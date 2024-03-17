@@ -16,32 +16,38 @@ For detailed information on `clab2drawio`, including features, options, and usag
 
 For more details on `drawio2clab`, including features, constraints for drawing, and how to run the tool, please see the [drawio2clab.md](drawio2clab.md) file in this directory.
 
-# Quick Usage
+## Quick Usage
 
-## Running with Docker
+### Running with Docker
+
 To simplify dependency management and execution, the tools can be run inside a Docker container. Follow these instructions to build and run the tool using Docker.
 
-### Pulling from dockerhub
+#### Pulling from dockerhub
+
 ```bash
 docker pull flosch62/clab-io-draw:latest
 ```
 
-### Building the Docker Image by yourself
+#### Building the Docker Image by yourself
 
 Navigate to the project directory and run:
 
 ```bash
 docker build -t clab-io-draw .
 ```
+
 This command builds the Docker image of clab-io-draw with the tag clab-io-draw, using the Dockerfile located in the docker/ directory.
 
-### Running the Tools
+#### Running the Tools
+
 Run drawio2clab or clab2drawio within a Docker container by mounting the directory containing your .drawio/.yaml files as a volume. Specify the input and output file paths relative to the mounted volume:
+
 ```bash
- docker run -e SCRIPT_NAME=clab2drawio.py -v "$(pwd)":/data flosch62/clab-io-draw -i /data/lab-examples/clos03/cfg-clos.clab.yml -o /data/output.drawio
+docker run -e SCRIPT_NAME=clab2drawio.py -v "$(pwd)":/data flosch62/clab-io-draw -i lab-examples/clos03/cfg-clos.clab.yml -o output.drawio
 ```
+
 ```bash
- docker run -e SCRIPT_NAME=drawio2clab.py -v "$(pwd)":/data flosch62/clab-io-draw -i /data/output.drawio -o /data/lab-examples/clos03/cfg-clos.clab.yml
+docker run -e SCRIPT_NAME=drawio2clab.py -v "$(pwd)":/data flosch62/clab-io-draw -i output.drawio -o lab-examples/clos03/cfg-clos.clab.yml
 ```
 
 Replace your_input_file.drawio and your_output_file.yaml with the names of your actual files. This command mounts your current directory to /data inside the container.
@@ -49,6 +55,7 @@ Replace your_input_file.drawio and your_output_file.yaml with the names of your 
 ## Running locally
 
 ### Requirements
+
 - Python 3.6+
 
 ### Installation
@@ -61,8 +68,11 @@ It's recommended to use a virtual environment for Python projects. This isolates
 python3 -m venv venv
 source venv/bin/activate  
 ```
+
 #### Installing Dependencies
+
 After activating the virtual environment, install the required packages from the requirements.txt file:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -78,18 +88,19 @@ Detailed Usages: [drawio2clab.md](drawio2clab.md#usage) and [clab2drawio.md](dra
 ```bash
 python drawio2clab.py -i <input_file.drawio> -o <output_file.yaml>
 ```
+
 `-i, --input`: Specifies the path to your input .drawio file.
 `-o, --output`: Specifies the path for the output YAML file.
 Make sure to replace `<input_file.drawio>` with the path to your .drawio file and `<output_file.yaml>` with the desired output YAML file path.
 
 For more comprehensive guidance, including additional command-line options, please see the Usage section in [drawio2clab.md](drawio2clab.md#usage)
 
-
 ## clab2drawio
 
 ```bash
 python clab2drawio.py -i <input_file.yaml> -o <output_file.drawio>
 ```
+
 `-i, --input`: Specifies the path to your input YAML file.
 `-o, --output`: Specifies the path for the output drawio file.
 Make sure to replace `<input_file.yaml>` with the path to your .drawio file and `<output_file.drawio>` with the desired output YAML file path.
