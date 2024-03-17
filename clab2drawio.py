@@ -581,6 +581,10 @@ def main(input_file, output_file, include_unlinked_nodes, no_links, layout, verb
     base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = set_styles()
     add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_links=no_links, layout=layout, verbose=verbose, base_style=base_style, link_style=link_style, custom_styles=custom_styles, icon_to_group_mapping=icon_to_group_mapping)
 
+    # If output_file is not provided, generate it from input_file
+    if not output_file:
+        output_file = os.path.splitext(input_file)[0] + ".drawio"
+        
     output_folder = os.path.dirname(output_file) or "."
     output_filename = os.path.basename(output_file)
     os.makedirs(output_folder, exist_ok=True)
@@ -592,7 +596,7 @@ def main(input_file, output_file, include_unlinked_nodes, no_links, layout, verb
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Generate a topology diagram from a containerlab YAML or draw.io XML file.')
     parser.add_argument('-i', '--input', required=True, help='The filename of the input file (containerlab YAML for diagram generation).')
-    parser.add_argument('-o', '--output', required=True, help='The output file path for the generated diagram (draw.io format).')
+    parser.add_argument('-o', '--output', required=False, help='The output file path for the generated diagram (draw.io format).')
     parser.add_argument('--include-unlinked-nodes', action='store_true', help='Include nodes without any links in the topology diagram')
     parser.add_argument('--no-links', action='store_true', help='Do not draw links between nodes in the topology diagram')
     parser.add_argument('--layout', type=str, default='vertical', choices=['vertical', 'horizontal'], help='Specify the layout of the topology diagram (vertical or horizontal)')  

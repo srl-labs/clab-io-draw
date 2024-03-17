@@ -321,6 +321,9 @@ def main(input_file, output_file, style='block', diagram_name=None):
     and then generates and writes the YAML file. It ties together all the steps necessary to convert
     .drawio diagrams into YAML-based network topologies.
     """
+    if not output_file:
+        output_file = os.path.splitext(input_file)[0] + ".yaml"
+
     root = parse_xml(input_file, diagram_name)
     node_details = extract_nodes(root)
     links_info = extract_links(root, node_details)
@@ -344,7 +347,7 @@ def main(input_file, output_file, style='block', diagram_name=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse a draw.io XML file and generate a YAML file with a specified style.")
     parser.add_argument("-i", "--input", dest="input_file", required=True, help="The input XML file to be parsed.")
-    parser.add_argument("-o", "--output", dest="output_file", required=True, help="The output YAML file.")
+    parser.add_argument("-o", "--output", dest="output_file", required=False, help="The output YAML file.")
     parser.add_argument("--style", dest="style", choices=['block', 'flow'], default="block", help="The style for YAML endpoints. Choose 'block' or 'flow'. Default is 'block'.")
     parser.add_argument("--diagram-name", dest="diagram_name", required=False, help="The name of the diagram (tab) to be parsed.")
 
