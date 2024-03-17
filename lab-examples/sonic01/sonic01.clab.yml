@@ -1,0 +1,13 @@
+name: sonic01
+
+topology:
+  nodes:
+    srl:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux
+    sonic:
+      kind: sonic-vs
+      image: docker-sonic-vs:2020-11-12
+
+  links:
+    - endpoints: ["srl:e1-1", "sonic:eth1"]

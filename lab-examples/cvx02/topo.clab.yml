@@ -1,0 +1,20 @@
+name: cvx02
+
+topology:
+  nodes:
+    sw1:
+      kind: cumulus_cvx
+      image: networkop/cx:4.3.0
+      runtime: docker
+      binds:
+        - /lib/modules:/lib/modules:ro # for kernel modules like ebtables
+        - sw1/interfaces:/etc/network/interfaces
+    h1:
+      kind: linux
+      image: networkop/host:ifreload
+      binds:
+        - h1/interfaces:/etc/network/interfaces
+      cmd: "2" # wait for 2 interfaces to be connected: eth0 + eth1
+
+  links:
+    - endpoints: ["sw1:swp12", "h1:eth1"]

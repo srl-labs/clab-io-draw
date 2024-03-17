@@ -1,0 +1,13 @@
+name: vr02
+
+topology:
+  nodes:
+    srl:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux
+    vmx:
+      kind: juniper_vmx
+      image: vrnetlab/vr-vmx:20.2R1.10
+
+  links:
+    - endpoints: ["srl:e1-1", "vmx:eth1"]

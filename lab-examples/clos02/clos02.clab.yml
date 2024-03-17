@@ -1,0 +1,72 @@
+# topology documentation: http://containerlab.dev/lab-examples/min-5clos/
+name: clos02
+
+topology:
+  kinds:
+    nokia_srlinux:
+      image: ghcr.io/nokia/srlinux
+    linux:
+      image: ghcr.io/hellt/network-multitool
+  nodes:
+    leaf1:
+      kind: nokia_srlinux
+    leaf2:
+      kind: nokia_srlinux
+    leaf3:
+      kind: nokia_srlinux
+    leaf4:
+      kind: nokia_srlinux
+
+    spine1:
+      kind: nokia_srlinux
+      type: ixrd3
+    spine2:
+      kind: nokia_srlinux
+      type: ixrd3
+    spine3:
+      kind: nokia_srlinux
+      type: ixrd3
+    spine4:
+      kind: nokia_srlinux
+      type: ixrd3
+
+    superspine1:
+      kind: nokia_srlinux
+      type: ixrd3
+    superspine2:
+      kind: nokia_srlinux
+      type: ixrd3
+
+    client1:
+      kind: linux
+    client2:
+      kind: linux
+    client3:
+      kind: linux
+    client4:
+      kind: linux
+
+  links:
+    # leaf to spine links POD1
+    - endpoints: ["leaf1:e1-1", "spine1:e1-1"]
+    - endpoints: ["leaf1:e1-2", "spine2:e1-1"]
+    - endpoints: ["leaf2:e1-1", "spine1:e1-2"]
+    - endpoints: ["leaf2:e1-2", "spine2:e1-2"]
+    # spine to superspine links POD1
+    - endpoints: ["spine1:e1-3", "superspine1:e1-1"]
+    - endpoints: ["spine2:e1-3", "superspine2:e1-1"]
+
+    # leaf to spine links POD2
+    - endpoints: ["leaf3:e1-1", "spine3:e1-1"]
+    - endpoints: ["leaf3:e1-2", "spine4:e1-1"]
+    - endpoints: ["leaf4:e1-1", "spine3:e1-2"]
+    - endpoints: ["leaf4:e1-2", "spine4:e1-2"]
+    # spine to superspine links POD2
+    - endpoints: ["spine3:e1-3", "superspine1:e1-2"]
+    - endpoints: ["spine4:e1-3", "superspine2:e1-2"]
+
+    # client connection links
+    - endpoints: ["client1:eth1", "leaf1:e1-3"]
+    - endpoints: ["client2:eth1", "leaf2:e1-3"]
+    - endpoints: ["client3:eth1", "leaf3:e1-3"]
+    - endpoints: ["client4:eth1", "leaf4:e1-3"]

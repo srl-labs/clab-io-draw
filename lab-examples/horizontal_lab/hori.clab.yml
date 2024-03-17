@@ -1,0 +1,141 @@
+name: horizonal
+prefix: ""
+
+topology:
+  kinds:
+
+    nokia_srlinux:
+      image: ghcr.io/nokia/srlinux:23.7.2
+    vr-sros:
+      image: registry.srlinux.dev/pub/vr-sros:23.10.R1
+      license: /opt/nokia/license-23.txt
+    linux:
+      image: ghcr.io/hellt/network-multitool
+  nodes:
+
+    srl-1:
+      kind: nokia_srlinux
+      type: ixrd2l
+      labels:
+        graph-icon: switch
+    srl-2:
+      kind: nokia_srlinux
+      type: ixrd2l
+      labels:
+        graph-icon: switch
+    srl-3:
+      kind: nokia_srlinux
+      type: ixrd2l
+      labels:
+        graph-icon: switch
+    vswitch-1:
+      kind: juniper_vjunosevolved
+      image:  vr-vjunosevolved:23.2R1-S1.8-EVO
+
+    7750-CORE-1:
+      kind: vr-sros
+      labels:
+        graph-icon: router
+
+    7750-CORE-2:
+      kind: vr-sros
+      labels:
+        graph-icon: router
+        
+    7750-DCIGW-1:
+      kind: vr-sros
+      mgmt-ipv4: 172.50.60.33
+      labels:
+        graph-icon: router
+
+    7750-DCIGW-2:
+      kind: vr-sros
+      labels:
+        graph-icon: router
+
+    7750-DCIGW-3:
+      kind: vr-sros
+      labels:
+        graph-icon: router
+
+    L2-SW-1:
+      kind: nokia_srlinux
+      type: ixrd2l
+      labels:
+        graph-icon: switch
+
+    L2-SW-2:
+      kind: nokia_srlinux
+      type: ixrd2l
+      labels:
+        graph-icon: switch
+      
+#-----------------------------------------------------------
+# Servers
+#-----------------------------------------------------------    
+    client1:
+      kind: linux
+      labels:
+        graph-icon: host
+
+    client2:
+      kind: linux
+      labels:
+        graph-icon: host
+
+    server:
+      kind: linux
+      labels:
+        graph-icon: host
+#-----------------------------------------------------------
+#Graphite for topology visualization
+#-----------------------------------------------------------  
+    ssh:
+      kind: linux
+      image: netreplica/graphite:webssh2
+      env:
+        GRAPHITE_DEFAULT_TYPE: clab
+        GRAPHITE_DEFAULT_TOPO: POC-REMIP
+        CLAB_SSH_CONNECTION: ${SSH_CONNECTION}
+      binds:
+        - .:/htdocs/clab
+      ports:
+        - 8080:80
+      exec:
+        - sh -c 'graphite_motd.sh 8080'
+      labels:
+        graph-hide: yes
+
+  links:
+    - endpoints: ["srl-1:e1-50", "srl-2:e1-50"]
+    - endpoints: ["srl-1:e1-51", "srl-3:e1-51"]
+    - endpoints: ["srl-1:e1-52", "7750-CORE-1:eth1"]
+    - endpoints: ["srl-2:e1-52", "7750-CORE-2:eth1"]
+    - endpoints: ["srl-3:e1-52", "7750-CORE-1:eth2"]
+    - endpoints: ["7750-CORE-1:eth3", "7750-CORE-2:eth3" ]
+    - endpoints: ["7750-CORE-1:eth4", "7750-DCIGW-1:eth1"]
+    - endpoints: ["7750-CORE-2:eth4", "7750-DCIGW-2:eth1"]
+
+    - endpoints: ["L2-SW-1:e1-1", "srl-1:e1-1"]
+    - endpoints: ["L2-SW-1:e1-2", "srl-3:e1-1"]
+    - endpoints: ["L2-SW-2:e1-50", "srl-2:e1-55"]
+
+    - endpoints: ["7750-CORE-2:eth5", "vswitch-1:eth3"]
+    - endpoints: ["srl-2:e1-54", "vswitch-1:eth1"]
+    - endpoints: ["srl-3:e1-54", "vswitch-1:eth2"]
+    - endpoints: ["L2-SW-2:e1-52", "vswitch-1:eth4"]
+
+#-----------------------
+#Links server to leafs : 114
+#Possibility to defined up to 3 NICs - translated into eth1 up to eth6 in contanierlab
+#-----------------------
+
+    - endpoints: ["client1:eth1",  "L2-SW-1:e1-10"]
+    - endpoints: ["client2:eth1",  "L2-SW-2:e1-10"]
+
+    - endpoints: ["7750-DCIGW-1:eth2", "7750-DCIGW-3:eth1"]
+    - endpoints: ["7750-DCIGW-2:eth2", "7750-DCIGW-3:eth2"]
+    - endpoints: ["7750-DCIGW-3:eth3", "server:eth1"]
+
+
+

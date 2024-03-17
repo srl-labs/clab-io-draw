@@ -1,0 +1,51 @@
+name: conf1
+
+topology:
+  defaults:
+    kind: nokia_sros
+    image: vrnetlab/vr-sros:21.2.R1
+    license: ~/license/sros.txt
+    config:
+      vars:
+        isis_iid: 1
+  nodes:
+    sr1:
+      config:
+        vars:
+          clab_system_ip: 10.0.50.31/32
+          sid_idx: 1
+    sr2:
+      config:
+        vars:
+          clab_system_ip: 10.0.50.32/32
+          sid_idx: 2
+    sr3:
+      config:
+        vars:
+          clab_system_ip: 10.0.50.33/32
+          sid_idx: 3
+    sr4:
+      config:
+        vars:
+          clab_system_ip: 10.0.50.34/32
+          sid_idx: 4
+  links:
+    - endpoints: [sr1:eth1, sr2:eth2]
+      vars:
+        port: [1/1/c1/1, 1/1/c2/1]
+        clab_link_ip: 1.1.1.2/30
+        vlan: [99, 99]
+        isis_iid: 1
+    - endpoints: [sr2:eth1, sr3:eth2]
+      vars:
+        port: [1/1/c1/1, 1/1/c2/1]
+        vlan: 98
+        isis_iid: 1
+    - endpoints: [sr3:eth1, sr4:eth2]
+      vars:
+        port: [1/1/c1/1, 1/1/c2/1]
+        isis_iid: 1
+    - endpoints: [sr4:eth1, sr1:eth2]
+      vars:
+        port: [1/1/c1/1, 1/1/c2/1]
+        isis_iid: 1

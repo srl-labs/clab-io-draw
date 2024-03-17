@@ -1,0 +1,13 @@
+name: vr03
+
+topology:
+  nodes:
+    srl:
+      kind: nokia_srlinux
+      image: ghcr.io/nokia/srlinux
+    xrv:
+      kind: cisco_xrv
+      image: vrnetlab/vr-xrv:6.1.2
+
+  links:
+    - endpoints: ["srl:e1-1", "xrv:eth1"]
