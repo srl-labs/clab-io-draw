@@ -43,11 +43,11 @@ This command builds the Docker image of clab-io-draw with the tag clab-io-draw, 
 Run drawio2clab or clab2drawio within a Docker container by mounting the directory containing your .drawio/.yaml files as a volume. Specify the input and output file paths relative to the mounted volume:
 
 ```bash
-docker run -e SCRIPT_NAME=clab2drawio.py -v "$(pwd)":/data flosch62/clab-io-draw -i lab-examples/clos03/cfg-clos.clab.yml -o output.drawio
+docker run -v "$(pwd)":/data flosch62/clab-io-draw -i lab-examples/clos03/cfg-clos.clab.yml
 ```
 
 ```bash
-docker run -e SCRIPT_NAME=drawio2clab.py -v "$(pwd)":/data flosch62/clab-io-draw -i output.drawio -o lab-examples/clos03/cfg-clos.clab.yml
+docker run -v "$(pwd)":/data flosch62/clab-io-draw -i output.drawio
 ```
 
 Replace your_input_file.drawio and your_output_file.yaml with the names of your actual files. This command mounts your current directory to /data inside the container.

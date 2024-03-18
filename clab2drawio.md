@@ -68,7 +68,7 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
     python clab2drawio.py -i <path_to_your_yaml_file>
     ```
 
-- `-o, --output`: Specifies the output file path for the generated diagram in draw.io format. This argument is required.
+- `-o, --output`: Specifies the output file path for the generated diagram in draw.io format. 
 
     ```bash
     python clab2drawio.py -i <path_to_your_yaml_file> -o <path_to_output_file>
