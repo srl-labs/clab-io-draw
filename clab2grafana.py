@@ -4,6 +4,18 @@ from collections import defaultdict
 import argparse
 import os
 import json
+import xml.etree.ElementTree as ET
+def create_grafana_dashboard(diagram=None,dashboard_filename=None):
+    xmlTree = ET.fromstring(diagram.dump_xml())
+    subXmlTree=xmlTree.findall('.//mxGraphModel')[0]
+    dashboard=gf_dashboard_template(panels=gf_flowchart_panel_template(xml=ET.tostring(subXmlTree, encoding="unicode"),
+                                    rulesData=gf_flowchart_rule_template())
+                                    )
+    dashboard_json=json.dumps(dashboard,indent=4)
+    with open(dashboard_filename,'w') as f:
+        f.write(dashboard_json)
+        print("Saved GF file to:", dashboard_filename)
+
 def gf_flowchart_rule_template(ruleName="myRule1"):
         rulesData = [
         {
@@ -480,7 +492,7 @@ def gf_flowchart_panel_template(xml=None,rulesData=None):
                "refId": "A"
              }
            ],
-           "title": "Panel Title",
+           "title": "Network Topology",
            "type": "agenty-flowcharting-panel",
            "valueName": "current",
            "version": "1.0.0e"
@@ -1133,6 +1145,7 @@ def main(input_file, output_file, include_unlinked_nodes, no_links, layout, verb
     diagram = drawio_diagram()
 
     # Add a diagram page
+    #diagram.add_diagram("Network Topology",width=1800,height=600)
     diagram.add_diagram("Network Topology")
 
     # Add nodes and links to the diagram
@@ -1151,20 +1164,8 @@ def main(input_file, output_file, include_unlinked_nodes, no_links, layout, verb
 
     diagram.dump_file(filename=output_filename, folder=output_folder)
     print("Saved file to:", output_file)
+    create_grafana_dashboard(diagram,dashboard_filename=output_gf_filename)
     
-    dashboard=gf_dashboard_template(panels=gf_flowchart_panel_template(rulesData=gf_flowchart_rule_template()))
-    #print(dashboard['panels'])
-                  
-    # flowcharts_data = [panel['flowchartsData']['flowcharts'] for panel in dashboard['panels'] if 'flowchartsData' in panel]
-    # flowcharts_rules = [panel['rulesData'] for panel in dashboard['panels'] if 'rulesData' in panel]
-    # print(dashboard)
-    #print(flowcharts_rules)
-    dashboard_json=json.dumps(dashboard,indent=4)
-    with open(output_gf_filename,'w') as f:
-        f.write(dashboard_json)
-        print("Saved GF file to:", output_gf_filename)
-
-
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Generate a topology diagram from a containerlab YAML or draw.io XML file.')
     parser.add_argument('-i', '--input', required=True, help='The filename of the input file (containerlab YAML for diagram generation).')
