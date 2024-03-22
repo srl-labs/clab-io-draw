@@ -523,9 +523,9 @@ def add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_l
                 source=source, target=target,
                 src_label=source_intf, trgt_label=target_intf,
                 style=unique_link_style,
-                link_id="{}:{}:{}:{}".format(source,source_intf,target,target_intf)
+                link_id=f"{source}:{source_intf}:{target}:{target_intf}"
             )
-
+            
 def main(input_file, output_file, include_unlinked_nodes, no_links, layout, verbose=False):
     """
     Generates a diagram from a given topology definition file, organizing and displaying nodes and links.
