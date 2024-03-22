@@ -5,17 +5,74 @@ import argparse
 import os
 import json
 import xml.etree.ElementTree as ET
+
 def create_grafana_dashboard(diagram=None,dashboard_filename=None,link_list=[]):
+    """
+    Creates a Grafana JSON Dashboard using the FlowChart Plugin
+    Requires as an input the Drawio Object to embed the XML 
+    The Link List obtained by add_nodes_and_links function and 
+    the file name
+    Metrics format defaults:
+      Ingress:   node:itf:in
+      Egress:    node:itf:out
+      OperState: oper_state:node:itf
+    Where `node` comes from the clab node and `itf` from the interface name
+    """
+    
+    # We just need the subtree objects from mxGraphModel.Single page drawings only
     xmlTree = ET.fromstring(diagram.dump_xml())
     subXmlTree=xmlTree.findall('.//mxGraphModel')[0]
-    dashboard=gf_dashboard_template(panels=gf_flowchart_panel_template(xml=ET.tostring(subXmlTree, encoding="unicode"),
-                                    rulesData=gf_flowchart_rule_template(link_list=link_list),dashboard_name=os.path.splitext(dashboard_filename)[0])
-                                   )
-    dashboard_json=json.dumps(dashboard,indent=4)
+    
+    # Define Query rules for the Panel, rule_expr needs to match the collector metric name
+    # Legend format needs to match the format expected by the metric
+    panelQueryList = {
+        "IngressTraffic" : {
+                    "rule_expr" : "interface_traffic_rate_in_bps",
+                    "legend_format" : '{{source}}:{{interface_name}}:in',
+                   },
+        "EgressTraffic" : {
+                    "rule_expr" : "interface_traffic_rate_out_bps",
+                    "legend_format" : '{{source}}:{{interface_name}}:out',
+                   },
+        "ItfOperState" : {
+                   "rule_expr" : "interface_oper_state",
+                   "legend_format" : 'oper_state:{{source}}:{{interface_name}}',
+                   },          
+    }
+    # Create a targets list to embed in the JSON object, we add all the other default JSON attributes to the list
+    targetsList = []
+    for query in panelQueryList:
+        targetsList.append(gf_dashboard_datasource_target(rule_expr=panelQueryList[query]["rule_expr"],legend_format=panelQueryList[query]["legend_format"], refId=query))
+    
+    # Create the Rules Data
+    rulesData = []
+    i=0
+    for link in link_list:
+        rule = link.split(":")
+        #src port ingress
+        rulesData.append(gf_flowchart_rule_traffic(ruleName=f"{rule[1]}:{rule[2]}:in", metric=f"{rule[1]}:{rule[2]}:in",link_id=f"{link}-src",order=i))
+        #src port egress, we can also change this for the ingress of remote port but there would not be an end
+        rulesData.append(gf_flowchart_rule_traffic(ruleName=f"{rule[1]}:{rule[2]}:out",metric=f"{rule[1]}:{rule[2]}:out",link_id=f"{link}-trgt",order=i+1))
+        #src port:
+        rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[1]}:{rule[2]}",metric=f"oper_state:{rule[1]}:{rule[2]}",link_id=f"{link}-src",order=i+2))
+        #dest port:
+        rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[3]}:{rule[4]}",metric=f"oper_state:{rule[3]}:{rule[4]}",link_id=f"{link}-trgt",order=i+3))
+        i=i+4
+    # Create the Panel
+    flowchart_panel=gf_flowchart_panel_template(xml=ET.tostring(subXmlTree, encoding="unicode"),
+                                                rulesData=rulesData,
+                                                panelTitle="Network Telemetry",
+                                                targetsList=targetsList)
+    #Create a dashboard from the panel
+    dashboard_json=json.dumps(gf_dashboard_template(panels=flowchart_panel,dashboard_name=os.path.splitext(dashboard_filename)[0]),indent=4)
     with open(dashboard_filename,'w') as f:
         f.write(dashboard_json)
-        print("Saved GF file to:", dashboard_filename)
+        print("Saved Grafana dashboard file to:", dashboard_filename)
+
 def gf_flowchart_rule_traffic(ruleName="traffic:inOrOut",metric=None,link_id=None,order=1):
+    """
+    Dictionary containg information relevant to the traffic Rules
+    """
     rule = {
         "aggregation": "current",
             "alias": ruleName,
@@ -157,10 +214,13 @@ def gf_flowchart_rule_traffic(ruleName="traffic:inOrOut",metric=None,link_id=Non
             "type": "number",
             "unit": "bps",
             "valueData": []
-          
     }
     return rule
+
 def gf_flowchart_rule_operstate(ruleName="oper_state",metric=None,link_id=None,order=1):
+    """
+    Dictionary containg information relevant to the Operational State Rules
+    """
     rule = {
             "aggregation": "current",
             "alias": ruleName,
@@ -214,7 +274,7 @@ def gf_flowchart_rule_operstate(ruleName="oper_state",metric=None,link_id=None,o
                   {
                     "colorOn": "a",
                     "hidden": False,
-                    "pattern": metric,
+                    "pattern": link_id,
                     "style": "fillColor"
                   }
                 ],
@@ -250,7 +310,7 @@ def gf_flowchart_rule_operstate(ruleName="oper_state",metric=None,link_id=None,o
             ],
             "order": order,
             "overlayIcon": False,
-            "pattern": link_id,
+            "pattern": metric,
             "rangeData": [],
             "reduce": True,
             "refId": "A",
@@ -289,33 +349,13 @@ def gf_flowchart_rule_operstate(ruleName="oper_state",metric=None,link_id=None,o
             "unit": "short",
             "valueData": []
           }
-        
-    
     return rule
-def gf_flowchart_rule_template(link_list=[]):
-        rulesData = []
-        i=0
-        for link in link_list:
-            rule = link.split(":")
-            #src port ingress
-            rulesData.append(gf_flowchart_rule_traffic(ruleName=f"{rule[1]}:{rule[2]}:in", metric=f"{rule[1]}:{rule[2]}:in",link_id=f"{link}-src",order=i))
-            #src port egress, we can also change this for the ingress of remote port but there would not be an end
-            rulesData.append(gf_flowchart_rule_traffic(ruleName=f"{rule[1]}:{rule[2]}:out",metric=f"{rule[1]}:{rule[2]}:out",link_id=f"{link}-trgt",order=i+1))
-            #src port:
-            rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[1]}:{rule[2]}",metric=f"oper_state:{rule[1]}:{rule[2]}",link_id=f"{link}-src",order=i+2))
-            #dest port:
-            rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[3]}:{rule[4]}",metric=f"oper_state:{rule[3]}:{rule[4]}",link_id=f"{link}-trgt",order=i+3))
-            i=i+4
 
-        # rulesData = [
-        # gf_flowchart_rule_traffic(metric="metric1",link_id="link_id1",order=1),
-        # gf_flowchart_rule_traffic(metric="metric2",link_id="link_id2",order=2),
-        # gf_flowchart_rule_operstate(metric="metric3",link_id="link_id3",order=3),
-        # gf_flowchart_rule_operstate(metric="metric4",link_id="link_id4",order=4),
-        # ]
-        print(rulesData)    
-        return rulesData
-def gf_flowchart_panel_template(xml=None,rulesData=None,targetsList=None,dashboard_name="clab-telemetry"):
+def gf_flowchart_panel_template(xml=None,rulesData=None,targetsList=None,panelTitle="Network Topology"):
+    """
+    Dictionary containg information relevant to the Panels Section in the JSON Dashboard
+    Embeding of the XML diagram, the Rules and the Targets
+    """
     panels = [
          {
            "datasource": {
@@ -356,19 +396,19 @@ def gf_flowchart_panel_template(xml=None,rulesData=None,targetsList=None,dashboa
            "rulesData": {
                  "rulesData": rulesData,
            },
-           "targets": [
-                 gf_dashboard_datasource_target(rule_expr="promql_query",legendFormat=None, refId="Query1"),
-                 gf_dashboard_datasource_target(rule_expr="promql_query",legendFormat=None, refId="Query2"),
-                 gf_dashboard_datasource_target(rule_expr="promql_query",legendFormat=None, refId="Query3")
-           ],
-           "title": "Network Topology",
+           "targets": targetsList,
+           "title": panelTitle,
            "type": "agenty-flowcharting-panel",
            "valueName": "current",
            "version": "1.0.0e"
          }
        ]
     return panels
-def gf_dashboard_datasource_target(rule_expr="promql_query",legendFormat=None, refId="Query1"):
+
+def gf_dashboard_datasource_target(rule_expr="promql_query",legend_format=None, refId="Query1"):
+    """
+    Dictionary containg information relevant to the Targets queried
+    """
     target = {
           "datasource": {
             "type": "prometheus",
@@ -377,12 +417,16 @@ def gf_dashboard_datasource_target(rule_expr="promql_query",legendFormat=None, r
           "editorMode": "code",
           "expr": rule_expr,
           "instant": False,
-          "legendFormat": legendFormat,
+          "legendFormat": legend_format,
           "range": True,
           "refId": refId,
     }
     return target
+
 def gf_dashboard_template(panels=None,dashboard_name="lab-telemetry"):
+    """
+    Dictionary containg information relevant to the Grafana Dashboard Root JSON object
+    """
     dashboard = {
        "__inputs": [
          {
@@ -456,6 +500,7 @@ def gf_dashboard_template(panels=None,dashboard_name="lab-telemetry"):
        "weekStart": ""
      }
     return dashboard
+
 def assign_graphlevels(nodes, links, verbose=False):
     """
     Assigns hierarchical graph levels to nodes based on connections or optional labels
