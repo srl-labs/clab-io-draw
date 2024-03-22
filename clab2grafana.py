@@ -275,7 +275,7 @@ def gf_flowchart_rule_operstate(ruleName="oper_state",metric=None,link_id=None,o
                     "colorOn": "a",
                     "hidden": False,
                     "pattern": link_id,
-                    "style": "fillColor"
+                    "style": "labelBackgroundColor"
                   }
                 ],
                 "options": {
