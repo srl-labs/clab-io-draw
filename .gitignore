@@ -1,0 +1,5 @@
+venv/*
+*.json
+__pycache__
+*.drawio
+*.yml
