@@ -5,441 +5,317 @@ import argparse
 import os
 import json
 import xml.etree.ElementTree as ET
-def create_grafana_dashboard(diagram=None,dashboard_filename=None):
+def create_grafana_dashboard(diagram=None,dashboard_filename=None,link_list=[]):
     xmlTree = ET.fromstring(diagram.dump_xml())
     subXmlTree=xmlTree.findall('.//mxGraphModel')[0]
     dashboard=gf_dashboard_template(panels=gf_flowchart_panel_template(xml=ET.tostring(subXmlTree, encoding="unicode"),
-                                    rulesData=gf_flowchart_rule_template())
-                                    )
+                                    rulesData=gf_flowchart_rule_template(link_list=link_list),dashboard_name=os.path.splitext(dashboard_filename)[0])
+                                   )
     dashboard_json=json.dumps(dashboard,indent=4)
     with open(dashboard_filename,'w') as f:
         f.write(dashboard_json)
         print("Saved GF file to:", dashboard_filename)
+def gf_flowchart_rule_traffic(ruleName="traffic:inOrOut",metric=None,link_id=None,order=1):
+    rule = {
+        "aggregation": "current",
+            "alias": ruleName,
+            "column": "Time",
+            "dateColumn": "Time",
+            "dateFormat": "YYYY-MM-DD HH:mm:ss",
+            "dateTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "0d"
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "-1d"
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "-1w"
+              }
+            ],
+            "decimals": 1,
+            "gradient": False,
+            "hidden": False,
+            "invert": False,
+            "mappingType": 1,
+            "mapsDat": {
+              "events": {
+                "dataList": [],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "links": {
+                "dataList": [],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "shapes": {
+                "dataList": [
+                  {
+                    "colorOn": "a",
+                    "hidden": False,
+                    "pattern": link_id,
+                    "style": "strokeColor"
+                  }
+                ],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "texts": {
+                "dataList": [
+                  {
+                    "hidden": False,
+                    "pattern": link_id,
+                    "textOn": "wmd",
+                    "textPattern": "/.*/",
+                    "textReplace": "content"
+                  }
+                ],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              }
+            },
+            "metricType": "serie",
+            "newRule": False,
+            "numberTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "ge",
+                "level": 0
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "comparator": "ge",
+                "level": 0,
+                "value": 50
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "ge",
+                "level": 0,
+                "value": 80
+              }
+            ],
+            "order": order,
+            "overlayIcon": False,
+            "pattern": metric,
+            "rangeData": [],
+            "reduce": True,
+            "refId": "A",
+            "sanitize": False,
+            "stringTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*/"
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*warning.*/"
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*(success|ok).*/"
+              }
+            ],
+            "tooltip": True,
+            "tooltipColors": False,
+            "tooltipLabel": "",
+            "tooltipOn": "a",
+            "tpDirection": "v",
+            "tpGraph": True,
+            "tpGraphScale": "linear",
+            "tpGraphSize": "100%",
+            "tpGraphType": "line",
+            "tpMetadata": False,
+            "type": "number",
+            "unit": "bps",
+            "valueData": []
+          
+    }
+    return rule
+def gf_flowchart_rule_operstate(ruleName="oper_state",metric=None,link_id=None,order=1):
+    rule = {
+            "aggregation": "current",
+            "alias": ruleName,
+            "column": "Time",
+            "dateColumn": "Time",
+            "dateFormat": "YYYY-MM-DD HH:mm:ss",
+            "dateTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "0d"
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "-1d"
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "-1w"
+              }
+            ],
+            "decimals": 0,
+            "gradient": False,
+            "hidden": False,
+            "invert": False,
+            "mappingType": 1,
+            "mapsDat": {
+              "events": {
+                "dataList": [],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "links": {
+                "dataList": [],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "shapes": {
+                "dataList": [
+                  {
+                    "colorOn": "a",
+                    "hidden": False,
+                    "pattern": metric,
+                    "style": "fillColor"
+                  }
+                ],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "texts": {
+                "dataList": [],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              }
+            },
+            "metricType": "serie",
+            "newRule": False,
+            "numberTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "ge",
+                "level": 0
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "ge",
+                "level": 0,
+                "value": 1
+              }
+            ],
+            "order": order,
+            "overlayIcon": False,
+            "pattern": link_id,
+            "rangeData": [],
+            "reduce": True,
+            "refId": "A",
+            "sanitize": False,
+            "stringTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*/"
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*warning.*/"
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*(success|ok).*/"
+              }
+            ],
+            "tooltip": False,
+            "tooltipColors": False,
+            "tooltipLabel": "",
+            "tooltipOn": "a",
+            "tpDirection": "v",
+            "tpGraph": False,
+            "tpGraphScale": "linear",
+            "tpGraphSize": "100%",
+            "tpGraphType": "line",
+            "tpMetadata": False,
+            "type": "number",
+            "unit": "short",
+            "valueData": []
+          }
+        
+    
+    return rule
+def gf_flowchart_rule_template(link_list=[]):
+        rulesData = []
+        i=0
+        for link in link_list:
+            rule = link.split(":")
+            #src port ingress
+            rulesData.append(gf_flowchart_rule_traffic(ruleName=f"{rule[1]}:{rule[2]}:in", metric=f"{rule[1]}:{rule[2]}:in",link_id=f"{link}-src",order=i))
+            #src port egress, we can also change this for the ingress of remote port but there would not be an end
+            rulesData.append(gf_flowchart_rule_traffic(ruleName=f"{rule[1]}:{rule[2]}:out",metric=f"{rule[1]}:{rule[2]}:out",link_id=f"{link}-trgt",order=i+1))
+            #src port:
+            rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[1]}:{rule[2]}",metric=f"oper_state:{rule[1]}:{rule[2]}",link_id=f"{link}-src",order=i+2))
+            #dest port:
+            rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[3]}:{rule[4]}",metric=f"oper_state:{rule[3]}:{rule[4]}",link_id=f"{link}-trgt",order=i+3))
+            i=i+4
 
-def gf_flowchart_rule_template(ruleName="myRule1"):
-        rulesData = [
-        {
-                   "aggregation": "current",
-                   "alias": "traffic:out",
-                   "column": "Time",
-                   "dateColumn": "Time",
-                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                   "dateTHData": [
-                     {
-                       "color": "rgba(245, 54, 54, 0.9)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": "0d"
-                     },
-                     {
-                       "color": "rgba(237, 129, 40, 0.89)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": "-1d"
-                     },
-                     {
-                       "color": "rgba(50, 172, 45, 0.97)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": "-1w"
-                     }
-                   ],
-                   "decimals": 2,
-                   "gradient": False,
-                   "hidden": False,
-                   "invert": False,
-                   "mappingType": 1,
-                   "mapsDat": {
-                     "events": {
-                       "dataList": [],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     },
-                     "links": {
-                       "dataList": [],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     },
-                     "shapes": {
-                       "dataList": [
-                         {
-                           "colorOn": "a",
-                           "hidden": False,
-                           "pattern": "1",
-                           "style": "strokeColor"
-                         }
-                       ],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     },
-                     "texts": {
-                       "dataList": [
-                         {
-                           "hidden": False,
-                           "pattern": "1",
-                           "textOn": "wmd",
-                           "textPattern": "/.*/",
-                           "textReplace": "content"
-                         }
-                       ],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     }
-                   },
-                   "metricType": "serie",
-                   "newRule": False,
-                   "numberTHData": [
-                     {
-                       "color": "rgba(245, 54, 54, 0.9)",
-                       "comparator": "ge",
-                       "level": 0
-                     },
-                     {
-                       "color": "rgba(237, 129, 40, 0.89)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": 50
-                     },
-                     {
-                       "color": "rgba(50, 172, 45, 0.97)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": 80
-                     }
-                   ],
-                   "order": 1,
-                   "overlayIcon": False,
-                   "pattern": ".*",
-                   "rangeData": [],
-                   "reduce": True,
-                   "refId": "A",
-                   "sanitize": False,
-                   "stringTHData": [
-                     {
-                       "color": "rgba(245, 54, 54, 0.9)",
-                       "comparator": "eq",
-                       "level": 0,
-                       "value": "/.*/"
-                     },
-                     {
-                       "color": "rgba(237, 129, 40, 0.89)",
-                       "comparator": "eq",
-                       "level": 0,
-                       "value": "/.*warning.*/"
-                     },
-                     {
-                       "color": "rgba(50, 172, 45, 0.97)",
-                       "comparator": "eq",
-                       "level": 0,
-                       "value": "/.*(success|ok).*/"
-                     }
-                   ],
-                   "tooltip": True,
-                   "tooltipColors": False,
-                   "tooltipLabel": "",
-                   "tooltipOn": "a",
-                   "tpDirection": "v",
-                   "tpGraph": True,
-                   "tpGraphScale": "linear",
-                   "tpGraphSize": "100%",
-                   "tpGraphType": "line",
-                   "tpMetadata": False,
-                   "type": "number",
-                   "unit": "short",
-                   "valueData": []
-        },
-        {
-                   "aggregation": "current",
-                   "alias": "traffic:in",
-                   "column": "Time",
-                   "dateColumn": "Time",
-                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                   "dateTHData": [
-                     {
-                       "color": "rgba(245, 54, 54, 0.9)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": "0d"
-                     },
-                     {
-                       "color": "rgba(237, 129, 40, 0.89)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": "-1d"
-                     },
-                     {
-                       "color": "rgba(50, 172, 45, 0.97)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": "-1w"
-                     }
-                   ],
-                   "decimals": 2,
-                   "gradient": False,
-                   "hidden": False,
-                   "invert": False,
-                   "mappingType": 1,
-                   "mapsDat": {
-                     "events": {
-                       "dataList": [],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     },
-                     "links": {
-                       "dataList": [],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     },
-                     "shapes": {
-                       "dataList": [
-                         {
-                           "colorOn": "a",
-                           "hidden": False,
-                           "pattern": "1",
-                           "style": "strokeColor"
-                         }
-                       ],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     },
-                     "texts": {
-                       "dataList": [
-                         {
-                           "hidden": False,
-                           "pattern": "1",
-                           "textOn": "wmd",
-                           "textPattern": "/.*/",
-                           "textReplace": "content"
-                         }
-                       ],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     }
-                   },
-                   "metricType": "serie",
-                   "newRule": False,
-                   "numberTHData": [
-                     {
-                       "color": "rgba(245, 54, 54, 0.9)",
-                       "comparator": "ge",
-                       "level": 0
-                     },
-                     {
-                       "color": "rgba(237, 129, 40, 0.89)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": 50
-                     },
-                     {
-                       "color": "rgba(50, 172, 45, 0.97)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": 80
-                     }
-                   ],
-                   "order": 2,
-                   "overlayIcon": False,
-                   "pattern": ".*",
-                   "rangeData": [],
-                   "reduce": True,
-                   "refId": "A",
-                   "sanitize": False,
-                   "stringTHData": [
-                     {
-                       "color": "rgba(245, 54, 54, 0.9)",
-                       "comparator": "eq",
-                       "level": 0,
-                       "value": "/.*/"
-                     },
-                     {
-                       "color": "rgba(237, 129, 40, 0.89)",
-                       "comparator": "eq",
-                       "level": 0,
-                       "value": "/.*warning.*/"
-                     },
-                     {
-                       "color": "rgba(50, 172, 45, 0.97)",
-                       "comparator": "eq",
-                       "level": 0,
-                       "value": "/.*(success|ok).*/"
-                     }
-                   ],
-                   "tooltip": True,
-                   "tooltipColors": False,
-                   "tooltipLabel": "",
-                   "tooltipOn": "a",
-                   "tpDirection": "v",
-                   "tpGraph": True,
-                   "tpGraphScale": "linear",
-                   "tpGraphSize": "100%",
-                   "tpGraphType": "line",
-                   "tpMetadata": False,
-                   "type": "number",
-                   "unit": "short",
-                   "valueData": []
-                 },
-                 {
-                   "aggregation": "current",
-                   "alias": "state:itf",
-                   "column": "Time",
-                   "dateColumn": "Time",
-                   "dateFormat": "YYYY-MM-DD HH:mm:ss",
-                   "dateTHData": [
-                     {
-                       "color": "rgba(245, 54, 54, 0.9)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": "0d"
-                     },
-                     {
-                       "color": "rgba(237, 129, 40, 0.89)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": "-1d"
-                     },
-                     {
-                       "color": "rgba(50, 172, 45, 0.97)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": "-1w"
-                     }
-                   ],
-                   "decimals": 2,
-                   "gradient": False,
-                   "hidden": False,
-                   "invert": False,
-                   "mappingType": 1,
-                   "mapsDat": {
-                     "events": {
-                       "dataList": [],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     },
-                     "links": {
-                       "dataList": [],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     },
-                     "shapes": {
-                       "dataList": [
-                         {
-                           "colorOn": "a",
-                           "hidden": False,
-                           "pattern": "1",
-                           "style": "fillColor"
-                         }
-                       ],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     },
-                     "texts": {
-                       "dataList": [],
-                       "options": {
-                         "enableRegEx": True,
-                         "identByProp": "id",
-                         "metadata": ""
-                       }
-                     }
-                   },
-                   "metricType": "serie",
-                   "newRule": False,
-                   "numberTHData": [
-                     {
-                       "color": "rgba(245, 54, 54, 0.9)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": 0
-                     },
-                     {
-                       "color": "rgba(237, 129, 40, 0.89)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": 50
-                     },
-                     {
-                       "color": "rgba(50, 172, 45, 0.97)",
-                       "comparator": "ge",
-                       "level": 0,
-                       "value": 80
-                     }
-                   ],
-                   "order": 3,
-                   "overlayIcon": False,
-                   "pattern": "/.*/",
-                   "rangeData": [],
-                   "reduce": True,
-                   "refId": "A",
-                   "sanitize": False,
-                   "stringTHData": [
-                     {
-                       "color": "rgba(245, 54, 54, 0.9)",
-                       "comparator": "eq",
-                       "level": 0,
-                       "value": "/.*/"
-                     },
-                     {
-                       "color": "rgba(237, 129, 40, 0.89)",
-                       "comparator": "eq",
-                       "level": 0,
-                       "value": "/.*warning.*/"
-                     },
-                     {
-                       "color": "rgba(50, 172, 45, 0.97)",
-                       "comparator": "eq",
-                       "level": 0,
-                       "value": "/.*(success|ok).*/"
-                     }
-                   ],
-                   "tooltip": False,
-                   "tooltipColors": False,
-                   "tooltipLabel": "",
-                   "tooltipOn": "a",
-                   "tpDirection": "v",
-                   "tpGraph": False,
-                   "tpGraphScale": "linear",
-                   "tpGraphSize": "100%",
-                   "tpGraphType": "line",
-                   "tpMetadata": False,
-                   "type": "number",
-                   "unit": "short",
-                   "valueData": []
-                 }
-        ]
+        # rulesData = [
+        # gf_flowchart_rule_traffic(metric="metric1",link_id="link_id1",order=1),
+        # gf_flowchart_rule_traffic(metric="metric2",link_id="link_id2",order=2),
+        # gf_flowchart_rule_operstate(metric="metric3",link_id="link_id3",order=3),
+        # gf_flowchart_rule_operstate(metric="metric4",link_id="link_id4",order=4),
+        # ]
+        print(rulesData)    
         return rulesData
-def gf_flowchart_panel_template(xml=None,rulesData=None):
+def gf_flowchart_panel_template(xml=None,rulesData=None,targetsList=None,dashboard_name="clab-telemetry"):
     panels = [
          {
            "datasource": {
@@ -481,16 +357,9 @@ def gf_flowchart_panel_template(xml=None,rulesData=None):
                  "rulesData": rulesData,
            },
            "targets": [
-             {
-               "datasource": {
-                 "type": "prometheus",
-                 "uid": "${DS_PROMETHEUS}"
-               },
-               "expr": "",
-               "instant": False,
-               "range": True,
-               "refId": "A"
-             }
+                 gf_dashboard_datasource_target(rule_expr="promql_query",legendFormat=None, refId="Query1"),
+                 gf_dashboard_datasource_target(rule_expr="promql_query",legendFormat=None, refId="Query2"),
+                 gf_dashboard_datasource_target(rule_expr="promql_query",legendFormat=None, refId="Query3")
            ],
            "title": "Network Topology",
            "type": "agenty-flowcharting-panel",
@@ -499,7 +368,21 @@ def gf_flowchart_panel_template(xml=None,rulesData=None):
          }
        ]
     return panels
-def gf_dashboard_template(panels=None):
+def gf_dashboard_datasource_target(rule_expr="promql_query",legendFormat=None, refId="Query1"):
+    target = {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": rule_expr,
+          "instant": False,
+          "legendFormat": legendFormat,
+          "range": True,
+          "refId": refId,
+    }
+    return target
+def gf_dashboard_template(panels=None,dashboard_name="lab-telemetry"):
     dashboard = {
        "__inputs": [
          {
@@ -567,7 +450,7 @@ def gf_dashboard_template(panels=None):
        },
        "timepicker": {},
        "timezone": "",
-       "title": "lab-telemetry",
+       "title": dashboard_name,
        "uid": "",
        "version": 1,
        "weekStart": ""
@@ -1060,7 +943,7 @@ def add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_l
         source, target = link['source'], link['target']
         link_key = tuple(sorted([source, target]))
         total_links_between_nodes[link_key] += 1
-
+    link_ids = []
     for link in links:
         source, target = link['source'], link['target']
         source_intf, target_intf = link['source_intf'], link['target_intf']
@@ -1088,13 +971,16 @@ def add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_l
 
         # Add the link to the diagram with the determined unique style
         if not no_links:
+            link_id=f"{source}:{source_intf}:{target}:{target_intf}"
             diagram.add_link(
                 source=source, target=target,
                 src_label=source_intf, trgt_label=target_intf,
                 style=unique_link_style,
-                link_id="{}:{}:{}:{}".format(source,source_intf,target,target_intf)
+                link_id=link_id
             )
-
+            link_ids.append(f"link_id:{link_id}")
+    return link_ids
+    
 def main(input_file, output_file, include_unlinked_nodes, no_links, layout, verbose=False):
     """
     Generates a diagram from a given topology definition file, organizing and displaying nodes and links.
@@ -1150,7 +1036,7 @@ def main(input_file, output_file, include_unlinked_nodes, no_links, layout, verb
 
     # Add nodes and links to the diagram
     base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = set_styles()
-    add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_links=no_links, layout=layout, verbose=verbose, base_style=base_style, link_style=link_style, custom_styles=custom_styles, icon_to_group_mapping=icon_to_group_mapping)
+    link_ids = add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_links=no_links, layout=layout, verbose=verbose, base_style=base_style, link_style=link_style, custom_styles=custom_styles, icon_to_group_mapping=icon_to_group_mapping)
 
     # If output_file is not provided, generate it from input_file
     if not output_file:
@@ -1164,7 +1050,7 @@ def main(input_file, output_file, include_unlinked_nodes, no_links, layout, verb
 
     diagram.dump_file(filename=output_filename, folder=output_folder)
     print("Saved file to:", output_file)
-    create_grafana_dashboard(diagram,dashboard_filename=output_gf_filename)
+    create_grafana_dashboard(diagram,dashboard_filename=output_gf_filename,link_list=link_ids)
     
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Generate a topology diagram from a containerlab YAML or draw.io XML file.')
