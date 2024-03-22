@@ -84,4 +84,36 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
 
 
 ## Customization
-The tool allows for basic customization of node and link styles within the generated diagram. To customize, edit the custom_styles dictionary within the clab2drawio.py file according to your preferences.
+The tool allows for customization of node and link styles within the generated diagrams, making it possible to adjust the appearance to fit specific requirements or preferences.
+
+### Custom Styles
+To customize styles, you can edit the `clab2drawio_styles.yaml` configuration file. This file defines the base style, link style, source and target label styles, and custom styles for different types of nodes based on their roles (e.g., routers, switches, servers).
+
+An example snippet from `clab2drawio_styles.yaml`:
+```yaml
+base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;"
+link_style: "endArrow=none;jumpStyle=gap;"
+src_label_style: "verticalLabelPosition=bottom;verticalAlign=top;align=left;spacingLeft=1;spacingTop=1;spacingBottom=0;"
+trgt_label_style: "verticalLabelPosition=top;verticalAlign=bottom;align=left;spacingLeft=1;spacingTop=1;spacingBottom=0;"
+custom_styles:
+  default: "image=data:image/png;base64,..."
+  spine: "image=data:image/png;base64,..."
+  leaf: "image=data:image/png;base64,..."
+  dcgw: "image=data:image/png;base64,..."
+  server: "image=data:image/png;base64,..."
+icon_to_group_mapping:
+  router: "dcgw"
+  switch: "leaf"
+  host: "server"
+```
+
+### Applying Styles
+Custom styles are applied to nodes and links based on the configurations specified in the `clab2drawio_styles.yaml` file. This YAML file allows you to define base styles, link styles, and custom styles for different node types such as routers, switches, and servers. To apply a new style to a node type, update its corresponding style definition in the `clab2drawio_styles.yaml` file. These styles determine the appearance of nodes and links in the generated diagram, including shapes, colors, and icons.
+
+### Advanced Styling
+For users looking to further customize their diagrams with more advanced styling options, such as custom icons, specific dimensions, or additional visual attributes, you can directly edit the styles within the Draw.io interface.
+
+To get the style data from Draw.io for a specific element:
+1. Create or select the element in your Draw.io diagram.
+2. Right-click on the element and select "Edit Style" from the context menu.
+3. A style definition string will be displayed in a text box. You can copy this string and use it to define custom styles in your `clab2drawio_styles.yaml` file or directly modify it within Draw.io for immediate effect.
