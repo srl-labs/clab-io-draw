@@ -1,8 +1,6 @@
 from N2G import drawio_diagram
-import yaml
 from collections import defaultdict
-import argparse
-import os
+import yaml, argparse, os, re
 
 def assign_graphlevels(nodes, links, verbose=False):
     """
@@ -450,15 +448,169 @@ def create_links(base_style, positions, source, target, source_graphlevel, targe
     links  = f"{base_style}entryY={entryY};exitY={exitY};entryX={entryX};exitX={exitX};"
     return links
 
+def add_connector_nodes(diagram, nodes, links, positions):
+    print("Initial States:")
+    print(f"Nodes: {nodes}")
+    print(f"Links: {links}")
+    print(f"Positions: {positions}")
 
-def add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_links=False, layout='vertical', verbose=False, base_style=None, link_style=None, custom_styles=None, icon_to_group_mapping=None, src_label_style=None, trgt_label_style=None):
-    """
-    Adds nodes and links to a diagram based on their positions, connectivity, and additional properties.
-    Utilizes custom styles for nodes based on their roles (e.g., routers, switches, servers) and dynamically adjusts link styles to represent connectivity accurately.
-    Supports conditional inclusion of links and customization of the diagram's layout (vertical or horizontal).
-    Parameters include the diagram object, node and link data, positioning information, and flags for link inclusion and verbosity.
-    """
+    # Set connector and node dimensions
+    connector_width, connector_height = 8, 8
+    node_width, node_height = 75, 75
 
+    # Initialize dictionaries for connector directions and positions
+    connector_directions = {node: {'up': 0, 'right': 0, 'down': 0, 'left': 0} for node in nodes}
+    connector_positions = {node: {'up': [], 'right': [], 'down': [], 'left': []} for node in nodes}
+
+    print(f"Total number of links: {len(links)}")
+    print(f"Expected number of connectors: {len(links) * 2}")
+
+    # Go through each link to determine the direction for both the source and target nodes
+    for link in links:
+        source = link['source']
+        target = link['target']
+
+        # Parse the unique link style parameters
+        style_params = dict(param.split('=') for param in link['unique_link_style'].split(';') if '=' in param)
+        exitY = float(style_params.get('exitY', '0.5'))
+        exitX = float(style_params.get('exitX', '0.5'))
+        entryY = float(style_params.get('entryY', '0.5'))
+        entryX = float(style_params.get('entryX', '0.5'))
+
+        # Determine the direction based on exit positions for the source node
+        if exitY == 0:
+            connector_directions[source]['up'] += 1
+        elif exitY == 1:
+            connector_directions[source]['down'] += 1
+
+        if exitX == 0:
+            connector_directions[source]['left'] += 1
+        elif exitX == 1:
+            connector_directions[source]['right'] += 1
+
+        # Determine the direction based on entry positions for the target node
+        if entryY == 0:
+            connector_directions[target]['up'] += 1
+        elif entryY == 1:
+            connector_directions[target]['down'] += 1
+
+        if entryX == 0:
+            connector_directions[target]['left'] += 1
+        elif entryX == 1:
+            connector_directions[target]['right'] += 1
+
+    # Calculate the connector positions based on the directions
+    for node, directions in connector_directions.items():
+        for direction, total_connectors in directions.items():
+            for count in range(total_connectors):
+                spacing = (node_width if direction in ['up', 'down'] else node_height) / (total_connectors + 1)
+                position = spacing * (count + 1)
+
+                if direction == 'up':
+                    connector_pos = (position - connector_width / 2, -connector_height / 2)
+                elif direction == 'down':
+                    connector_pos = (position - connector_width / 2, node_height - connector_height / 2)
+                elif direction == 'left':
+                    connector_pos = (-connector_width / 2, position - connector_height / 2)
+                elif direction == 'right':
+                    connector_pos = (node_width - connector_width / 2, position - connector_height / 2)
+
+                # Translate local connector position to global coordinates
+                global_connector_pos = (
+                    positions[node][0] + connector_pos[0],
+                    positions[node][1] + connector_pos[1]
+                )
+                connector_positions[node][direction].append(global_connector_pos)
+
+    # Add connector nodes to the diagram based on the calculated positions
+    created_connectors = []
+    for link in links:
+        source = link['source']
+        target = link['target']
+        source_intf = link['source_intf']
+        target_intf = link['target_intf']
+
+        # Extract the numeric part from the interface names for the labels
+        source_label = re.findall(r'\d+', source_intf)[-1]
+        target_label = re.findall(r'\d+', target_intf)[-1]
+
+        # Add connector nodes for the source and target
+        source_connector_id = f"{source}_{source_intf}"
+        target_connector_id = f"{target}_{target_intf}"
+        connector_id = f"{source}_{source_intf}_{target}_{target_intf}"
+
+        # Parse the unique link style parameters
+        style_params = dict(param.split('=') for param in link['unique_link_style'].split(';') if '=' in param)
+        exitY = float(style_params.get('exitY', '0.5'))
+        exitX = float(style_params.get('exitX', '0.5'))
+        entryY = float(style_params.get('entryY', '0.5'))
+        entryX = float(style_params.get('entryX', '0.5'))
+
+        # Determine the direction based on exit positions for the source node
+        source_direction = None
+        if exitY == 0:
+            source_direction = 'up'
+        elif exitY == 1:
+            source_direction = 'down'
+        elif exitX == 0:
+            source_direction = 'left'
+        elif exitX == 1:
+            source_direction = 'right'
+
+        # Determine the direction based on entry positions for the target node
+        target_direction = None
+        if entryY == 0:
+            target_direction = 'up'
+        elif entryY == 1:
+            target_direction = 'down'
+        elif entryX == 0:
+            target_direction = 'left'
+        elif entryX == 1:
+            target_direction = 'right'
+
+        # Get the connector positions for the source and target nodes
+        source_connector_pos = connector_positions[source][source_direction].pop(0) if connector_positions[source][source_direction] else None
+        target_connector_pos = connector_positions[target][target_direction].pop(0) if connector_positions[target][target_direction] else None
+
+        if source_connector_pos:
+            cID = f"{source}_{source_intf}_{target}_{target_intf}"
+            print(f"Adding connector for {source} with ID {cID} at position {source_connector_pos} with label {source_label}")
+            diagram.add_node(
+                id=source_connector_id,
+                label=source_label,
+                x_pos=source_connector_pos[0],
+                y_pos=source_connector_pos[1],
+                width=connector_width,
+                height=connector_height,
+                style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontSize=6;strokeColor=#98A2AE;fillColor=#BEC8D2;fontColor=#FFFFFF;"
+            )
+            created_connectors.append(source_connector_id)
+
+        if target_connector_pos:
+            cID = f"{target}_{target_intf}_{source}_{source_intf}"
+            print(f"Adding connector for {target} with ID {cID} at position {target_connector_pos} with label {target_label}")
+            diagram.add_node(
+                id=cID,
+                label=target_label,
+                x_pos=target_connector_pos[0],
+                y_pos=target_connector_pos[1],
+                width=connector_width,
+                height=connector_height,
+                style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontSize=6;strokeColor=#98A2AE;fillColor=#BEC8D2;fontColor=#FFFFFF;",
+                parent=f"srl1"
+            )
+            created_connectors.append(target_connector_id)
+
+    print(f"Total number of connectors created: {len(created_connectors)}")
+
+    if len(created_connectors) != len(links) * 2:
+        print("Warning: The number of connectors created is not double the number of links.")
+        missing_connectors = set(f"{link['source']}_{link['source_intf']}" for link in links) | set(f"{link['target']}_{link['target_intf']}" for link in links) - set(created_connectors)
+        print(f"Missing connectors: {missing_connectors}")
+    else:
+        print("All connectors created successfully.")
+
+def add_nodes(diagram, nodes, positions, node_graphlevels, base_style=None, custom_styles=None, icon_to_group_mapping=None):
     for node_name, node_info in nodes.items():
         # Check for 'graph-icon' label and map it to the corresponding group
         labels = node_info.get('labels') or {}
@@ -483,10 +635,19 @@ def add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_l
         # Add each node to the diagram with the given x and y position.
         diagram.add_node(id=node_name, label=node_name, x_pos=x_pos, y_pos=y_pos, style=style, width=75, height=75)
 
+def add_links(diagram, links, positions, node_graphlevels, no_links=False, layout='vertical', verbose=False, link_style=None, src_label_style=None, trgt_label_style=None):
     # Initialize a counter for links between the same nodes
     link_counter = defaultdict(lambda: 0)
-
     total_links_between_nodes = defaultdict(int)
+    adjacency = defaultdict(set)
+
+    # Construct adjacency list once
+    for link in links:
+        src, dst = link['source'], link['target']
+        adjacency[src].add(dst)
+        adjacency[dst].add(src)
+
+    # Prepare link counter and total links
     for link in links:
         source, target = link['source'], link['target']
         link_key = tuple(sorted([source, target]))
@@ -495,36 +656,20 @@ def add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_l
     for link in links:
         source, target = link['source'], link['target']
         source_intf, target_intf = link['source_intf'], link['target_intf']
-        source_graphlevel = node_graphlevels.get(source.split(':')[0], -1)
-        target_graphlevel = node_graphlevels.get(target.split(':')[0], -1)
+        source_graphlevel = node_graphlevels.get(source, -1)
+        target_graphlevel = node_graphlevels.get(target, -1)
         link_key = tuple(sorted([source, target]))
         link_index = link_counter[link_key]
 
-        # Increment link counter for next time
         link_counter[link_key] += 1
         total_links = total_links_between_nodes[link_key]
 
-        source_graphlevel = node_graphlevels[source]
-        target_graphlevel = node_graphlevels[target]
+        unique_link_style = create_links(base_style=link_style, positions=positions, source=source, target=target, source_graphlevel=source_graphlevel, target_graphlevel=target_graphlevel, adjacency=adjacency, link_index=link_index, total_links=total_links, layout=layout)
+        link['unique_link_style'] = unique_link_style
 
-        adjacency = defaultdict(set)
-
-        # Build adjacency list
-        for link in links:
-            src, dst = link['source'], link['target']
-            adjacency[src].add(dst)
-            adjacency[dst].add(src)
-
-        unique_link_style = create_links(base_style=link_style, positions=positions, source=source, target=target, source_graphlevel=source_graphlevel, target_graphlevel=target_graphlevel, link_index=link_index, total_links=total_links, adjacency=adjacency, layout=layout)
-
-        # Add the link to the diagram with the determined unique style
         if not no_links:
-            diagram.add_link(
-                source=source, target=target,
-                src_label=source_intf, trgt_label=target_intf,
-                src_label_style=src_label_style, trgt_label_style=trgt_label_style,
-                style=unique_link_style
-            )
+            diagram.add_link(source=source, target=target, src_label=source_intf, trgt_label=target_intf, src_label_style=src_label_style, trgt_label_style=trgt_label_style, style=unique_link_style)
+
 
 def load_styles_from_config(config_path):
     with open(config_path, 'r') as file:
@@ -604,7 +749,15 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
 
     # Add nodes and links to the diagram
     base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = load_styles_from_config(config_path)
-    add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_links=no_links, layout=layout, verbose=verbose, base_style=base_style, link_style=link_style, custom_styles=custom_styles, icon_to_group_mapping=icon_to_group_mapping, src_label_style=src_label_style, trgt_label_style=trgt_label_style)
+
+    # Add nodes to the diagram
+    add_nodes(diagram, nodes, positions, node_graphlevels, base_style=base_style, custom_styles=custom_styles, icon_to_group_mapping=icon_to_group_mapping)
+
+    # Add links to the diagram
+    add_links(diagram, links, positions, node_graphlevels, no_links=no_links, layout=layout, verbose=verbose, link_style=link_style, src_label_style=src_label_style, trgt_label_style=trgt_label_style)
+
+    # Add connector nodes for each link
+    add_connector_nodes(diagram, nodes, links, positions)
 
     # If output_file is not provided, generate it from input_file
     if not output_file:
