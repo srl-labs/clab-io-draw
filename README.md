@@ -2,19 +2,19 @@
 
 The `clab-io-draw` project unifies two tools, `clab2drawio` and `drawio2clab`. These tools facilitate the conversion between [Containerlab](https://github.com/srl-labs/containerlab) YAML files and Draw.io diagrams, making it easier for network engineers and architects to visualize, document, and share their network topologies.
 
-![Drawio Example](img/drawio1.png)
+![Drawio Example](docs/img/drawio1.png)
 
 ## clab2drawio
 
 `clab2drawio` is a Python script that automatically generates Draw.io diagrams from Containerlab YAML configurations. It aims to simplify the visualization of network designs by providing a graphical representation of container-based network topologies.
 
-For detailed information on `clab2drawio`, including features, options, and usage instructions, please refer to the [clab2drawio.md](clab2drawio.md) file located in the same directory as this README.
+For detailed information on `clab2drawio`, including features, options, and usage instructions, please refer to the [clab2drawio.md](docs/clab2drawio.md) file located in the same directory as this README.
 
 ## drawio2clab
 
 `drawio2clab` is a Python script that converts Draw.io diagrams into Containerlab-compatible YAML files. This tool is designed to assist in the setup of container-based networking labs by parsing .drawio XML files and generating structured YAML representations of the network.
 
-For more details on `drawio2clab`, including features, constraints for drawing, and how to run the tool, please see the [drawio2clab.md](drawio2clab.md) file in this directory.
+For more details on `drawio2clab`, including features, constraints for drawing, and how to run the tool, please see the [drawio2clab.md](docs/drawio2clab.md) file in this directory.
 
 ## Quick Usage
 
@@ -81,7 +81,7 @@ pip install -r requirements.txt
 
 This section provides a brief overview on how to use the `drawio2clab` and `clab2drawio` tools. For detailed instructions, including command-line options and examples, please refer to the dedicated usage sections in their respective documentation files.
 
-Detailed Usages: [drawio2clab.md](drawio2clab.md#usage) and [clab2drawio.md](drawio2clab.md#usage)
+Detailed Usages: [drawio2clab.md](docs/drawio2clab.md#usage) and [clab2drawio.md](docs/drawio2clab.md#usage)
 
 ## drawio2clab
 
@@ -93,7 +93,7 @@ python drawio2clab.py -i <input_file.drawio> -o <output_file.yaml>
 `-o, --output`: Specifies the path for the output YAML file.
 Make sure to replace `<input_file.drawio>` with the path to your .drawio file and `<output_file.yaml>` with the desired output YAML file path.
 
-For more comprehensive guidance, including additional command-line options, please see the Usage section in [drawio2clab.md](drawio2clab.md#usage)
+For more comprehensive guidance, including additional command-line options, please see the Usage section in [drawio2clab.md](docs/drawio2clab.md#usage)
 
 ## clab2drawio
 
@@ -105,4 +105,4 @@ python clab2drawio.py -i <input_file.yaml> -o <output_file.drawio>
 `-o, --output`: Specifies the path for the output drawio file.
 Make sure to replace `<input_file.yaml>` with the path to your .drawio file and `<output_file.drawio>` with the desired output YAML file path.
 
-For more comprehensive guidance, including additional command-line options, please see the Usage section in [clab2drawio.md](clab2drawio.md#usage)
+For more comprehensive guidance, including additional command-line options, please see the Usage section in [clab2drawio.md](docs/clab2drawio.md#usage)
