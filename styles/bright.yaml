@@ -5,8 +5,8 @@ base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPositi
 link_style: "endArrow=none;jumpStyle=gap;"
 
 # Styles for labels on the source and target ends of a link
-src_label_style: "verticalLabelPosition=bottom;verticalAlign=top;align=left;spacingLeft=1;spacingTop=1;spacingBottom=0;"
-trgt_label_style: "verticalLabelPosition=top;verticalAlign=bottom;align=left;spacingLeft=1;spacingTop=1;spacingBottom=0;"
+src_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];"
+trgt_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];"
 
 # Custom styles for different types of nodes, allowing for unique visual representation based on node role or function
 custom_styles:

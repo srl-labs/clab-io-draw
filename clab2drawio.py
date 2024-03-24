@@ -543,7 +543,7 @@ def load_styles_from_config(config_path):
     return base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping
 
 
-def main(input_file, output_file, config_path, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False):
+def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False):
     """
     Generates a diagram from a given topology definition file, organizing and displaying nodes and links.
     
@@ -595,6 +595,13 @@ def main(input_file, output_file, config_path, include_unlinked_nodes=False, no_
     # Add a diagram page
     diagram.add_diagram("Network Topology")
 
+    if theme in ['bright', 'dark']:
+        config_path = os.path.join(script_dir, f'styles/{theme}.yaml')
+    else:
+        # Assume the user has provided a custom path
+        config_path = theme
+
+
     # Add nodes and links to the diagram
     base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = load_styles_from_config(config_path)
     add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_links=no_links, layout=layout, verbose=verbose, base_style=base_style, link_style=link_style, custom_styles=custom_styles, icon_to_group_mapping=icon_to_group_mapping, src_label_style=src_label_style, trgt_label_style=trgt_label_style)
@@ -617,15 +624,16 @@ def parse_arguments():
     parser.add_argument('-o', '--output', required=False, help='The output file path for the generated diagram (draw.io format).')
     parser.add_argument('--include-unlinked-nodes', action='store_true', help='Include nodes without any links in the topology diagram')
     parser.add_argument('--no-links', action='store_true', help='Do not draw links between nodes in the topology diagram')
-    parser.add_argument('--layout', type=str, default='vertical', choices=['vertical', 'horizontal'], help='Specify the layout of the topology diagram (vertical or horizontal)')  
+    parser.add_argument('--layout', type=str, default='vertical', choices=['vertical', 'horizontal'], help='Specify the layout of the topology diagram (vertical or horizontal)')
+    parser.add_argument('--theme', default='bright', help='Specify the theme for the diagram (bright, dark) or the path to a custom style config file.')  
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output for debugging purposes')  
     return parser.parse_args()
     
 if __name__ == "__main__":
     args = parse_arguments()
 
-    script_dir = os.path.dirname(__file__)  
-    config_path_arg = os.path.join(script_dir, 'clab2drawio_styles.yaml')
+    script_dir = os.path.dirname(__file__)
 
-    main(args.input, args.output, config_path_arg, args.include_unlinked_nodes, args.no_links, args.layout, args.verbose)
+    main(args.input, args.output, args.theme, args.include_unlinked_nodes, args.no_links, args.layout, args.verbose)
+
 

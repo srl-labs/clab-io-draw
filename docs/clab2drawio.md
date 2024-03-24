@@ -80,6 +80,18 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
 
 - `--layout`: Specifies the layout of the topology diagram (either `vertical` or `horizontal`). The default layout is `vertical`.
 
+- `--theme`: Specifies the theme for the diagram (`bright` or `dark`) or the path to a custom style config file. By default, the `bright` theme is used. Users can also create their own style file and place it in any directory, specifying its path with this option.
+
+    ```bash
+    python clab2drawio.py --theme dark -i <path_to_your_yaml_file>
+    ```
+    
+    Or using a custom style file:
+
+    ```bash
+    python clab2drawio.py --theme <path_to_custom_style_file> -i <path_to_your_yaml_file>
+    ```
+
 - `--verbose`: Enable verbose output for debugging purposes.
 
 
@@ -108,7 +120,9 @@ icon_to_group_mapping:
 ```
 
 ### Applying Styles
-Custom styles are applied to nodes and links based on the configurations specified in the `clab2drawio_styles.yaml` file. This YAML file allows you to define base styles, link styles, and custom styles for different node types such as routers, switches, and servers. To apply a new style to a node type, update its corresponding style definition in the `clab2drawio_styles.yaml` file. These styles determine the appearance of nodes and links in the generated diagram, including shapes, colors, and icons.
+Custom styles are applied to nodes and links based on the configurations specified in the style configuration files (`bright.yaml` for the bright theme and `dark.yaml` for the dark theme), located in the `styles` directory by default. To apply a new style to a node type, update its corresponding style definition in the appropriate YAML file. These styles determine the appearance of nodes and links in the generated diagram, including shapes, colors, and icons.
+
+If you wish to create a completely new style, you can create a new YAML file with your custom configurations. This file can be placed in any directory, and you can specify its path when running the script using the `--theme` option.
 
 ### Advanced Styling
 For users looking to further customize their diagrams with more advanced styling options, such as custom icons, specific dimensions, or additional visual attributes, you can directly edit the styles within the Draw.io interface.
@@ -116,4 +130,6 @@ For users looking to further customize their diagrams with more advanced styling
 To get the style data from Draw.io for a specific element:
 1. Create or select the element in your Draw.io diagram.
 2. Right-click on the element and select "Edit Style" from the context menu.
-3. A style definition string will be displayed in a text box. You can copy this string and use it to define custom styles in your `clab2drawio_styles.yaml` file or directly modify it within Draw.io for immediate effect.
+3. A style definition string will be displayed in a text box. You can copy this string and incorporate it into your custom style file or directly modify it within Draw.io for immediate effect.
+
+
