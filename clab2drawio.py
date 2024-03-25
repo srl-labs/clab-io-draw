@@ -448,12 +448,40 @@ def create_links(base_style, positions, source, target, source_graphlevel, targe
     links  = f"{base_style}entryY={entryY};exitY={exitY};entryX={entryX};exitX={exitX};"
     return links
 
-def add_connector_nodes(diagram, nodes, links, positions):
-    print("Initial States:")
-    print(f"Nodes: {nodes}")
-    print(f"Links: {links}")
-    print(f"Positions: {positions}")
+def check_node_alignment(source_node_position, target_node_position):
+    # Horizontal alignment if y-coordinates are equal
+    if source_node_position[1] == target_node_position[1]:
+        return 'horizontal'
+    # Vertical alignment if x-coordinates are equal
+    elif source_node_position[0] == target_node_position[0]:
+        return 'vertical'
+    return 'none'
 
+def sort_connector_positions(link_connector_positions):
+
+    for link_id, link_info in link_connector_positions.items():
+        source_node_position = link_info['source_node_position']
+        target_node_position = link_info['target_node_position']
+        
+        # Check if nodes for this link are aligned (horizontal or vertical)
+        node_alignment = check_node_alignment(source_node_position, target_node_position)
+
+        # Proceed to check connector alignment only if nodes are aligned
+        if node_alignment != 'none':
+            source_connector_pos = link_info['source_connector_position']
+            target_connector_pos = link_info['target_connector_position']
+            # Check connector alignment based on node alignment direction
+            if node_alignment == 'horizontal' and source_connector_pos[1] == target_connector_pos[1]:
+                #print(f"Connectors for link {link_id} are nicely aligned horizontally.")
+                pass
+            elif node_alignment == 'vertical' and source_connector_pos[0] == target_connector_pos[0]:
+                pass
+                #print(f"Connectors for link {link_id} are nicely aligned vertically.")
+            else:
+                print(f"Connectors for link {link_id} are not nicely aligned {node_alignment}.")
+                #TODO: Adjust them
+
+def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_style, verbose=False):
     # Set connector and node dimensions
     connector_width, connector_height = 8, 8
     node_width, node_height = 75, 75
@@ -461,9 +489,11 @@ def add_connector_nodes(diagram, nodes, links, positions):
     # Initialize dictionaries for connector directions and positions
     connector_directions = {node: {'up': 0, 'right': 0, 'down': 0, 'left': 0} for node in nodes}
     connector_positions = {node: {'up': [], 'right': [], 'down': [], 'left': []} for node in nodes}
+    link_connector_positions = {}
 
-    print(f"Total number of links: {len(links)}")
-    print(f"Expected number of connectors: {len(links) * 2}")
+    if verbose:
+        print(f"Total number of links: {len(links)}")
+        print(f"Expected number of connectors: {len(links) * 2}")
 
     # Go through each link to determine the direction for both the source and target nodes
     for link in links:
@@ -522,22 +552,12 @@ def add_connector_nodes(diagram, nodes, links, positions):
                 )
                 connector_positions[node][direction].append(global_connector_pos)
 
-    # Add connector nodes to the diagram based on the calculated positions
-    created_connectors = []
+    # First loop: Populate link_connector_positions
     for link in links:
         source = link['source']
         target = link['target']
         source_intf = link['source_intf']
         target_intf = link['target_intf']
-
-        # Extract the numeric part from the interface names for the labels
-        source_label = re.findall(r'\d+', source_intf)[-1]
-        target_label = re.findall(r'\d+', target_intf)[-1]
-
-        # Add connector nodes for the source and target
-        source_connector_id = f"{source}_{source_intf}"
-        target_connector_id = f"{target}_{target_intf}"
-        connector_id = f"{source}_{source_intf}_{target}_{target_intf}"
 
         # Parse the unique link style parameters
         style_params = dict(param.split('=') for param in link['unique_link_style'].split(';') if '=' in param)
@@ -572,43 +592,120 @@ def add_connector_nodes(diagram, nodes, links, positions):
         source_connector_pos = connector_positions[source][source_direction].pop(0) if connector_positions[source][source_direction] else None
         target_connector_pos = connector_positions[target][target_direction].pop(0) if connector_positions[target][target_direction] else None
 
+        if source_connector_pos and target_connector_pos:
+            link_id = f"{source}-{link['source_intf']}_to_{target}-{link['target_intf']}"
+            link_connector_positions[link_id] = {
+                'source': source,
+                'target': target,
+                'target_intf': link['target_intf'],
+                'source_intf': link['source_intf'],
+                'source_node_position': positions[source],
+                'target_node_position': positions[target],
+                'source_connector_position': source_connector_pos,
+                'target_connector_position': target_connector_pos
+            }
+
+    # Sort connector positions
+    _sorted_connector_positions = sort_connector_positions(link_connector_positions)
+
+    # Second loop: Add connector nodes to the diagram and create connector links
+    connector_links = []
+    for link_id, link_info in link_connector_positions.items():
+        source = link_info['source']
+        target = link_info['target']
+        source_intf = link_info['source_intf']
+        target_intf = link_info['target_intf']
+        source_connector_pos = link_info['source_connector_position']
+        target_connector_pos = link_info['target_connector_position']
+
+        # Extract the numeric part from the interface names for the labels
+        source_label = re.findall(r'\d+', source_intf)[-1]
+        target_label = re.findall(r'\d+', target_intf)[-1]
+
         if source_connector_pos:
-            cID = f"{source}_{source_intf}_{target}_{target_intf}"
-            print(f"Adding connector for {source} with ID {cID} at position {source_connector_pos} with label {source_label}")
+            source_cID = f"{source};{source_intf};{target};{target_intf}"
+            if verbose:
+                print(f"Adding connector for {source} with ID {source_cID} at position {source_connector_pos} with label {source_label}")
             diagram.add_node(
-                id=source_connector_id,
+                id=source_cID,
                 label=source_label,
                 x_pos=source_connector_pos[0],
                 y_pos=source_connector_pos[1],
                 width=connector_width,
                 height=connector_height,
-                style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontSize=6;strokeColor=#98A2AE;fillColor=#BEC8D2;fontColor=#FFFFFF;"
+                style=port_style
             )
-            created_connectors.append(source_connector_id)
 
         if target_connector_pos:
-            cID = f"{target}_{target_intf}_{source}_{source_intf}"
-            print(f"Adding connector for {target} with ID {cID} at position {target_connector_pos} with label {target_label}")
+            target_cID = f"{target};{target_intf};{source};{source_intf}"
+            if verbose:
+                print(f"Adding connector for {target} with ID {target_cID} at position {target_connector_pos} with label {target_label}")
             diagram.add_node(
-                id=cID,
+                id=target_cID,
                 label=target_label,
                 x_pos=target_connector_pos[0],
                 y_pos=target_connector_pos[1],
                 width=connector_width,
                 height=connector_height,
-                style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontSize=6;strokeColor=#98A2AE;fillColor=#BEC8D2;fontColor=#FFFFFF;",
-                parent=f"srl1"
+                style=port_style
             )
-            created_connectors.append(target_connector_id)
 
-    print(f"Total number of connectors created: {len(created_connectors)}")
+        # Assuming each link has one source and one target connector, pair them to form a connector link
+        if source_connector_pos and target_connector_pos:    
 
-    if len(created_connectors) != len(links) * 2:
-        print("Warning: The number of connectors created is not double the number of links.")
-        missing_connectors = set(f"{link['source']}_{link['source_intf']}" for link in links) | set(f"{link['target']}_{link['target_intf']}" for link in links) - set(created_connectors)
-        print(f"Missing connectors: {missing_connectors}")
-    else:
-        print("All connectors created successfully.")
+            # Calculate center positions
+            source_center = (source_connector_pos[0] + connector_width / 2, source_connector_pos[1] + connector_height / 2)
+            target_center = (target_connector_pos[0] + connector_width / 2, target_connector_pos[1] + connector_height / 2)
+
+            # Calculate the real middle between the centers for the midpoint connector
+            midpoint_center_x = (source_center[0] + target_center[0]) / 2
+            midpoint_center_y = (source_center[1] + target_center[1]) / 2
+
+            midpoint_top_left_x = midpoint_center_x - 2
+            midpoint_top_left_y = midpoint_center_y - 2
+
+            # Calculate the real middle between the centers
+            midpoint_x = (source_center[0] + target_center[0]) / 2
+            midpoint_y = (source_center[1] + target_center[1]) / 2
+
+            midpoint_id = f"mid;{source};{source_intf};{target};{target_intf}"  # Adjusted ID format
+            if verbose:
+                print(f"Creating midpoint connector {midpoint_id} between source {source} and target {target} at position ({midpoint_x}, {midpoint_y})")
+
+            # Add the midpoint connector node
+            diagram.add_node(
+                id=midpoint_id,
+                label='\u200B',
+                x_pos=midpoint_top_left_x,
+                y_pos=midpoint_top_left_y,
+                width=4,
+                height=4,
+                style=connector_style
+            )
+
+            # Adjust connector_links to include the midpoint connector
+            connector_links.append({'source': source_cID, 'target': midpoint_id})
+            connector_links.append({'source': target_cID, 'target': midpoint_id})  
+
+    if verbose:
+        # Calculate the total number of connectors, including midpoints
+        total_connector_count = len(connector_links)  # Each link now includes a midpoint, hence total is directly from connector_links
+        print(f"Total number of connectors created: {total_connector_count}")
+        
+        # Expected connectors is now triple the number of links, since each link generates three connectors (source to midpoint, midpoint to target)
+        expected_connector_count = len(links) * 3
+        
+        if total_connector_count != expected_connector_count:
+            print("Warning: The number of connectors created does not match the expected count.")
+        else:
+            print("All connectors created successfully.")
+
+    return connector_links
+
+
+def add_links_with_connectors(diagram, connector_links, link_style=None, verbose=False):
+    for link in connector_links:
+        diagram.add_link(source=link['source'], target=link['target'], style=link_style, label='rate')
 
 def add_nodes(diagram, nodes, positions, node_graphlevels, base_style=None, custom_styles=None, icon_to_group_mapping=None):
     for node_name, node_info in nodes.items():
@@ -672,20 +769,31 @@ def add_links(diagram, links, positions, node_graphlevels, no_links=False, layou
 
 
 def load_styles_from_config(config_path):
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
+    try:
+        with open(config_path, 'r') as file:
+            config = yaml.safe_load(file)
+    except FileNotFoundError:
+        error_message = f"Error: The specified config file '{config_path}' does not exist."
+        print(error_message)
+        exit()
+    except Exception as e:
+        error_message = f"An error occurred while loading the config: {e}"
+        print(error_message)
+        exit()
 
     base_style = config['base_style']
     link_style = config['link_style']
     src_label_style = config['src_label_style']
     trgt_label_style = config['trgt_label_style']
-    
+    port_style = config.get('port_style', '') 
+    connector_style = config.get('connector_style', '') 
+
     # Prepend base_style to each custom style
     custom_styles = {key: base_style + value for key, value in config['custom_styles'].items()}
     
     icon_to_group_mapping = config['icon_to_group_mapping']
 
-    return base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping
+    return base_style, link_style, port_style, connector_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping
 
 
 def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False):
@@ -695,20 +803,18 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
     Processes an input YAML file containing node and link definitions, extracts relevant information,
     and applies logic to determine node positions and connectivity. The function supports filtering out unlinked nodes,
     optionally excluding links, choosing the layout orientation, and toggling verbose output for detailed processing logs.
-    
-    Outputs the generated diagram to a specified file, creating directories as needed.
-
-    Parameters:
-    - input_file (str): Path to the input YAML file with topology definitions.
-    - output_file (str): Path where the output diagram file will be saved.
-    - include_unlinked_nodes (bool): Flag to include nodes that do not have any links.
-    - no_links (bool): Flag to exclude links from the diagram.
-    - layout (str): Layout orientation ('vertical' or 'horizontal') for the diagram.
-    - verbose (bool, optional): If True, enables detailed logging of the function's operations.
     """
-
-    with open(input_file, 'r') as file:
-        containerlab_data = yaml.safe_load(file)
+    try:
+        with open(input_file, 'r') as file:
+            containerlab_data = yaml.safe_load(file)
+    except FileNotFoundError:
+        error_message = f"Error: The specified clab file '{input_file}' does not exist."
+        print(error_message)
+        exit()
+    except Exception as e:
+        error_message = f"An error occurred while loading the config: {e}"
+        print(error_message)
+        exit()
 
    # Nodes remain the same
     nodes = containerlab_data['topology']['nodes']
@@ -740,15 +846,17 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
     # Add a diagram page
     diagram.add_diagram("Network Topology")
 
-    if theme in ['bright', 'dark']:
+    if 'grafana' in theme.lower():
+        no_links = True
+
+    if theme in ['nokia_bright', 'nokia_dark', 'grafana_dark']:
         config_path = os.path.join(script_dir, f'styles/{theme}.yaml')
     else:
         # Assume the user has provided a custom path
         config_path = theme
 
-
     # Add nodes and links to the diagram
-    base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = load_styles_from_config(config_path)
+    base_style, link_style, port_style, connector_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = load_styles_from_config(config_path)
 
     # Add nodes to the diagram
     add_nodes(diagram, nodes, positions, node_graphlevels, base_style=base_style, custom_styles=custom_styles, icon_to_group_mapping=icon_to_group_mapping)
@@ -757,7 +865,9 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
     add_links(diagram, links, positions, node_graphlevels, no_links=no_links, layout=layout, verbose=verbose, link_style=link_style, src_label_style=src_label_style, trgt_label_style=trgt_label_style)
 
     # Add connector nodes for each link
-    add_connector_nodes(diagram, nodes, links, positions)
+    if 'grafana' in theme.lower():
+        connector_links = add_connector_nodes(diagram, nodes, links, positions, connector_style=connector_style, port_style=port_style, verbose=verbose)
+        add_links_with_connectors(diagram, connector_links, link_style=link_style, verbose=verbose)
 
     # If output_file is not provided, generate it from input_file
     if not output_file:
@@ -778,7 +888,7 @@ def parse_arguments():
     parser.add_argument('--include-unlinked-nodes', action='store_true', help='Include nodes without any links in the topology diagram')
     parser.add_argument('--no-links', action='store_true', help='Do not draw links between nodes in the topology diagram')
     parser.add_argument('--layout', type=str, default='vertical', choices=['vertical', 'horizontal'], help='Specify the layout of the topology diagram (vertical or horizontal)')
-    parser.add_argument('--theme', default='bright', help='Specify the theme for the diagram (bright, dark) or the path to a custom style config file.')  
+    parser.add_argument('--theme', default='nokia_bright', help='Specify the theme for the diagram (nokia_bright, nokia_dark, grafana_dark) or the path to a custom style config file.')  
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output for debugging purposes')  
     return parser.parse_args()
     
