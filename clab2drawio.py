@@ -959,6 +959,18 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
         print(error_message)
         exit()
 
+    if 'grafana' in theme.lower():
+        no_links = True
+
+    if theme in ['nokia_bright', 'nokia_dark', 'grafana_dark']:
+        config_path = os.path.join(script_dir, f'styles/{theme}.yaml')
+    else:
+        # Assume the user has provided a custom path
+        config_path = theme
+
+    # Load styles
+    styles = load_styles_from_config(config_path)
+
    # Nodes remain the same
     nodes = containerlab_data['topology']['nodes']
 
@@ -983,20 +995,24 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
     sorted_nodes, node_graphlevels, connections = assign_graphlevels(nodes, links, verbose=verbose)
     positions = calculate_positions(sorted_nodes, links, node_graphlevels, connections, layout=layout, verbose=verbose)
 
-    if 'grafana' in theme.lower():
-        no_links = True
+    #Calculate the diagram size based on the positions of the nodes
+    min_x = min(position[0] for position in positions.values())
+    min_y = min(position[1] for position in positions.values())
+    max_x = max(position[0] for position in positions.values())
+    max_y = max(position[1] for position in positions.values())
 
-    if theme in ['nokia_bright', 'nokia_dark', 'grafana_dark']:
-        config_path = os.path.join(script_dir, f'styles/{theme}.yaml')
-    else:
-        # Assume the user has provided a custom path
-        config_path = theme
+    max_size_x = max_x - min_x + 2 * 150
+    max_size_y = max_y - min_y + 2 * 150
 
-    # Load styles
-    styles = load_styles_from_config(config_path)
+    if styles['pagew'] == "auto":
+        styles['pagew'] = max_size_x
+    if styles['pageh'] == "auto":
+        styles['pageh'] = max_size_y
+
+    # Adjust positions to ensure the smallest x and y are at least 0
+    positions = {node: (x - min_x + 100, y - min_y + 100) for node, (x, y) in positions.items()}
 
     # Create a draw.io diagram instance
-    #diagram = CustomDrawioDiagram(background=background, shadow=shadow, grid=grid, pagew=pagew, pageh=pageh)
     diagram = CustomDrawioDiagram(styles=styles)
 
     # Add a diagram page
