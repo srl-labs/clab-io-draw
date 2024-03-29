@@ -1,6 +1,112 @@
 from N2G import drawio_diagram
 from collections import defaultdict
 import yaml, argparse, os, re
+import xml.etree.ElementTree as ET
+
+class CustomDrawioDiagram(drawio_diagram):
+    # Overriding the drawio_diagram_xml with shadow=0
+    drawio_diagram_xml = """
+    <diagram id="{id}" name="{name}">
+      <mxGraphModel dx="{width}" dy="{height}" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0" background="#000000">
+        <root>
+          <mxCell id="0"/>   
+          <mxCell id="1" parent="0"/>
+        </root>
+      </mxGraphModel>
+    </diagram>
+    """
+    
+    def __init__(self, node_duplicates="skip", link_duplicates="skip", background="#FFFFFF", shadow="1", grid="1", pagew="1024", pageh="1"):
+
+        self.drawio_diagram_xml = f"""
+        <diagram id="{{id}}" name="{{name}}">
+          <mxGraphModel dx="{{width}}" dy="{{height}}" grid="{grid}" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="{pagew}" pageHeight="{pageh}" math="0" shadow="{shadow}" background="{background}">
+            <root>
+              <mxCell id="0"/>   
+              <mxCell id="1" parent="0"/>
+            </root>
+          </mxGraphModel>
+        </diagram>
+        """
+
+        super().__init__(node_duplicates, link_duplicates, )
+
+    def group_nodes(self, member_objects, group_id, style=""):
+        """
+        Groups specified nodes under a new group.
+
+        Parameters:
+        - node_ids: A list of node IDs to be grouped.
+        - group_id: The ID for the new group.
+        - group_label: An optional label for the group.
+        - style: Optional DrawIO style parameters for the group.
+        """
+        min_x = min_y = float('inf')
+        max_x = max_y = float('-inf')
+
+        #print(f"Member objects: {member_objects}")
+
+        # Iterate over member objects to find the bounding box
+        for obj_id in member_objects:
+            obj = self.current_root.find(f".//object[@id='{obj_id}']/mxCell/mxGeometry")
+            if obj is not None:
+                x = float(obj.get('x', '0'))
+                y = float(obj.get('y', '0'))
+                width = float(obj.get('width', '0'))
+                height = float(obj.get('height', '0'))
+
+                print(f"Object ID {obj_id}: x={x}, y={y}, width={width}, height={height}")
+
+                min_x = min(min_x, x)
+                min_y = min(min_y, y)
+                max_x = max(max_x, x + width)
+                max_y = max(max_y, y + height)
+            else:
+                print(f"Geometry for object ID {obj_id} not found.")
+
+        if min_x == float('inf') or min_y == float('inf'):
+            print("No valid member objects found to create a group.")
+            return
+
+        # Calculate the group's position and size
+        group_x, group_y = min_x, min_y
+        group_width = max_x - min_x
+        group_height = max_y - min_y
+
+        # Create the group cell with calculated dimensions
+        group_cell_xml = f"""
+        <mxCell id="{group_id}" value="" style="{style}" vertex="1" connectable="0" parent="1">
+        <mxGeometry x="{int(group_x)}" y="{int(group_y)}" width="{int(group_width)}" height="{int(group_height)}" as="geometry" />
+        </mxCell>
+        """
+        group_cell = ET.fromstring(group_cell_xml)
+        self.current_root.append(group_cell)
+        # Update parent attribute and adjust x, y attributes based on conditions.
+        for obj_id in member_objects:
+            obj_mxcell = self.current_root.find(f".//object[@id='{obj_id}']/mxCell")
+            if obj_mxcell is not None:
+                obj_mxcell.set("parent", group_id)
+
+                geometry = obj_mxcell.find("./mxGeometry")
+                if geometry is not None:
+                    obj_style = obj_mxcell.get('style', '')
+                    # Check if the style includes "ellipse".
+                    if "ellipse" in obj_style:
+                        # Calculate new x and y based on the group's position.
+                        new_x = float(geometry.get('x', '0')) - group_x
+                        new_y = float(geometry.get('y', '0')) - group_y
+                        geometry.set('x', str(new_x))
+                        geometry.set('y', str(new_y))
+                    else:
+                        # For non-ellipse objects, remove x and y attributes.
+                        geometry.attrib.pop('x', None)
+                        geometry.attrib.pop('y', None)
+                #else:
+                #    print(f"Geometry for object ID {obj_id} not found.")
+            #else:
+            #    print(f"Object ID {obj_id} not found, cannot set parent.")
+
+
 
 def assign_graphlevels(nodes, links, verbose=False):
     """
@@ -593,7 +699,7 @@ def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_
         target_connector_pos = connector_positions[target][target_direction].pop(0) if connector_positions[target][target_direction] else None
 
         if source_connector_pos and target_connector_pos:
-            link_id = f"{source}-{link['source_intf']}_to_{target}-{link['target_intf']}"
+            link_id = f"{source}:{link['source_intf']}:{target}:{link['target_intf']}"
             link_connector_positions[link_id] = {
                 'source': source,
                 'target': target,
@@ -610,6 +716,8 @@ def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_
 
     # Second loop: Add connector nodes to the diagram and create connector links
     connector_links = []
+    node_groups = {}  # Dictionary to store groups by node
+
     for link_id, link_info in link_connector_positions.items():
         source = link_info['source']
         target = link_info['target']
@@ -617,13 +725,14 @@ def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_
         target_intf = link_info['target_intf']
         source_connector_pos = link_info['source_connector_position']
         target_connector_pos = link_info['target_connector_position']
+        source_cID = f"{source}:{source_intf}:{target}:{target_intf}"
+        target_cID = f"{target}:{target_intf}:{source}:{source_intf}"
 
         # Extract the numeric part from the interface names for the labels
         source_label = re.findall(r'\d+', source_intf)[-1]
         target_label = re.findall(r'\d+', target_intf)[-1]
 
-        if source_connector_pos:
-            source_cID = f"{source};{source_intf};{target};{target_intf}"
+        if source_connector_pos:            
             if verbose:
                 print(f"Adding connector for {source} with ID {source_cID} at position {source_connector_pos} with label {source_label}")
             diagram.add_node(
@@ -636,8 +745,7 @@ def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_
                 style=port_style
             )
 
-        if target_connector_pos:
-            target_cID = f"{target};{target_intf};{source};{source_intf}"
+        if target_connector_pos:            
             if verbose:
                 print(f"Adding connector for {target} with ID {target_cID} at position {target_connector_pos} with label {target_label}")
             diagram.add_node(
@@ -649,6 +757,14 @@ def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_
                 height=connector_height,
                 style=port_style
             )
+
+        if source not in node_groups:
+            node_groups[source] = []
+        node_groups[source].append(source_cID)
+
+        if target not in node_groups:
+            node_groups[target] = []
+        node_groups[target].append(target_cID)
 
         # Assuming each link has one source and one target connector, pair them to form a connector link
         if source_connector_pos and target_connector_pos:    
@@ -668,7 +784,7 @@ def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_
             midpoint_x = (source_center[0] + target_center[0]) / 2
             midpoint_y = (source_center[1] + target_center[1]) / 2
 
-            midpoint_id = f"mid;{source};{source_intf};{target};{target_intf}"  # Adjusted ID format
+            midpoint_id = f"mid:{source}:{source_intf}:{target}:{target_intf}"  # Adjusted ID format
             if verbose:
                 print(f"Creating midpoint connector {midpoint_id} between source {source} and target {target} at position ({midpoint_x}, {midpoint_y})")
 
@@ -686,6 +802,18 @@ def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_
             # Adjust connector_links to include the midpoint connector
             connector_links.append({'source': source_cID, 'target': midpoint_id})
             connector_links.append({'source': target_cID, 'target': midpoint_id})  
+
+    # Now, create groups for each node's connectors
+    for node, connector_ids in node_groups.items():
+        group_id = f"group-{node}"
+        
+        # write node node and group id into one array
+        connector_ids.append(node)  
+
+        print(f"Creating group for node {node} with connectors: {connector_ids}")
+        # Create a group for the connectors
+        diagram.group_nodes(member_objects=connector_ids, group_id=group_id, style='group')
+
 
     if verbose:
         # Calculate the total number of connectors, including midpoints
@@ -788,12 +916,19 @@ def load_styles_from_config(config_path):
     port_style = config.get('port_style', '') 
     connector_style = config.get('connector_style', '') 
 
+    background = config.get('background', "#FFFFFF")
+    shadow = config.get('shadow', "1")
+    pagew = config.get('pagew', "827")
+    pageh = config.get('pageh', "1169")
+    grid = config.get('grid', "1")
+
+
     # Prepend base_style to each custom style
     custom_styles = {key: base_style + value for key, value in config['custom_styles'].items()}
     
     icon_to_group_mapping = config['icon_to_group_mapping']
 
-    return base_style, link_style, port_style, connector_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping
+    return background, shadow, grid, pagew, pageh, base_style, link_style, port_style, connector_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping
 
 
 def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False):
@@ -840,11 +975,7 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
     sorted_nodes, node_graphlevels, connections = assign_graphlevels(nodes, links, verbose=verbose)
     positions = calculate_positions(sorted_nodes, links, node_graphlevels, connections, layout=layout, verbose=verbose)
 
-    # Create a draw.io diagram instance
-    diagram = drawio_diagram()
 
-    # Add a diagram page
-    diagram.add_diagram("Network Topology")
 
     if 'grafana' in theme.lower():
         no_links = True
@@ -855,8 +986,15 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
         # Assume the user has provided a custom path
         config_path = theme
 
-    # Add nodes and links to the diagram
-    base_style, link_style, port_style, connector_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = load_styles_from_config(config_path)
+    # Load styles
+    background, shadow, grid, pagew, pageh, base_style, link_style, port_style, connector_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = load_styles_from_config(config_path)
+
+    # Create a draw.io diagram instance
+    diagram = CustomDrawioDiagram(background=background, shadow=shadow, grid=grid, pagew=pagew, pageh=pageh)
+
+    # Add a diagram page
+    diagram.add_diagram("Network Topology")
+
 
     # Add nodes to the diagram
     add_nodes(diagram, nodes, positions, node_graphlevels, base_style=base_style, custom_styles=custom_styles, icon_to_group_mapping=icon_to_group_mapping)
