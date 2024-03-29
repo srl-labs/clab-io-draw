@@ -16,7 +16,14 @@ class CustomDrawioDiagram(drawio_diagram):
     </diagram>
     """
     
-    def __init__(self, node_duplicates="skip", link_duplicates="skip", background="#FFFFFF", shadow="1", grid="1", pagew="1024", pageh="1"):
+    def __init__(self, styles, node_duplicates="skip", link_duplicates="skip"):
+
+
+        background = styles['background']
+        shadow = styles['shadow']
+        grid = styles['grid']
+        pagew = styles['pagew']
+        pageh = styles['pageh']
 
         self.drawio_diagram_xml = f"""
         <diagram id="{{id}}" name="{{name}}">
@@ -54,15 +61,12 @@ class CustomDrawioDiagram(drawio_diagram):
                 y = float(obj.get('y', '0'))
                 width = float(obj.get('width', '0'))
                 height = float(obj.get('height', '0'))
-
-                print(f"Object ID {obj_id}: x={x}, y={y}, width={width}, height={height}")
-
                 min_x = min(min_x, x)
                 min_y = min(min_y, y)
                 max_x = max(max_x, x + width)
                 max_y = max(max_y, y + height)
-            else:
-                print(f"Geometry for object ID {obj_id} not found.")
+            #else:
+                #print(f"Geometry for object ID {obj_id} not found.")
 
         if min_x == float('inf') or min_y == float('inf'):
             print("No valid member objects found to create a group.")
@@ -101,10 +105,10 @@ class CustomDrawioDiagram(drawio_diagram):
                         # For non-ellipse objects, remove x and y attributes.
                         geometry.attrib.pop('x', None)
                         geometry.attrib.pop('y', None)
-                #else:
-                #    print(f"Geometry for object ID {obj_id} not found.")
-            #else:
-            #    print(f"Object ID {obj_id} not found, cannot set parent.")
+                else:
+                    print(f"Geometry for object ID {obj_id} not found.")
+            else:
+                print(f"Object ID {obj_id} not found, cannot set parent.")
 
 
 
@@ -587,7 +591,7 @@ def sort_connector_positions(link_connector_positions):
                 print(f"Connectors for link {link_id} are not nicely aligned {node_alignment}.")
                 #TODO: Adjust them
 
-def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_style, verbose=False):
+def add_connector_nodes(diagram, nodes, links, positions, styles, verbose=False):
     # Set connector and node dimensions
     connector_width, connector_height = 8, 8
     node_width, node_height = 75, 75
@@ -742,7 +746,7 @@ def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_
                 y_pos=source_connector_pos[1],
                 width=connector_width,
                 height=connector_height,
-                style=port_style
+                style=styles['port_style']
             )
 
         if target_connector_pos:            
@@ -755,7 +759,7 @@ def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_
                 y_pos=target_connector_pos[1],
                 width=connector_width,
                 height=connector_height,
-                style=port_style
+                style=styles['port_style']
             )
 
         if source not in node_groups:
@@ -796,7 +800,7 @@ def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_
                 y_pos=midpoint_top_left_y,
                 width=4,
                 height=4,
-                style=connector_style
+                style=styles['connector_style']
             )
 
             # Adjust connector_links to include the midpoint connector
@@ -810,7 +814,6 @@ def add_connector_nodes(diagram, nodes, links, positions, connector_style, port_
         # write node node and group id into one array
         connector_ids.append(node)  
 
-        print(f"Creating group for node {node} with connectors: {connector_ids}")
         # Create a group for the connectors
         diagram.group_nodes(member_objects=connector_ids, group_id=group_id, style='group')
 
@@ -835,7 +838,12 @@ def add_links_with_connectors(diagram, connector_links, link_style=None, verbose
     for link in connector_links:
         diagram.add_link(source=link['source'], target=link['target'], style=link_style, label='rate')
 
-def add_nodes(diagram, nodes, positions, node_graphlevels, base_style=None, custom_styles=None, icon_to_group_mapping=None):
+def add_nodes(diagram, nodes, positions, node_graphlevels, styles):
+
+    base_style = styles['base_style']
+    custom_styles = styles['custom_styles']
+    icon_to_group_mapping = styles['icon_to_group_mapping']
+
     for node_name, node_info in nodes.items():
         # Check for 'graph-icon' label and map it to the corresponding group
         labels = node_info.get('labels') or {}
@@ -860,7 +868,9 @@ def add_nodes(diagram, nodes, positions, node_graphlevels, base_style=None, cust
         # Add each node to the diagram with the given x and y position.
         diagram.add_node(id=node_name, label=node_name, x_pos=x_pos, y_pos=y_pos, style=style, width=75, height=75)
 
-def add_links(diagram, links, positions, node_graphlevels, no_links=False, layout='vertical', verbose=False, link_style=None, src_label_style=None, trgt_label_style=None):
+def add_links(diagram, links, positions, node_graphlevels, styles, no_links=False, layout='vertical', verbose=False):
+       
+    
     # Initialize a counter for links between the same nodes
     link_counter = defaultdict(lambda: 0)
     total_links_between_nodes = defaultdict(int)
@@ -889,12 +899,11 @@ def add_links(diagram, links, positions, node_graphlevels, no_links=False, layou
         link_counter[link_key] += 1
         total_links = total_links_between_nodes[link_key]
 
-        unique_link_style = create_links(base_style=link_style, positions=positions, source=source, target=target, source_graphlevel=source_graphlevel, target_graphlevel=target_graphlevel, adjacency=adjacency, link_index=link_index, total_links=total_links, layout=layout)
+        unique_link_style = create_links(base_style=styles['link_style'], positions=positions, source=source, target=target, source_graphlevel=source_graphlevel, target_graphlevel=target_graphlevel, adjacency=adjacency, link_index=link_index, total_links=total_links, layout=layout)
         link['unique_link_style'] = unique_link_style
 
         if not no_links:
-            diagram.add_link(source=source, target=target, src_label=source_intf, trgt_label=target_intf, src_label_style=src_label_style, trgt_label_style=trgt_label_style, style=unique_link_style)
-
+            diagram.add_link(source=source, target=target, src_label=source_intf, trgt_label=target_intf, src_label_style=styles['src_label_style'], trgt_label_style=styles['trgt_label_style'], style=unique_link_style)
 
 def load_styles_from_config(config_path):
     try:
@@ -909,26 +918,25 @@ def load_styles_from_config(config_path):
         print(error_message)
         exit()
 
-    base_style = config['base_style']
-    link_style = config['link_style']
-    src_label_style = config['src_label_style']
-    trgt_label_style = config['trgt_label_style']
-    port_style = config.get('port_style', '') 
-    connector_style = config.get('connector_style', '') 
+    # Initialize the styles dictionary with defaults and override with config values
+    styles = {
+        'base_style': config['base_style'],
+        'link_style': config['link_style'],
+        'src_label_style': config['src_label_style'],
+        'trgt_label_style': config['trgt_label_style'],
+        'port_style': config.get('port_style', ''), 
+        'connector_style': config.get('connector_style', ''), 
+        'background': config.get('background', "#FFFFFF"),
+        'shadow': config.get('shadow', "1"),
+        'pagew': config.get('pagew', "827"),
+        'pageh': config.get('pageh', "1169"),
+        'grid': config.get('grid', "1"),
+        # Prepend base_style to each custom style
+        'custom_styles': {key: config['base_style'] + value for key, value in config['custom_styles'].items()},
+        'icon_to_group_mapping': config['icon_to_group_mapping'],
+    }
 
-    background = config.get('background', "#FFFFFF")
-    shadow = config.get('shadow', "1")
-    pagew = config.get('pagew', "827")
-    pageh = config.get('pageh', "1169")
-    grid = config.get('grid', "1")
-
-
-    # Prepend base_style to each custom style
-    custom_styles = {key: base_style + value for key, value in config['custom_styles'].items()}
-    
-    icon_to_group_mapping = config['icon_to_group_mapping']
-
-    return background, shadow, grid, pagew, pageh, base_style, link_style, port_style, connector_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping
+    return styles
 
 
 def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False):
@@ -975,8 +983,6 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
     sorted_nodes, node_graphlevels, connections = assign_graphlevels(nodes, links, verbose=verbose)
     positions = calculate_positions(sorted_nodes, links, node_graphlevels, connections, layout=layout, verbose=verbose)
 
-
-
     if 'grafana' in theme.lower():
         no_links = True
 
@@ -987,25 +993,24 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
         config_path = theme
 
     # Load styles
-    background, shadow, grid, pagew, pageh, base_style, link_style, port_style, connector_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = load_styles_from_config(config_path)
+    styles = load_styles_from_config(config_path)
 
     # Create a draw.io diagram instance
-    diagram = CustomDrawioDiagram(background=background, shadow=shadow, grid=grid, pagew=pagew, pageh=pageh)
+    #diagram = CustomDrawioDiagram(background=background, shadow=shadow, grid=grid, pagew=pagew, pageh=pageh)
+    diagram = CustomDrawioDiagram(styles=styles)
 
     # Add a diagram page
     diagram.add_diagram("Network Topology")
 
-
     # Add nodes to the diagram
-    add_nodes(diagram, nodes, positions, node_graphlevels, base_style=base_style, custom_styles=custom_styles, icon_to_group_mapping=icon_to_group_mapping)
+    add_nodes(diagram, nodes, positions, node_graphlevels, styles=styles)
 
     # Add links to the diagram
-    add_links(diagram, links, positions, node_graphlevels, no_links=no_links, layout=layout, verbose=verbose, link_style=link_style, src_label_style=src_label_style, trgt_label_style=trgt_label_style)
-
+    add_links(diagram, links, positions, node_graphlevels, styles=styles, no_links=no_links, layout=layout, verbose=verbose)
     # Add connector nodes for each link
     if 'grafana' in theme.lower():
-        connector_links = add_connector_nodes(diagram, nodes, links, positions, connector_style=connector_style, port_style=port_style, verbose=verbose)
-        add_links_with_connectors(diagram, connector_links, link_style=link_style, verbose=verbose)
+        connector_links = add_connector_nodes(diagram, nodes, links, positions, styles=styles, verbose=verbose)
+        add_links_with_connectors(diagram, connector_links, link_style=styles['link_style'], verbose=verbose)
 
     # If output_file is not provided, generate it from input_file
     if not output_file:
