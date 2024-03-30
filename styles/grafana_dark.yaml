@@ -1,3 +1,10 @@
+#General Diagram settings:
+background: "#4D5766"
+shadow: "0"
+grid: "0"
+pagew: "auto"
+pageh: "auto"
+
 # Base style for nodes; defines the general appearance for all nodes.
 base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;fontColor=#F0F0F0;"
 
@@ -11,6 +18,9 @@ link_style: "rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startSize=6;endArr
 # Styles for labels on the source and target ends of a link
 src_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=6;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;"
 trgt_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=6;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;"
+
+node_width: 75
+node_height: 75
 
 # Custom styles for different types of nodes, allowing for unique visual representation based on node role or function
 custom_styles:
