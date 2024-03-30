@@ -38,46 +38,35 @@ class CustomDrawioDiagram(drawio_diagram):
 
         super().__init__(node_duplicates, link_duplicates, )
 
-    def calculate_new_group_positions(self, node_pos_old, port_pos_olds, group_pos, group_size):
-        # Adjust node and port positions relative to the new group's position
-        node_pos_new = (node_pos_old[0] - group_pos[0], node_pos_old[1] - group_pos[1])
-        port_pos_news = [(port_pos_old[0] - group_pos[0], port_pos_old[1] - group_pos[1]) for port_pos_old in port_pos_olds]
-        return node_pos_new, port_pos_news
+    def calculate_new_group_positions(self, obj_pos_old, group_pos):
+        # Adjust object positions relative to the new group's position
+        obj_pos_new = (obj_pos_old[0] - group_pos[0], obj_pos_old[1] - group_pos[1])
+        return obj_pos_new
 
     def group_nodes(self, member_objects, group_id, style=""):
         # Initialize bounding box coordinates
         min_x = min_y = float('inf')
         max_x = max_y = float('-inf')
 
-        node_objects_positions = []  # To store node positions
-        port_objects_positions = []  # To store port positions
+        object_positions = []  # To store all object positions
 
-        # Process each member object to categorize it and update the bounding box
+        # Process each member object to update the bounding box
         for obj_id in member_objects:
             obj_mxcell = self.current_root.find(f".//object[@id='{obj_id}']/mxCell")
             if obj_mxcell is not None:
                 geometry = obj_mxcell.find("./mxGeometry")
                 if geometry is not None:
-                    obj_style = obj_mxcell.get('style', '')
                     x, y = float(geometry.get('x', '0')), float(geometry.get('y', '0'))
                     width, height = float(geometry.get('width', '0')), float(geometry.get('height', '0'))
 
-                    # Categorize as node or port and update bounding box
-                    if "ellipse" not in obj_style:
-                        node_objects_positions.append((obj_id, x, y, width, height))
-                    else:
-                        port_objects_positions.append((obj_id, x, y, width, height))
-
+                    # Store object positions and update bounding box
+                    object_positions.append((obj_id, x, y, width, height))
                     min_x, min_y = min(min_x, x), min(min_y, y)
                     max_x, max_y = max(max_x, x + width), max(max_y, y + height)
 
         # Define the group's position and size based on the bounding box
         group_x, group_y = min_x, min_y
         group_width, group_height = max_x - min_x, max_y - min_y
-
-        # Exit if no valid nodes are found
-        if not node_objects_positions:
-            return
 
         # Create the group cell in the XML structure
         group_cell_xml = f"""
@@ -88,29 +77,18 @@ class CustomDrawioDiagram(drawio_diagram):
         group_cell = ET.fromstring(group_cell_xml)
         self.current_root.append(group_cell)
 
-        # Update positions of nodes and ports within the group
-        for node_id, x, y, width, height in node_objects_positions:
-            node_pos_old = (x, y)
-            port_pos_olds = [(px, py) for _, px, py, _, _ in port_objects_positions]
-            node_pos_new, port_pos_news = self.calculate_new_group_positions(node_pos_old, port_pos_olds, (group_x, group_y), (group_width, group_height))
+        # Update positions of all objects within the group
+        for obj_id, x, y, _, _ in object_positions:
+            obj_pos_old = (x, y)
+            obj_pos_new = self.calculate_new_group_positions(obj_pos_old, (group_x, group_y))
 
-            node_mxcell = self.current_root.find(f".//object[@id='{node_id}']/mxCell")
-            if node_mxcell is not None:
-                geometry = node_mxcell.find("./mxGeometry")
+            obj_mxcell = self.current_root.find(f".//object[@id='{obj_id}']/mxCell")
+            if obj_mxcell is not None:
+                geometry = obj_mxcell.find("./mxGeometry")
                 if geometry is not None:
-                    geometry.set('x', str(node_pos_new[0]))
-                    geometry.set('y', str(node_pos_new[1]))
-                    node_mxcell.set("parent", group_id)  # Set the node's parent to the new group
-
-            # Update port positions and set their parent to the new group
-            for (port_id, _, _, _, _), (new_x, new_y) in zip(port_objects_positions, port_pos_news):
-                port_mxcell = self.current_root.find(f".//object[@id='{port_id}']/mxCell")
-                if port_mxcell is not None:
-                    geometry = port_mxcell.find("./mxGeometry")
-                    if geometry is not None:
-                        geometry.set('x', str(new_x))
-                        geometry.set('y', str(new_y))
-                        port_mxcell.set("parent", group_id)
+                    geometry.set('x', str(obj_pos_new[0]))
+                    geometry.set('y', str(obj_pos_new[1]))
+                    obj_mxcell.set("parent", group_id)  # Set the object's parent to the new group
 
 def assign_graphlevels(nodes, links, verbose=False):
     """
