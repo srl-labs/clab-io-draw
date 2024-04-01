@@ -545,7 +545,6 @@ def load_styles_from_config(config_path):
 
 
 def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False):
->>>>>>> upstream/main
     """
     Generates a diagram from a given topology definition file, organizing and displaying nodes and links.
     
