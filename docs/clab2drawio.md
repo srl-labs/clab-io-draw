@@ -80,8 +80,56 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
 
 - `--layout`: Specifies the layout of the topology diagram (either `vertical` or `horizontal`). The default layout is `vertical`.
 
+- `--theme`: Specifies the theme for the diagram (`bright` or `dark`) or the path to a custom style config file. By default, the `bright` theme is used. Users can also create their own style file and place it in any directory, specifying its path with this option.
+
+    ```bash
+    python clab2drawio.py --theme dark -i <path_to_your_yaml_file>
+    ```
+    
+    Or using a custom style file:
+
+    ```bash
+    python clab2drawio.py --theme <path_to_custom_style_file> -i <path_to_your_yaml_file>
+    ```
+
 - `--verbose`: Enable verbose output for debugging purposes.
 
 
 ## Customization
-The tool allows for basic customization of node and link styles within the generated diagram. To customize, edit the custom_styles dictionary within the clab2drawio.py file according to your preferences.
+The tool allows for customization of node and link styles within the generated diagrams, making it possible to adjust the appearance to fit specific requirements or preferences.
+
+### Custom Styles
+To customize styles, you can edit the `clab2drawio_styles.yaml` configuration file. This file defines the base style, link style, source and target label styles, and custom styles for different types of nodes based on their roles (e.g., routers, switches, servers).
+
+An example snippet from `clab2drawio_styles.yaml`:
+```yaml
+base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;"
+link_style: "endArrow=none;jumpStyle=gap;"
+src_label_style: "verticalLabelPosition=bottom;verticalAlign=top;align=left;spacingLeft=1;spacingTop=1;spacingBottom=0;"
+trgt_label_style: "verticalLabelPosition=top;verticalAlign=bottom;align=left;spacingLeft=1;spacingTop=1;spacingBottom=0;"
+custom_styles:
+  default: "image=data:image/png;base64,..."
+  spine: "image=data:image/png;base64,..."
+  leaf: "image=data:image/png;base64,..."
+  dcgw: "image=data:image/png;base64,..."
+  server: "image=data:image/png;base64,..."
+icon_to_group_mapping:
+  router: "dcgw"
+  switch: "leaf"
+  host: "server"
+```
+
+### Applying Styles
+Custom styles are applied to nodes and links based on the configurations specified in the style configuration files (`bright.yaml` for the bright theme and `dark.yaml` for the dark theme), located in the `styles` directory by default. To apply a new style to a node type, update its corresponding style definition in the appropriate YAML file. These styles determine the appearance of nodes and links in the generated diagram, including shapes, colors, and icons.
+
+If you wish to create a completely new style, you can create a new YAML file with your custom configurations. This file can be placed in any directory, and you can specify its path when running the script using the `--theme` option.
+
+### Advanced Styling
+For users looking to further customize their diagrams with more advanced styling options, such as custom icons, specific dimensions, or additional visual attributes, you can directly edit the styles within the Draw.io interface.
+
+To get the style data from Draw.io for a specific element:
+1. Create or select the element in your Draw.io diagram.
+2. Right-click on the element and select "Edit Style" from the context menu.
+3. A style definition string will be displayed in a text box. You can copy this string and incorporate it into your custom style file or directly modify it within Draw.io for immediate effect.
+
+
