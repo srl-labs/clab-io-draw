@@ -940,15 +940,15 @@ def create_grafana_dashboard(diagram=None,dashboard_filename=None,link_list=[]):
     # Legend format needs to match the format expected by the metric
     panelQueryList = {
         "IngressTraffic" : {
-                    "rule_expr" : "interface_traffic_rate_in_bps",
+                    "rule_expr" : "gnmic_in_bps",
                     "legend_format" : '{{source}}:{{interface_name}}:in',
                    },
         "EgressTraffic" : {
-                    "rule_expr" : "interface_traffic_rate_out_bps",
+                    "rule_expr" : "gnmic_out_bps",
                     "legend_format" : '{{source}}:{{interface_name}}:out',
                    },
         "ItfOperState" : {
-                   "rule_expr" : "interface_oper_state",
+                   "rule_expr" : "gnmic_oper_state",
                    "legend_format" : 'oper_state:{{source}}:{{interface_name}}',
                    },          
     }
@@ -966,13 +966,18 @@ def create_grafana_dashboard(diagram=None,dashboard_filename=None,link_list=[]):
             #src port ingress
             rulesData.append(gf_flowchart_rule_traffic(ruleName=f"{rule[1]}:{rule[2]}:in", metric=f"{rule[1]}:{rule[2]}:in",link_id=link,order=i))
             #src port:
-            rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[1]}:{rule[2]}",metric=f"oper_state:{rule[1]}:{rule[2]}",link_id=link,order=i+2))
+            # split this link which is link_id:spine1:e1-1:leaf1:e1-49-src into spine1:e1-1:leaf1:e1-49-src
+            link_id = link.replace('link_id:', '').replace('-src', '')
+            rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[1]}:{rule[2]}",metric=f"oper_state:{rule[1]}:{rule[2]}",link_id=link_id,order=i+2))
             i=i+2
         elif "-trgt" in link: 
             #src port egress, we can also change this for the ingress of remote port but there would not be an end
-            rulesData.append(gf_flowchart_rule_traffic(ruleName=f"{rule[1]}:{rule[2]}:out",metric=f"{rule[1]}:{rule[2]}:out",link_id=link,order=i+1))
+            rule2 = rule[2].replace('-trgt', '')
+            rulesData.append(gf_flowchart_rule_traffic(ruleName=f"{rule[1]}:{rule2}:out",metric=f"{rule[1]}:{rule2}:out",link_id=link,order=i+1))
             #dest port:
-            rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[3]}:{rule[4]}",metric=f"oper_state:{rule[3]}:{rule[4]}",link_id=link,order=i+3))
+            link_id = link.replace('link_id:', '').replace('-trgt', '')
+            
+            rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[1]}:{rule2}",metric=f"oper_state:{rule[1]}:{rule2}",link_id=link_id,order=i+3))
             i=i+2
     # Create the Panel
     flowchart_panel=gf_flowchart_panel_template(xml=ET.tostring(subXmlTree, encoding="unicode"),
@@ -1073,21 +1078,27 @@ def gf_flowchart_rule_traffic(ruleName="traffic:inOrOut",metric=None,link_id=Non
             "newRule": False,
             "numberTHData": [
               {
-                "color": "rgba(245, 54, 54, 0.9)",
+                "color": "rgba(171, 187, 187, 1)",
                 "comparator": "ge",
                 "level": 0
               },
               {
-                "color": "rgba(237, 129, 40, 0.89)",
+                "color": "rgba(75, 221, 51, 1)",
                 "comparator": "ge",
                 "level": 0,
-                "value": 50
+                "value": 500000
               },
               {
-                "color": "rgba(50, 172, 45, 0.97)",
+                "color": "rgba(255, 128, 0, 1)",
+                "comparator": "gt",
+                "level": 0,
+                "value": 2000000
+              },
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
                 "comparator": "ge",
                 "level": 0,
-                "value": 80
+                "value": 5000000
               }
             ],
             "order": order,
