@@ -1,6 +1,6 @@
 from N2G import drawio_diagram
 from collections import defaultdict
-import yaml, argparse, os, re
+import yaml, argparse, os, re, json
 import xml.etree.ElementTree as ET
 
 class CustomDrawioDiagram(drawio_diagram):
@@ -782,8 +782,8 @@ def add_connector_nodes(diagram, nodes, links, positions, styles, verbose=False)
             )
 
             # Adjust connector_links to include the midpoint connector
-            connector_links.append({'source': source_cID, 'target': midpoint_id})
-            connector_links.append({'source': target_cID, 'target': midpoint_id})  
+            connector_links.append({'source': source_cID, 'target': midpoint_id, 'link_id' : f"{source_cID}-src"})
+            connector_links.append({'source': target_cID, 'target': midpoint_id, 'link_id' : f"{target_cID}-trgt"})  
 
     # Now, create groups for each node's connectors
     for node, connector_ids in node_groups.items():
@@ -814,7 +814,7 @@ def add_connector_nodes(diagram, nodes, links, positions, styles, verbose=False)
 
 def add_links_with_connectors(diagram, connector_links, link_style=None, verbose=False):
     for link in connector_links:
-        diagram.add_link(source=link['source'], target=link['target'], style=link_style, label='rate')
+        diagram.add_link(source=link['source'], target=link['target'], style=link_style, label='rate', link_id=link['link_id'])
 
 def add_nodes(diagram, nodes, positions, node_graphlevels, styles):
 
@@ -879,9 +879,11 @@ def add_links(diagram, links, positions, node_graphlevels, styles, no_links=Fals
 
         unique_link_style = create_links(base_style=styles['link_style'], positions=positions, source=source, target=target, source_graphlevel=source_graphlevel, target_graphlevel=target_graphlevel, adjacency=adjacency, link_index=link_index, total_links=total_links, layout=layout)
         link['unique_link_style'] = unique_link_style
+        link_id=f"{source}:{source_intf}:{target}:{target_intf}"
+        link['link_id'] = f"link_id:{link_id}"
 
         if not no_links:
-            diagram.add_link(source=source, target=target, src_label=source_intf, trgt_label=target_intf, src_label_style=styles['src_label_style'], trgt_label_style=styles['trgt_label_style'], style=unique_link_style)
+            diagram.add_link(source=source, target=target, src_label=source_intf, trgt_label=target_intf, src_label_style=styles['src_label_style'], trgt_label_style=styles['trgt_label_style'], style=unique_link_style, link_id=link_id)
 
 def load_styles_from_config(config_path):
     try:
@@ -917,7 +919,522 @@ def load_styles_from_config(config_path):
     return styles
 
 
-def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False):
+def create_grafana_dashboard(diagram=None,dashboard_filename=None,link_list=[]):
+    """
+    Creates a Grafana JSON Dashboard using the FlowChart Plugin
+    Requires as an input the Drawio Object to embed the XML 
+    The Link List obtained by add_nodes_and_links function and 
+    the file name
+    Metrics format defaults:
+      Ingress:   node:itf:in
+      Egress:    node:itf:out
+      OperState: oper_state:node:itf
+    Where `node` comes from the clab node and `itf` from the interface name
+    """
+    
+    # We just need the subtree objects from mxGraphModel.Single page drawings only
+    xmlTree = ET.fromstring(diagram.dump_xml())
+    subXmlTree=xmlTree.findall('.//mxGraphModel')[0]
+    
+    # Define Query rules for the Panel, rule_expr needs to match the collector metric name
+    # Legend format needs to match the format expected by the metric
+    panelQueryList = {
+        "IngressTraffic" : {
+                    "rule_expr" : "interface_traffic_rate_in_bps",
+                    "legend_format" : '{{source}}:{{interface_name}}:in',
+                   },
+        "EgressTraffic" : {
+                    "rule_expr" : "interface_traffic_rate_out_bps",
+                    "legend_format" : '{{source}}:{{interface_name}}:out',
+                   },
+        "ItfOperState" : {
+                   "rule_expr" : "interface_oper_state",
+                   "legend_format" : 'oper_state:{{source}}:{{interface_name}}',
+                   },          
+    }
+    # Create a targets list to embed in the JSON object, we add all the other default JSON attributes to the list
+    targetsList = []
+    for query in panelQueryList:
+        targetsList.append(gf_dashboard_datasource_target(rule_expr=panelQueryList[query]["rule_expr"],legend_format=panelQueryList[query]["legend_format"], refId=query))
+    
+    # Create the Rules Data
+    rulesData = []
+    i=0
+    for link in link_list:
+        rule = link.split(":")
+        if "-src" in link:
+            #src port ingress
+            rulesData.append(gf_flowchart_rule_traffic(ruleName=f"{rule[1]}:{rule[2]}:in", metric=f"{rule[1]}:{rule[2]}:in",link_id=link,order=i))
+            #src port:
+            rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[1]}:{rule[2]}",metric=f"oper_state:{rule[1]}:{rule[2]}",link_id=link,order=i+2))
+            i=i+2
+        elif "-trgt" in link: 
+            #src port egress, we can also change this for the ingress of remote port but there would not be an end
+            rulesData.append(gf_flowchart_rule_traffic(ruleName=f"{rule[1]}:{rule[2]}:out",metric=f"{rule[1]}:{rule[2]}:out",link_id=link,order=i+1))
+            #dest port:
+            rulesData.append(gf_flowchart_rule_operstate(ruleName=f"oper_state:{rule[3]}:{rule[4]}",metric=f"oper_state:{rule[3]}:{rule[4]}",link_id=link,order=i+3))
+            i=i+2
+    # Create the Panel
+    flowchart_panel=gf_flowchart_panel_template(xml=ET.tostring(subXmlTree, encoding="unicode"),
+                                                rulesData=rulesData,
+                                                panelTitle="Network Telemetry",
+                                                targetsList=targetsList)
+    #Create a dashboard from the panel
+    dashboard_json=json.dumps(gf_dashboard_template(panels=flowchart_panel,dashboard_name=os.path.splitext(dashboard_filename)[0]),indent=4)
+    with open(dashboard_filename,'w') as f:
+        f.write(dashboard_json)
+        print("Saved Grafana dashboard file to:", dashboard_filename)
+
+def gf_flowchart_rule_traffic(ruleName="traffic:inOrOut",metric=None,link_id=None,order=1):
+    """
+    Dictionary containg information relevant to the traffic Rules
+    """
+    rule = {
+        "aggregation": "current",
+            "alias": ruleName,
+            "column": "Time",
+            "dateColumn": "Time",
+            "dateFormat": "YYYY-MM-DD HH:mm:ss",
+            "dateTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "0d"
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "-1d"
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "-1w"
+              }
+            ],
+            "decimals": 1,
+            "gradient": False,
+            "hidden": False,
+            "invert": False,
+            "mappingType": 1,
+            "mapsDat": {
+              "events": {
+                "dataList": [],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "links": {
+                "dataList": [],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "shapes": {
+                "dataList": [
+                  {
+                    "colorOn": "a",
+                    "hidden": False,
+                    "pattern": link_id,
+                    "style": "strokeColor"
+                  }
+                ],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "texts": {
+                "dataList": [
+                  {
+                    "hidden": False,
+                    "pattern": link_id,
+                    "textOn": "wmd",
+                    "textPattern": "/.*/",
+                    "textReplace": "content"
+                  }
+                ],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              }
+            },
+            "metricType": "serie",
+            "newRule": False,
+            "numberTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "ge",
+                "level": 0
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "comparator": "ge",
+                "level": 0,
+                "value": 50
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "ge",
+                "level": 0,
+                "value": 80
+              }
+            ],
+            "order": order,
+            "overlayIcon": False,
+            "pattern": metric,
+            "rangeData": [],
+            "reduce": True,
+            "refId": "A",
+            "sanitize": False,
+            "stringTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*/"
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*warning.*/"
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*(success|ok).*/"
+              }
+            ],
+            "tooltip": True,
+            "tooltipColors": False,
+            "tooltipLabel": "",
+            "tooltipOn": "a",
+            "tpDirection": "v",
+            "tpGraph": True,
+            "tpGraphScale": "linear",
+            "tpGraphSize": "100%",
+            "tpGraphType": "line",
+            "tpMetadata": False,
+            "type": "number",
+            "unit": "bps",
+            "valueData": []
+    }
+    return rule
+
+def gf_flowchart_rule_operstate(ruleName="oper_state",metric=None,link_id=None,order=1):
+    """
+    Dictionary containg information relevant to the Operational State Rules
+    """
+    rule = {
+            "aggregation": "current",
+            "alias": ruleName,
+            "column": "Time",
+            "dateColumn": "Time",
+            "dateFormat": "YYYY-MM-DD HH:mm:ss",
+            "dateTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "0d"
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "-1d"
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "ge",
+                "level": 0,
+                "value": "-1w"
+              }
+            ],
+            "decimals": 0,
+            "gradient": False,
+            "hidden": False,
+            "invert": False,
+            "mappingType": 1,
+            "mapsDat": {
+              "events": {
+                "dataList": [],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "links": {
+                "dataList": [],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "shapes": {
+                "dataList": [
+                  {
+                    "colorOn": "a",
+                    "hidden": False,
+                    "pattern": link_id,
+                    "style": "labelBackgroundColor"
+                  }
+                ],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              },
+              "texts": {
+                "dataList": [],
+                "options": {
+                  "enableRegEx": True,
+                  "identByProp": "id",
+                  "metadata": ""
+                }
+              }
+            },
+            "metricType": "serie",
+            "newRule": False,
+            "numberTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "ge",
+                "level": 0
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "ge",
+                "level": 0,
+                "value": 1
+              }
+            ],
+            "order": order,
+            "overlayIcon": False,
+            "pattern": metric,
+            "rangeData": [],
+            "reduce": True,
+            "refId": "A",
+            "sanitize": False,
+            "stringTHData": [
+              {
+                "color": "rgba(245, 54, 54, 0.9)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*/"
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.89)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*warning.*/"
+              },
+              {
+                "color": "rgba(50, 172, 45, 0.97)",
+                "comparator": "eq",
+                "level": 0,
+                "value": "/.*(success|ok).*/"
+              }
+            ],
+            "tooltip": False,
+            "tooltipColors": False,
+            "tooltipLabel": "",
+            "tooltipOn": "a",
+            "tpDirection": "v",
+            "tpGraph": False,
+            "tpGraphScale": "linear",
+            "tpGraphSize": "100%",
+            "tpGraphType": "line",
+            "tpMetadata": False,
+            "type": "number",
+            "unit": "short",
+            "valueData": []
+          }
+    return rule
+
+def gf_flowchart_panel_template(xml=None,rulesData=None,targetsList=None,panelTitle="Network Topology"):
+    """
+    Dictionary containg information relevant to the Panels Section in the JSON Dashboard
+    Embeding of the XML diagram, the Rules and the Targets
+    """
+    panels = [
+         {
+           "datasource": {
+             "type": "prometheus",
+             "uid": "${DS_PROMETHEUS}"
+           },
+           "flowchartsData": {
+             "allowDrawio": True,
+             "editorTheme": "kennedy",
+             "editorUrl": "https://embed.diagrams.net/",
+             "flowcharts": [
+               {
+                 "center": True,
+                 "csv": "",
+                 "download": False,
+                 "enableAnim": True,
+                 "grid": False,
+                 "lock": True,
+                 "name": "Main",
+                 "scale": True,
+                 "tooltip": True,
+                 "type": "xml",
+                 "url": "http://<YourUrl>/<Your XML/drawio file/api>",
+                 "xml": xml,
+                 "zoom": "100%"
+               }
+             ]
+           },
+           "format": "short",
+           "graphId": "flowchart_1",
+           "gridPos": {
+             "h": 20,
+             "w": 17,
+             "x": 0,
+             "y": 0
+           },
+           "id": 1,
+           "rulesData": {
+                 "rulesData": rulesData,
+           },
+           "targets": targetsList,
+           "title": panelTitle,
+           "type": "agenty-flowcharting-panel",
+           "valueName": "current",
+           "version": "1.0.0e"
+         }
+       ]
+    return panels
+
+def gf_dashboard_datasource_target(rule_expr="promql_query",legend_format=None, refId="Query1"):
+    """
+    Dictionary containg information relevant to the Targets queried
+    """
+    target = {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": rule_expr,
+          "instant": False,
+          "legendFormat": legend_format,
+          "range": True,
+          "refId": refId,
+    }
+    return target
+
+def gf_dashboard_template(panels=None,dashboard_name="lab-telemetry"):
+    """
+    Dictionary containg information relevant to the Grafana Dashboard Root JSON object
+    """
+    dashboard = {
+       "__inputs": [
+         {
+           "name": "DS_PROMETHEUS",
+           "label": "Prometheus",
+           "description": "Autogenerated by clab2grafana.py",
+           "type": "datasource",
+           "pluginId": "prometheus",
+           "pluginName": "Prometheus"
+         }
+       ],
+       "__elements": {},
+       "__requires": [
+         {
+           "type": "panel",
+           "id": "agenty-flowcharting-panel",
+           "name": "FlowCharting",
+           "version": "1.0.0e"
+         },
+         {
+           "type": "grafana",
+           "id": "grafana",
+           "name": "Grafana",
+           "version": "10.3.3"
+         },
+         {
+           "type": "datasource",
+           "id": "prometheus",
+           "name": "Prometheus",
+           "version": "1.0.0"
+         }
+       ],
+       "annotations": {
+         "list": [
+           {
+             "builtIn": 1,
+             "datasource": {
+               "type": "grafana",
+               "uid": "-- Grafana --"
+             },
+             "enable": True,
+             "hide": True,
+             "iconColor": "rgba(0, 211, 255, 1)",
+             "name": "Annotations & Alerts",
+             "type": "dashboard"
+           }
+         ]
+       },
+       "editable": True,
+       "fiscalYearStartMonth": 0,
+       "graphTooltip": 0,
+       "id": None,
+       "links": [],
+       "liveNow": False,
+       "panels": panels,
+       "refresh": "5s",
+       "schemaVersion": 39,
+       "tags": [],
+       "templating": {
+         "list": []
+       },
+       "time": {
+         "from": "now-6h",
+         "to": "now"
+       },
+       "timepicker": {},
+       "timezone": "",
+       "title": dashboard_name,
+       "uid": "",
+       "version": 1,
+       "weekStart": ""
+     }
+    return dashboard
+
+   
+    # link_ids = add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_links=no_links, layout=layout, verbose=verbose, base_style=base_style, link_style=link_style, custom_styles=custom_styles, icon_to_group_mapping=icon_to_group_mapping)
+
+    # # If output_file is not provided, generate it from input_file
+    # if not output_file:
+    #     output_file = os.path.splitext(input_file)[0] + ".drawio"
+    #     gf_file= os.path.splitext(input_file)[0] + ".grafana.json"
+        
+    # output_folder = os.path.dirname(output_file) or "."
+    # output_filename = os.path.basename(output_file)
+    # output_gf_filename = os.path.basename(gf_file)
+    # os.makedirs(output_folder, exist_ok=True)
+
+    # diagram.dump_file(filename=output_filename, folder=output_folder)
+    # print("Saved file to:", output_file)
+    # create_grafana_dashboard(diagram,dashboard_filename=output_gf_filename,link_list=link_ids)
+
+def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False, gf_dashboard=False):
     """
     Generates a diagram from a given topology definition file, organizing and displaying nodes and links.
     
@@ -1005,6 +1522,7 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
     if 'grafana' in theme.lower():
         connector_links = add_connector_nodes(diagram, nodes, links, positions, styles=styles, verbose=verbose)
         add_links_with_connectors(diagram, connector_links, link_style=styles['link_style'], verbose=verbose)
+        gf_dashboard = True
 
     # If output_file is not provided, generate it from input_file
     if not output_file:
@@ -1017,11 +1535,21 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
     diagram.dump_file(filename=output_filename, folder=output_folder)
 
     print("Saved file to:", output_file)
+    if gf_dashboard:
+        output_gf_filename = os.path.basename(os.path.splitext(input_file)[0] + ".grafana.json")
+        if verbose:
+           print(connector_links)
+        link_id_list = []
+        for link in connector_links:
+            link_id_list.append(f"link_id:{link['link_id']}")
+        create_grafana_dashboard(diagram,dashboard_filename=output_gf_filename,link_list=link_id_list)
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Generate a topology diagram from a containerlab YAML or draw.io XML file.')
     parser.add_argument('-i', '--input', required=True, help='The filename of the input file (containerlab YAML for diagram generation).')
     parser.add_argument('-o', '--output', required=False, help='The output file path for the generated diagram (draw.io format).')
+    parser.add_argument('-g', '--gf_dashboard',default=False, required=False, help='Generate Grafana Dashboard Flag.')
     parser.add_argument('--include-unlinked-nodes', action='store_true', help='Include nodes without any links in the topology diagram')
     parser.add_argument('--no-links', action='store_true', help='Do not draw links between nodes in the topology diagram')
     parser.add_argument('--layout', type=str, default='vertical', choices=['vertical', 'horizontal'], help='Specify the layout of the topology diagram (vertical or horizontal)')
@@ -1034,6 +1562,6 @@ if __name__ == "__main__":
 
     script_dir = os.path.dirname(__file__)
 
-    main(args.input, args.output, args.theme, args.include_unlinked_nodes, args.no_links, args.layout, args.verbose)
+    main(args.input, args.output, args.theme, args.include_unlinked_nodes, args.no_links, args.layout, args.verbose, args.gf_dashboard)
 
 
