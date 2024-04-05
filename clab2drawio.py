@@ -3,6 +3,7 @@ import yaml
 from collections import defaultdict
 import argparse
 import os
+import inquirer
 
 def assign_graphlevels(nodes, links, verbose=False):
     """
@@ -543,7 +544,7 @@ def load_styles_from_config(config_path):
     return base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping
 
 
-def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False):
+def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False, interactive=False):
     """
     Generates a diagram from a given topology definition file, organizing and displaying nodes and links.
     
@@ -567,6 +568,48 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
 
    # Nodes remain the same
     nodes = containerlab_data['topology']['nodes']
+
+    if theme in ['bright', 'dark']:
+        config_path = os.path.join(script_dir, f'styles/{theme}.yaml')
+    else:
+        # Assume the user has provided a custom path
+        config_path = theme
+    base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = load_styles_from_config(config_path)
+
+    if interactive:
+        tmp_nodes=list(nodes.keys())
+        level=0
+        while True:
+            os.system('clear -x')
+            level+=1
+            level_nodes=inquirer.prompt([inquirer.Checkbox('current_nodes', message="Level " + str(level) + " nodes", choices=tmp_nodes),])
+            for node in level_nodes['current_nodes']:
+                if "labels" in nodes[node].keys():
+                    nodes[node]["labels"]["graph-level"]=level
+                else:
+                    labels=dict()
+                    labels["graph-level"]=level
+                    nodes[node]["labels"]=labels
+                tmp_nodes.remove(node)
+            if(len(tmp_nodes) == 0):
+                    break
+
+        tmp_nodes=list(nodes.keys())
+        icons = list(icon_to_group_mapping.keys())
+        for icon in icons:
+            os.system('clear -x')
+            icon_nodes=inquirer.prompt([inquirer.Checkbox('current_nodes', message="Choose " + icon + " nodes", choices=tmp_nodes),])
+            for node in icon_nodes['current_nodes']:
+                if "labels" in nodes[node].keys():
+                    nodes[node]["labels"]["graph-icon"]=icon
+                else:
+                    labels=dict()
+                    labels["graph-icon"]=icon
+                    nodes[node]["labels"]=labels
+                tmp_nodes.remove(node)
+            if(len(tmp_nodes) == 0):
+                break
+
 
     # Prepare the links list by extracting source and target from each link's 'endpoints'
     links = []
@@ -595,15 +638,6 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
     # Add a diagram page
     diagram.add_diagram("Network Topology")
 
-    if theme in ['bright', 'dark']:
-        config_path = os.path.join(script_dir, f'styles/{theme}.yaml')
-    else:
-        # Assume the user has provided a custom path
-        config_path = theme
-
-
-    # Add nodes and links to the diagram
-    base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = load_styles_from_config(config_path)
     add_nodes_and_links(diagram, nodes, positions, links, node_graphlevels, no_links=no_links, layout=layout, verbose=verbose, base_style=base_style, link_style=link_style, custom_styles=custom_styles, icon_to_group_mapping=icon_to_group_mapping, src_label_style=src_label_style, trgt_label_style=trgt_label_style)
 
     # If output_file is not provided, generate it from input_file
@@ -627,6 +661,7 @@ def parse_arguments():
     parser.add_argument('--layout', type=str, default='vertical', choices=['vertical', 'horizontal'], help='Specify the layout of the topology diagram (vertical or horizontal)')
     parser.add_argument('--theme', default='bright', help='Specify the theme for the diagram (bright, dark) or the path to a custom style config file.')  
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output for debugging purposes')  
+    parser.add_argument('-I', '--interactive', action='store_true', required=False, help='Define graph-levels and graph-icons in interactive mode')
     return parser.parse_args()
     
 if __name__ == "__main__":
@@ -634,6 +669,6 @@ if __name__ == "__main__":
 
     script_dir = os.path.dirname(__file__)
 
-    main(args.input, args.output, args.theme, args.include_unlinked_nodes, args.no_links, args.layout, args.verbose)
+    main(args.input, args.output, args.theme, args.include_unlinked_nodes, args.no_links, args.layout, args.verbose, args.interactive)
 
 

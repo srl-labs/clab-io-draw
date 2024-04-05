@@ -1,2 +1,3 @@
 n2g==0.3.3
 PyYAML==6.0.1
+inquirer==3.2.4
