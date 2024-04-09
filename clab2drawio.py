@@ -3,7 +3,11 @@ import yaml
 from collections import defaultdict
 import argparse
 import os
-import inquirer
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.shortcuts import checkboxlist_dialog, yes_no_dialog
+
 
 def assign_graphlevels(nodes, links, verbose=False):
     """
@@ -543,6 +547,92 @@ def load_styles_from_config(config_path):
 
     return base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping
 
+def interactive_mode(nodes, icon_to_group_mapping):
+    previous_summary = { "Levels":{}, "Icons": {}}
+    for node, node_info in nodes.items():
+        try:
+            level = node_info["labels"]["graph-level"]
+            if level not in previous_summary["Levels"]:
+                previous_summary["Levels"][level] = []
+            previous_summary["Levels"][level].append(node)
+            
+            icon = node_info["labels"]["graph-icon"]
+            if icon not in previous_summary["Icons"]:
+                previous_summary["Icons"][icon] = []
+            previous_summary["Icons"][icon].append(node)
+        except:
+            continue
+
+    result=False
+    while not result:
+        summary = { "Levels":{}, "Icons": {}}
+        tmp_nodes = list(nodes.keys())
+        level = 0
+        while True:
+            level += 1
+            level_nodes = checkboxlist_dialog(
+                title=f"Level {level} nodes",
+                text="Choose the nodes for this level:",
+                values=[(node, node) for node in tmp_nodes],
+                default_values=previous_summary["Levels"][level] if level in previous_summary["Levels"] else []
+            ).run()
+    
+            if not level_nodes:
+                break
+    
+            for node in level_nodes:
+                if "labels" in nodes[node]:
+                    nodes[node]["labels"]["graph-level"] = level
+                else:
+                    nodes[node]["labels"] = {"graph-level": level}
+                
+                if level not in summary["Levels"]:
+                    summary["Levels"][level] = []
+                summary["Levels"][level].append(node)
+                tmp_nodes.remove(node)
+    
+            if not tmp_nodes:
+                break
+
+        tmp_nodes = list(nodes.keys())
+        icons = list(icon_to_group_mapping.keys())
+        for icon in icons:
+            icon_nodes = checkboxlist_dialog(
+                title=f"Choose {icon} nodes",
+                text="Select the nodes for this icon:",
+                values=[(node, node) for node in tmp_nodes],
+                default_values=previous_summary["Icons"][icon] if icon in previous_summary["Icons"] else []
+            ).run()
+    
+            if not icon_nodes:
+                break
+    
+            for node in icon_nodes:
+                if "labels" in nodes[node]:
+                    nodes[node]["labels"]["graph-icon"] = icon
+                else:
+                    nodes[node]["labels"] = {"graph-icon": icon}
+                if icon not in summary["Icons"]:
+                    summary["Icons"][icon] = []
+                summary["Icons"][icon].append(node)
+                tmp_nodes.remove(node)
+    
+            if not tmp_nodes:
+                break
+
+        summary_tree = ""
+        for key, info in summary.items():
+            summary_tree += f"\n### {key} ###\n"
+            for item, node_list in info.items():
+                summary_tree += f"[ {item} ]\n"
+                for node in node_list:
+                    summary_tree += f"    - {node}\n"
+        summary_tree += "\n\nDo you want to keep it like this? Select < No > to edit your configuration."
+
+        previous_summary=summary
+        result = yes_no_dialog(
+            title='SUMMARY',
+            text=summary_tree).run()
 
 def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False, interactive=False):
     """
@@ -575,41 +665,9 @@ def main(input_file, output_file, theme, include_unlinked_nodes=False, no_links=
         # Assume the user has provided a custom path
         config_path = theme
     base_style, link_style, src_label_style, trgt_label_style, custom_styles, icon_to_group_mapping = load_styles_from_config(config_path)
-
+    
     if interactive:
-        tmp_nodes=list(nodes.keys())
-        level=0
-        while True:
-            os.system('clear -x')
-            level+=1
-            level_nodes=inquirer.prompt([inquirer.Checkbox('current_nodes', message="Level " + str(level) + " nodes", choices=tmp_nodes),])
-            for node in level_nodes['current_nodes']:
-                if "labels" in nodes[node].keys():
-                    nodes[node]["labels"]["graph-level"]=level
-                else:
-                    labels=dict()
-                    labels["graph-level"]=level
-                    nodes[node]["labels"]=labels
-                tmp_nodes.remove(node)
-            if(len(tmp_nodes) == 0):
-                    break
-
-        tmp_nodes=list(nodes.keys())
-        icons = list(icon_to_group_mapping.keys())
-        for icon in icons:
-            os.system('clear -x')
-            icon_nodes=inquirer.prompt([inquirer.Checkbox('current_nodes', message="Choose " + icon + " nodes", choices=tmp_nodes),])
-            for node in icon_nodes['current_nodes']:
-                if "labels" in nodes[node].keys():
-                    nodes[node]["labels"]["graph-icon"]=icon
-                else:
-                    labels=dict()
-                    labels["graph-icon"]=icon
-                    nodes[node]["labels"]=labels
-                tmp_nodes.remove(node)
-            if(len(tmp_nodes) == 0):
-                break
-
+        interactive_mode(nodes, icon_to_group_mapping)
 
     # Prepare the links list by extracting source and target from each link's 'endpoints'
     links = []
