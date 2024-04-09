@@ -1,3 +1,7 @@
+#General Diagram settings:
+pagew: "auto"
+pageh: "auto"
+
 # Base style for nodes; defines the general appearance for all nodes.
 base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;fontColor=#F0F0F0;"
 

@@ -12,6 +12,9 @@ base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPositi
 port_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=6;strokeColor=#98A2AE;fillColor=#BEC8D2;"
 connector_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=6;fillColor=#BEC8D2;strokeColor=none;noLabel=1;"
 
+connector_width:  8
+connector_height: 8 
+
 # Style for links between nodes
 link_style: "rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startSize=6;endArrow=classicThin;endFill=1;endSize=2;fontSize=8;strokeColor=#98A2AE;fontSize=6;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;jumpStyle=gap;"
 
