@@ -18,15 +18,15 @@ class GrafanaDashboard:
         # Legend format needs to match the format expected by the metric
         panelQueryList = {
             "IngressTraffic": {
-                "rule_expr": "gnmic_in_bps",
+                "rule_expr": "interface_traffic_rate_in_bps",
                 "legend_format": '{{source}}:{{interface_name}}:in',
             },
             "EgressTraffic": {
-                "rule_expr": "gnmic_out_bps",
+                "rule_expr": "interface_traffic_rate_out_bps",
                 "legend_format": '{{source}}:{{interface_name}}:out',
             },
             "ItfOperState": {
-                "rule_expr": "gnmic_oper_state",
+                "rule_expr": "interface_oper_state",
                 "legend_format": 'oper_state:{{source}}:{{interface_name}}',
             },
         }
@@ -47,11 +47,11 @@ class GrafanaDashboard:
         for link in self.links:
             link_id =  f"{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
 
-            # Traffic in
+            # Traffic out
             rulesData.append(
                 self.gf_flowchart_rule_traffic(
-                    ruleName=f"{link.source.name}:{link.source_intf}:in",
-                    metric=f"{link.source.name}:{link.source_intf}:in",
+                    ruleName=f"{link.source.name}:{link.source_intf}:out",
+                    metric=f"{link.source.name}:{link.source_intf}:out",
                     link_id=link_id,
                     order=i,
                 )
@@ -86,9 +86,7 @@ class GrafanaDashboard:
             ),
             indent=4,
         )
-        with open(self.dashboard_filename, 'w') as f:
-            f.write(dashboard_json)
-            print("Saved Grafana dashboard file to:", self.dashboard_filename)
+        return dashboard_json
 
     def gf_dashboard_datasource_target(self, rule_expr="promql_query", legend_format=None, refId="Query1"):
         """
