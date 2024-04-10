@@ -560,7 +560,7 @@ def interactive_mode(nodes, icon_to_group_mapping):
             if icon not in previous_summary["Icons"]:
                 previous_summary["Icons"][icon] = []
             previous_summary["Icons"][icon].append(node)
-        except:
+        except KeyError:
             continue
 
     result=False
