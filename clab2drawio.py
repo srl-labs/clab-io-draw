@@ -457,30 +457,30 @@ def adjust_node_levels(diagram):
     used_levels = diagram.get_used_levels()
     max_level = diagram.get_max_level()
     min_level = diagram.get_min_level()
-    print(f"Initial used levels: {used_levels}")
+    #print(f"Initial used levels: {used_levels}")
     if len(used_levels) <= 1:
-        print("Only one level present, no adjustment needed.")
+        #print("Only one level present, no adjustment needed.")
         return  # Only one level present, no adjustment needed
 
     current_level = min_level
     while current_level < max_level + 1:
         #if level is the first used level or the last used level, skip it
         if current_level == min_level:
-            print(f"Skip Level: {current_level} because it is the first or last level")
+            #print(f"Skip Level: {current_level} because it is the first or last level")
             current_level += 1
             continue
 
         nodes_at_current_level = diagram.get_nodes_by_level(current_level)
         nodes_at_next_level = diagram.get_nodes_by_level(current_level + 1)
-        print(f"Processing level {current_level}:")
-        print(f"Nodes at current level: {{current_level}} {[node.name for node in nodes_at_current_level.values()]}")
+        #print(f"Processing level {current_level}:")
+        #print(f"Nodes at current level: {{current_level}} {[node.name for node in nodes_at_current_level.values()]}")
         next_level = current_level + 1
         before_level = current_level - 1
         nodes_to_move = []
         # if nodes_at_next_level:
 
         if len(nodes_at_current_level.items()) == 1:
-            print(f"Only one node found at level {current_level}. No adjustment needed.")
+            #print(f"Only one node found at level {current_level}. No adjustment needed.")
             current_level += 1
             continue
         for node_name , node in nodes_at_current_level.items():          
@@ -489,33 +489,33 @@ def adjust_node_levels(diagram):
             
             if not has_upstream_connection:
                 nodes_to_move.append(node)
-            else:
-                print(f"Node {node_name} has {len(node.get_upstream_links_towards_level(before_level))} upstream links against Level {before_level} No adjustment needed.")
+            #else:
+                #print(f"Node {node_name} has {len(node.get_upstream_links_towards_level(before_level))} upstream links against Level {before_level} No adjustment needed.")
 
         if (len(nodes_to_move) == len(nodes_at_current_level) ):
-            print(f"Nothing to move here")
+            #print(f"Nothing to move here")
             current_level += 1
             continue
-        else:
-            for node in nodes_to_move:
-                print(f"!Node {node.name} does not have an upstream connection to level {before_level}. Marked for movement.")
+        #else:
+            #for node in nodes_to_move:
+                #print(f"!Node {node.name} does not have an upstream connection to level {before_level}. Marked for movement.")
 
 
         if nodes_to_move:
-            print(f"Because we need to move, we are increasing all node_graphlevels from the next Levels Nodes by one level")
+            #print(f"Because we need to move, we are increasing all node_graphlevels from the next Levels Nodes by one level")
 
             for level in range(max_level, current_level, -1):
                 nodes_at_level = diagram.get_nodes_by_level(level)
                 for node in nodes_at_level.values():
                     node.graph_level += 1
-                    print(f"  Moving node {node.name} from level {level} to level {level + 1}.")
+                    #print(f"  Moving node {node.name} from level {level} to level {level + 1}.")
 
             # Move the nodes marked for movement to the next level
             for node in nodes_to_move:
                 node.graph_level += 1
-                print(f"  Moving node {node.name} from level {current_level} to level {next_level}")
+                #print(f"  Moving node {node.name} from level {current_level} to level {next_level}")
 
-            print(f"Moved nodes at level {current_level} to level {next_level}.")
+            #print(f"Moved nodes at level {current_level} to level {next_level}.")
             update_links(diagram.get_links_from_nodes())
             max_level = diagram.get_max_level()
 
@@ -539,7 +539,7 @@ def adjust_node_levels(diagram):
                     level_diff = node.graph_level - link.target.graph_level
                     if level_diff > 1:
                         node.graph_level -= 1
-                        print(f"  Moving node {node.name} from level {level} to level {level - 1} due to upstream link with level difference > 1")
+                        #print(f"  Moving node {node.name} from level {level} to level {level - 1} due to upstream link with level difference > 1")
                         update_links(diagram.get_links_from_nodes())
                         max_level = diagram.get_max_level()
                         break  # Stop moving the node after adjusting its level once
@@ -568,6 +568,7 @@ def assign_graphlevels(diagram, verbose=False):
         already_set = True
     else:
         already_set = False
+        print("Not all graph levels set in the .clab file. Assigning graph levels based on downstream links. Expect experimental output. Please consider assigning graph levels to your .clab file, or use it with -I for interactive mode. Find more information here: https://github.com/srl-labs/clab-io-draw/blob/grafana_style/docs/clab2drawio.md#influencing-node-placement")
 
     # Helper function to assign graphlevel by recursively checking connections
     def set_graphlevel(node, current_graphlevel, visited=None):
