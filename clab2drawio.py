@@ -605,7 +605,7 @@ def interactive_mode(nodes, icon_to_group_mapping):
             ).run()
     
             if not icon_nodes:
-                break
+                continue
     
             for node in icon_nodes:
                 if "labels" in nodes[node]:
