@@ -1,7 +1,4 @@
 venv/*
-*.json
 __pycache__
-*.drawio
-*.yml
 grafana_test/
 testlabsv2/
