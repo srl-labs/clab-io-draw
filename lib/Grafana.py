@@ -29,6 +29,14 @@ class GrafanaDashboard:
                 "rule_expr": "interface_oper_state",
                 "legend_format": 'oper_state:{{source}}:{{interface_name}}',
             },
+            "ItfOperState2": {
+                "rule_expr": "port_oper_state",
+                "legend_format": 'oper_state:{{source}}:{{interface_name}}',
+            },
+            "EgressTraffic2": {
+                "rule_expr": "rate(port_ethernet_statistics_out_octets[10s])*8",
+                "legend_format": '{{source}}:{{interface_name}}:out',
+            },
         }
         # Create a targets list to embed in the JSON object, we add all the other default JSON attributes to the list
         targetsList = []
@@ -45,7 +53,7 @@ class GrafanaDashboard:
         rulesData = []
         i = 0
         for link in self.links:
-            link_id =  f"{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
+            link_id =  f"link_id:{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
 
             # Traffic out
             rulesData.append(
@@ -59,13 +67,13 @@ class GrafanaDashboard:
              
             i = i + 2
             
-
+            port_id =  f"{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
             # Port State:
             rulesData.append(
                 self.gf_flowchart_rule_operstate(
                     ruleName=f"oper_state:{link.source.name}:{link.source_intf}",
                     metric=f"oper_state:{link.source.name}:{link.source_intf}",
-                    link_id=link_id,
+                    link_id=port_id,
                     order=i + 3,
                 )
             )

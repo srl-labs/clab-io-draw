@@ -52,7 +52,7 @@
             "colorOn": "a",
             "hidden": false,
             "pattern": "",
-            "style": "labelBackgroundColor"
+            "style": "fillColor"
           }
         ],
         "options": {
