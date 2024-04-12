@@ -1,0 +1,47 @@
+[
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "flowchartsData": {
+        "allowDrawio": true,
+        "editorTheme": "kennedy",
+        "editorUrl": "https://embed.diagrams.net/",
+        "flowcharts": [
+          {
+            "center": true,
+            "csv": "",
+            "download": false,
+            "enableAnim": true,
+            "grid": false,
+            "lock": true,
+            "name": "Main",
+            "scale": true,
+            "tooltip": true,
+            "type": "xml",
+            "url": "http://<YourUrl>/<Your XML/drawio file/api>",
+            "xml": null,
+            "zoom": "100%"
+          }
+        ]
+      },
+      "format": "short",
+      "graphId": "flowchart_1",
+      "gridPos": {
+        "h": 20,
+        "w": 17,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "rulesData": {
+        "rulesData": null
+      },
+      "targets": null,
+      "title": "Network Topology",
+      "type": "agenty-flowcharting-panel",
+      "valueName": "current",
+      "version": "1.0.0d"
+    }
+  ]
