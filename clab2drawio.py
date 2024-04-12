@@ -664,9 +664,6 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
         print(error_message)
         exit()
 
-    if 'grafana' in theme.lower():
-        no_links = True
-
     if theme in ['nokia_bright', 'nokia_dark', 'grafana_dark']:
         config_path = os.path.join(script_dir, f'styles/{theme}.yaml')
     else:
