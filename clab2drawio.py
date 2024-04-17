@@ -4,7 +4,10 @@ from lib.Link import Link
 from lib.Node import Node
 from lib.Grafana import GrafanaDashboard
 from collections import defaultdict
-import yaml, argparse, os, re, random
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.shortcuts import checkboxlist_dialog, yes_no_dialog
 
 def add_ports(diagram, styles, verbose=True):
     nodes = diagram.nodes
@@ -607,6 +610,7 @@ def assign_graphlevels(diagram, verbose=False):
     return sorted_nodes
 
 
+
 def load_styles_from_config(config_path):
     try:
         with open(config_path, 'r') as file:
@@ -644,7 +648,95 @@ def load_styles_from_config(config_path):
 
     return styles
 
-def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False):
+def interactive_mode(nodes, icon_to_group_mapping):
+    previous_summary = { "Levels":{}, "Icons": {}}
+    for node, node_info in nodes.items():
+        try:
+            level = node_info["labels"]["graph-level"]
+            if level not in previous_summary["Levels"]:
+                previous_summary["Levels"][level] = []
+            previous_summary["Levels"][level].append(node)
+            
+            icon = node_info["labels"]["graph-icon"]
+            if icon not in previous_summary["Icons"]:
+                previous_summary["Icons"][icon] = []
+            previous_summary["Icons"][icon].append(node)
+        except KeyError:
+            continue
+
+    result=False
+    while not result:
+        summary = { "Levels":{}, "Icons": {}}
+        tmp_nodes = list(nodes.keys())
+        level = 0
+        while True:
+            level += 1
+            level_nodes = checkboxlist_dialog(
+                title=f"Level {level} nodes",
+                text=f"Choose the nodes for level {level}:",
+                values=[(node, node) for node in tmp_nodes],
+                default_values=previous_summary["Levels"][level] if level in previous_summary["Levels"] else []
+            ).run()
+    
+            if not level_nodes:
+                continue
+    
+            for node in level_nodes:
+                if "labels" in nodes[node]:
+                    nodes[node]["labels"]["graph-level"] = level
+                else:
+                    nodes[node]["labels"] = {"graph-level": level}
+                
+                if level not in summary["Levels"]:
+                    summary["Levels"][level] = []
+                summary["Levels"][level].append(node)
+                tmp_nodes.remove(node)
+    
+            if not tmp_nodes:
+                break
+
+        tmp_nodes = list(nodes.keys())
+        icons = list(icon_to_group_mapping.keys())
+        for icon in icons:
+            icon_nodes = checkboxlist_dialog(
+                title=f"Choose {icon} nodes",
+                text=f"Select the nodes for the {icon} icon:",
+                values=[(node, node) for node in tmp_nodes],
+                default_values=previous_summary["Icons"][icon] if icon in previous_summary["Icons"] else []
+            ).run()
+    
+            if not icon_nodes:
+                continue
+    
+            for node in icon_nodes:
+                if "labels" in nodes[node]:
+                    nodes[node]["labels"]["graph-icon"] = icon
+                else:
+                    nodes[node]["labels"] = {"graph-icon": icon}
+                if icon not in summary["Icons"]:
+                    summary["Icons"][icon] = []
+                summary["Icons"][icon].append(node)
+                tmp_nodes.remove(node)
+    
+            if not tmp_nodes:
+                break
+
+        summary_tree = ""
+        for key, info in summary.items():
+            summary_tree += f"\n### {key} ###\n"
+            for item, node_list in info.items():
+                summary_tree += f"[ {item} ]\n"
+                for node in node_list:
+                    summary_tree += f"    - {node}\n"
+        summary_tree += "\n\nDo you want to keep it like this? Select < No > to edit your configuration."
+
+        previous_summary=summary
+        result = yes_no_dialog(
+            title='SUMMARY',
+            text=summary_tree).run()
+
+
+def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False, interactive=False):
     """
     Generates a diagram from a given topology definition file, organizing and displaying nodes and links.
     
@@ -697,6 +789,9 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
         nodes[node_name] = node
 
     diagram.nodes = nodes
+    
+    if interactive:
+        interactive_mode(nodes_from_clab, styles['icon_to_group_mapping'])
 
     # Prepare the links list by extracting source and target from each link's 'endpoints'
     links_from_clab = []
@@ -823,6 +918,7 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
 
     print("Saved file to:", output_file)
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Generate a topology diagram from a containerlab YAML or draw.io XML file.')
     parser.add_argument('-i', '--input', required=True, help='The filename of the input file (containerlab YAML for diagram generation).')
@@ -833,11 +929,13 @@ def parse_arguments():
     parser.add_argument('--layout', type=str, default='vertical', choices=['vertical', 'horizontal'], help='Specify the layout of the topology diagram (vertical or horizontal)')
     parser.add_argument('--theme', default='nokia_bright', help='Specify the theme for the diagram (nokia_bright, nokia_dark, grafana_dark) or the path to a custom style config file.')  
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output for debugging purposes')  
+    parser.add_argument('-I', '--interactive', action='store_true', required=False, help='Define graph-levels and graph-icons in interactive mode')
     return parser.parse_args()
     
 if __name__ == "__main__":
     args = parse_arguments()
 
     script_dir = os.path.dirname(__file__)
+    
+    main(args.input, args.output, args.gf_dashboard, args.theme, args.include_unlinked_nodes, args.no_links, args.layout, args.verbose, args.interactive)
 
-    main(args.input, args.output, args.gf_dashboard, args.theme, args.include_unlinked_nodes, args.no_links, args.layout, args.verbose)

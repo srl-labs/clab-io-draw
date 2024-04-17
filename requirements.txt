@@ -1,2 +1,5 @@
 n2g==0.3.3
+prompt-toolkit==3.0.43
 PyYAML==6.0.1
+six==1.16.0
+wcwidth==0.2.13
