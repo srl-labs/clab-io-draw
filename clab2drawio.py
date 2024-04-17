@@ -845,8 +845,10 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
       
     if not include_unlinked_nodes:
         connected_nodes = {name: node for name, node in nodes.items() if node.links}
-    diagram.nodes = connected_nodes
-    nodes = diagram.nodes
+        diagram.nodes = connected_nodes
+        nodes = diagram.nodes
+    else:
+        diagram.nodes = nodes
 
     assign_graphlevels(diagram, verbose=False)
     calculate_positions(diagram, layout=layout, verbose=verbose)
