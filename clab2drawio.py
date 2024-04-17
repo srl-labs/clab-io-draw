@@ -572,13 +572,13 @@ def interactive_mode(nodes, icon_to_group_mapping):
             level += 1
             level_nodes = checkboxlist_dialog(
                 title=f"Level {level} nodes",
-                text="Choose the nodes for this level:",
+                text=f"Choose the nodes for level {level}:",
                 values=[(node, node) for node in tmp_nodes],
                 default_values=previous_summary["Levels"][level] if level in previous_summary["Levels"] else []
             ).run()
     
             if not level_nodes:
-                break
+                continue
     
             for node in level_nodes:
                 if "labels" in nodes[node]:
@@ -599,7 +599,7 @@ def interactive_mode(nodes, icon_to_group_mapping):
         for icon in icons:
             icon_nodes = checkboxlist_dialog(
                 title=f"Choose {icon} nodes",
-                text="Select the nodes for this icon:",
+                text=f"Select the nodes for the {icon} icon:",
                 values=[(node, node) for node in tmp_nodes],
                 default_values=previous_summary["Icons"][icon] if icon in previous_summary["Icons"] else []
             ).run()
