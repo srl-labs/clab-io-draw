@@ -649,18 +649,17 @@ def load_styles_from_config(config_path):
 def interactive_mode(nodes, icon_to_group_mapping):
     # Initialize previous summary with existing node labels
     previous_summary = {"Levels": {}, "Icons": {}}
-    for node, node_info in nodes.items():
+    for node_name, node in nodes.items():
         try:
-            level = node_info["labels"]["graph-level"]
-            previous_summary["Levels"].setdefault(level, []).append(node)
+            level = node.graph_level
+            previous_summary["Levels"].setdefault(level, []).append(node_name)
 
-            icon = node_info["labels"]["graph-icon"]
-            previous_summary["Icons"].setdefault(icon, []).append(node)
-        except KeyError:
+            icon = node.graph_icon
+            previous_summary["Icons"].setdefault(icon, []).append(node_name)
+        except AttributeError:
             continue
 
-    result = False
-    while not result:
+    while True:
         summary = {"Levels": {}, "Icons": {}}
         tmp_nodes = list(nodes.keys())
         level = 0
@@ -677,17 +676,19 @@ def interactive_mode(nodes, icon_to_group_mapping):
                     default_values=previous_summary["Levels"].get(level, [])
                 ).run()
             else:
-                level_nodes = []
+                break
 
-            if not level_nodes:
-                level -= 1
+            if level_nodes is None:
+                return  # Exit the function if cancel button is clicked
+
+            if len(level_nodes) == 0:
                 continue
 
             # Update node labels and summary with assigned levels
-            for node in level_nodes:
-                nodes[node].setdefault("labels", {})["graph-level"] = level
-                summary["Levels"].setdefault(level, []).append(node)
-                tmp_nodes.remove(node)
+            for node_name in level_nodes:
+                nodes[node_name].graph_level = level
+                summary["Levels"].setdefault(level, []).append(node_name)
+                tmp_nodes.remove(node_name)
 
         tmp_nodes = list(nodes.keys())
         icons = list(icon_to_group_mapping.keys())
@@ -705,14 +706,17 @@ def interactive_mode(nodes, icon_to_group_mapping):
             else:
                 icon_nodes = []
 
+            if icon_nodes is None:
+                return  # Exit the function if cancel button is clicked
+
             if not icon_nodes:
                 continue
 
             # Update node labels and summary with assigned icons
-            for node in icon_nodes:
-                nodes[node].setdefault("labels", {})["graph-icon"] = icon
-                summary["Icons"].setdefault(icon, []).append(node)
-                tmp_nodes.remove(node)
+            for node_name in icon_nodes:
+                nodes[node_name].graph_icon = icon
+                summary["Icons"].setdefault(icon, []).append(node_name)
+                tmp_nodes.remove(node_name)
 
         # Generate summary tree for user confirmation
         summary_tree = ""
@@ -730,6 +734,12 @@ def interactive_mode(nodes, icon_to_group_mapping):
         # Prompt user for confirmation
         result = yes_no_dialog(title='SUMMARY', text=summary_tree).run()
 
+        if result is None:
+            return  # Exit the function if cancel button is clicked
+        elif result:
+            break  # Exit the loop if user confirms the summary
+
+    return summary
 
 def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False, interactive=False):
     """
@@ -764,9 +774,6 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
     diagram.layout = layout
 
     nodes_from_clab = containerlab_data['topology']['nodes']
-
-    if interactive:
-        interactive_mode(nodes_from_clab, styles['icon_to_group_mapping'])
 
     nodes = {}
     for node_name, node_data in nodes_from_clab.items():
@@ -849,6 +856,9 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
         nodes = diagram.nodes
     else:
         diagram.nodes = nodes
+
+    if interactive:
+        interactive_mode(diagram.nodes, styles['icon_to_group_mapping'])
 
     assign_graphlevels(diagram, verbose=False)
     calculate_positions(diagram, layout=layout, verbose=verbose)
