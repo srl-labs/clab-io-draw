@@ -10,7 +10,7 @@ get_extension() {
 # Function to show help message
 show_help() {
 cat << EOF
-Usage: docker run [DOCKER_OPTIONS] flosch62/clab-io-draw -i INPUT_FILE -o OUTPUT_FILE
+Usage: docker run -v "$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i INPUT_FILE
 
 This tool automatically converts between .drawio and .yaml file formats for Container Lab diagrams.
 
@@ -19,15 +19,21 @@ Options:
   -o, --output   Specify the path for the output file. The output format is determined by the input file type.
 
 Examples:
-  Convert .drawio to .yaml: docker run -v "\$(pwd)":/data flosch62/clab-io-draw -i input.drawio -o output.yaml
-  Convert .yaml to .drawio: docker run -v "\$(pwd)":/data flosch62/clab-io-draw -i input.yaml -o output.drawio
+  Convert .drawio to .yaml: docker run -v "\$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i input.drawio -o output.yaml
+  Convert .yaml to .drawio: docker run -v "\$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i input.yaml -o output.drawio
+
+clab2drawio.py help:
+$(python -u "/app/clab2drawio.py" -h)
+
+drawio2clab.py help:
+$(python -u "/app/drawio2clab.py" -h)
 EOF
 }
 
-# Check if no arguments were provided
-if [ $# -eq 0 ]; then
+# Check if no arguments were provided or if help option is specified
+if [ $# -eq 0 ] || [[ " $@ " =~ " -h " ]] || [[ " $@ " =~ " --help " ]]; then
   show_help
-  exit 1
+  exit 0
 fi
 
 script_name=""
@@ -41,12 +47,6 @@ for arg in "$@"; do
   fi
   prev_arg="$arg"
 done
-
-# Check for help option
-if [[ " $@ " =~ " -h " ]] || [[ " $@ " =~ " --help " ]]; then
-  show_help
-  exit 0
-fi
 
 # Determine the script based on file extension
 if [ ! -z "$input_file" ]; then

@@ -12,27 +12,13 @@
 - **Graph-icon Support**: Enhances node visualization by allowing users to specify graph-icon labels such as router, switch, or host to define custom icons for nodes in the generated diagrams.
 - **Customizable Styles**: Supports customization of node and link styles within the diagrams.
 
-## Installation
-
-Clone the repository to your local machine:
-
-```bash
-git clone https://github.com/FloSch62/clab2drawio.git
-cd clab2drawio
-```
-
-Ensure you have Python 3.x installed on your system. You can then install the required dependencies:
-```bash
-pip install -r requirements.txt
-```
-
 ## Usage
 To generate a network topology diagram from a containerlab YAML file, run the following command:
 
 ```bash
-python clab2drawio.py -i <path_to_your_yaml_file> -o <path_to_output_file>
+python clab2drawio.py -i <path_to_your_yaml_file> 
 ```
-The output will be a Draw.io diagram file saved in the output path. You can open this file with Draw.io to view and further edit your network topology diagram.
+The output will be a Draw.io diagram file saved in the output path. In case without -o, the file will be saved in folder of the input file. You can open this file with Draw.io to view and further edit your network topology diagram.
 
 ## Advanced Usage
 
@@ -73,17 +59,21 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
     ```bash
     python clab2drawio.py -i <path_to_your_yaml_file> -o <path_to_output_file>
     ```
+- `-g, --gf_dashboard`: Generates a grafana dashboard in grafana style. (WIP)
 
+    ```bash
+    python clab2drawio.py -i <path_to_your_yaml_file> -g
+    ```
 - `--include-unlinked-nodes`: Include nodes without any links in the topology diagram. By default, only nodes with at least one connection are included.
 
 - `--no-links`: Do not draw links between nodes in the topology diagram. This option can be useful for focusing on node placement or when the connectivity between nodes is not relevant.
 
 - `--layout`: Specifies the layout of the topology diagram (either `vertical` or `horizontal`). The default layout is `vertical`.
 
-- `--theme`: Specifies the theme for the diagram (`bright` or `dark`) or the path to a custom style config file. By default, the `bright` theme is used. Users can also create their own style file and place it in any directory, specifying its path with this option.
+- `--theme`: Specifies the theme for the diagram (`nokia_bright` or `nokia_dark`) or the path to a custom style config file. By default, the `bright` theme is used. Users can also create their own style file and place it in any directory, specifying its path with this option. Feel free to contribute your own styles.
 
     ```bash
-    python clab2drawio.py --theme dark -i <path_to_your_yaml_file>
+    python clab2drawio.py --theme nokia_dark -i <path_to_your_yaml_file>
     ```
     
     Or using a custom style file:
@@ -99,10 +89,14 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
 The tool allows for customization of node and link styles within the generated diagrams, making it possible to adjust the appearance to fit specific requirements or preferences.
 
 ### Custom Styles
-To customize styles, you can edit the `clab2drawio_styles.yaml` configuration file. This file defines the base style, link style, source and target label styles, and custom styles for different types of nodes based on their roles (e.g., routers, switches, servers).
+To customize styles, you can edit or copy the `nokia_bright.yaml` configuration file. This file defines the base style, link style, source and target label styles, and custom styles for different types of nodes based on their roles (e.g., routers, switches, servers).
 
-An example snippet from `clab2drawio_styles.yaml`:
+An example snippet from `nokia_bright.yaml`:
 ```yaml
+#General Diagram settings:
+pagew: "auto"
+pageh: "auto"
+
 base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;"
 link_style: "endArrow=none;jumpStyle=gap;"
 src_label_style: "verticalLabelPosition=bottom;verticalAlign=top;align=left;spacingLeft=1;spacingTop=1;spacingBottom=0;"
@@ -120,7 +114,7 @@ icon_to_group_mapping:
 ```
 
 ### Applying Styles
-Custom styles are applied to nodes and links based on the configurations specified in the style configuration files (`bright.yaml` for the bright theme and `dark.yaml` for the dark theme), located in the `styles` directory by default. To apply a new style to a node type, update its corresponding style definition in the appropriate YAML file. These styles determine the appearance of nodes and links in the generated diagram, including shapes, colors, and icons.
+Custom styles are applied to nodes and links based on the configurations specified in the style configuration files (`nokia_bright.yaml` for the bright theme and `nokia_dark.yaml` for the dark theme), located in the `styles` directory by default. To apply a new style to a node type, update its corresponding style definition in the appropriate YAML file. These styles determine the appearance of nodes and links in the generated diagram, including shapes, colors, and icons.
 
 If you wish to create a completely new style, you can create a new YAML file with your custom configurations. This file can be placed in any directory, and you can specify its path when running the script using the `--theme` option.
 

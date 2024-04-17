@@ -7,6 +7,7 @@ COPY clab2drawio.py /app/
 COPY requirements.txt /app/
 COPY entrypoint.sh /app/
 COPY styles/ /app/styles/
+COPY lib/ /app/lib/
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
