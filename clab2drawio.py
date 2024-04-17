@@ -4,10 +4,8 @@ from lib.Link import Link
 from lib.Node import Node
 from lib.Grafana import GrafanaDashboard
 from collections import defaultdict
-from prompt_toolkit import prompt
-from prompt_toolkit.completion import WordCompleter
-from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.shortcuts import checkboxlist_dialog, yes_no_dialog
+import yaml, argparse, os, re, random
 
 def add_ports(diagram, styles, verbose=True):
     nodes = diagram.nodes
@@ -649,78 +647,74 @@ def load_styles_from_config(config_path):
     return styles
 
 def interactive_mode(nodes, icon_to_group_mapping):
-    previous_summary = { "Levels":{}, "Icons": {}}
+    # Initialize previous summary with existing node labels
+    previous_summary = {"Levels": {}, "Icons": {}}
     for node, node_info in nodes.items():
         try:
             level = node_info["labels"]["graph-level"]
-            if level not in previous_summary["Levels"]:
-                previous_summary["Levels"][level] = []
-            previous_summary["Levels"][level].append(node)
-            
+            previous_summary["Levels"].setdefault(level, []).append(node)
+
             icon = node_info["labels"]["graph-icon"]
-            if icon not in previous_summary["Icons"]:
-                previous_summary["Icons"][icon] = []
-            previous_summary["Icons"][icon].append(node)
+            previous_summary["Icons"].setdefault(icon, []).append(node)
         except KeyError:
             continue
 
-    result=False
+    result = False
     while not result:
-        summary = { "Levels":{}, "Icons": {}}
+        summary = {"Levels": {}, "Icons": {}}
         tmp_nodes = list(nodes.keys())
         level = 0
-        while True:
+
+        # Assign levels to nodes
+        while tmp_nodes:
             level += 1
-            level_nodes = checkboxlist_dialog(
-                title=f"Level {level} nodes",
-                text=f"Choose the nodes for level {level}:",
-                values=[(node, node) for node in tmp_nodes],
-                default_values=previous_summary["Levels"][level] if level in previous_summary["Levels"] else []
-            ).run()
-    
+            valid_nodes = [(node, node) for node in tmp_nodes]
+            if valid_nodes:
+                level_nodes = checkboxlist_dialog(
+                    title=f"Level {level} nodes",
+                    text=f"Choose the nodes for level {level}:",
+                    values=valid_nodes,
+                    default_values=previous_summary["Levels"].get(level, [])
+                ).run()
+            else:
+                level_nodes = []
+
             if not level_nodes:
+                level -= 1
                 continue
-    
+
+            # Update node labels and summary with assigned levels
             for node in level_nodes:
-                if "labels" in nodes[node]:
-                    nodes[node]["labels"]["graph-level"] = level
-                else:
-                    nodes[node]["labels"] = {"graph-level": level}
-                
-                if level not in summary["Levels"]:
-                    summary["Levels"][level] = []
-                summary["Levels"][level].append(node)
+                nodes[node].setdefault("labels", {})["graph-level"] = level
+                summary["Levels"].setdefault(level, []).append(node)
                 tmp_nodes.remove(node)
-    
-            if not tmp_nodes:
-                break
 
         tmp_nodes = list(nodes.keys())
         icons = list(icon_to_group_mapping.keys())
+
+        # Assign icons to nodes
         for icon in icons:
-            icon_nodes = checkboxlist_dialog(
-                title=f"Choose {icon} nodes",
-                text=f"Select the nodes for the {icon} icon:",
-                values=[(node, node) for node in tmp_nodes],
-                default_values=previous_summary["Icons"][icon] if icon in previous_summary["Icons"] else []
-            ).run()
-    
+            valid_nodes = [(node, node) for node in tmp_nodes]
+            if valid_nodes:
+                icon_nodes = checkboxlist_dialog(
+                    title=f"Choose {icon} nodes",
+                    text=f"Select the nodes for the {icon} icon:",
+                    values=valid_nodes,
+                    default_values=previous_summary["Icons"].get(icon, [])
+                ).run()
+            else:
+                icon_nodes = []
+
             if not icon_nodes:
                 continue
-    
-            for node in icon_nodes:
-                if "labels" in nodes[node]:
-                    nodes[node]["labels"]["graph-icon"] = icon
-                else:
-                    nodes[node]["labels"] = {"graph-icon": icon}
-                if icon not in summary["Icons"]:
-                    summary["Icons"][icon] = []
-                summary["Icons"][icon].append(node)
-                tmp_nodes.remove(node)
-    
-            if not tmp_nodes:
-                break
 
+            # Update node labels and summary with assigned icons
+            for node in icon_nodes:
+                nodes[node].setdefault("labels", {})["graph-icon"] = icon
+                summary["Icons"].setdefault(icon, []).append(node)
+                tmp_nodes.remove(node)
+
+        # Generate summary tree for user confirmation
         summary_tree = ""
         for key, info in summary.items():
             summary_tree += f"\n### {key} ###\n"
@@ -730,10 +724,11 @@ def interactive_mode(nodes, icon_to_group_mapping):
                     summary_tree += f"    - {node}\n"
         summary_tree += "\n\nDo you want to keep it like this? Select < No > to edit your configuration."
 
-        previous_summary=summary
-        result = yes_no_dialog(
-            title='SUMMARY',
-            text=summary_tree).run()
+        # Update previous summary for the next iteration
+        previous_summary = summary
+
+        # Prompt user for confirmation
+        result = yes_no_dialog(title='SUMMARY', text=summary_tree).run()
 
 
 def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False, interactive=False):
@@ -770,6 +765,9 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
 
     nodes_from_clab = containerlab_data['topology']['nodes']
 
+    if interactive:
+        interactive_mode(nodes_from_clab, styles['icon_to_group_mapping'])
+
     nodes = {}
     for node_name, node_data in nodes_from_clab.items():
         node = Node(
@@ -790,9 +788,6 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
 
     diagram.nodes = nodes
     
-    if interactive:
-        interactive_mode(nodes_from_clab, styles['icon_to_group_mapping'])
-
     # Prepare the links list by extracting source and target from each link's 'endpoints'
     links_from_clab = []
     for link in containerlab_data['topology'].get('links', []):
