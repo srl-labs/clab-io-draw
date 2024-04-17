@@ -27,7 +27,7 @@
     "decimals": 1,
     "gradient": false,
     "hidden": false,
-    "invert": false,
+    "invert": true,
     "mappingType": 1,
     "mapsDat": {
       "events": {
@@ -66,7 +66,7 @@
           {
             "hidden": false,
             "pattern": "",
-            "textOn": "wmd",
+            "textOn": "wc",
             "textPattern": "/.*/",
             "textReplace": "content"
           }
@@ -89,20 +89,20 @@
       {
         "color": "rgba(75, 221, 51, 1)",
         "comparator": "ge",
-        "level": 0,
-        "value": 500000
+        "value": 500000,
+        "level": 0
       },
       {
         "color": "rgba(255, 128, 0, 1)",
         "comparator": "gt",
-        "level": 0,
-        "value": 2000000
+        "value": 2000000,
+        "level": 0
       },
       {
         "color": "rgba(245, 54, 54, 0.9)",
         "comparator": "ge",
-        "level": 0,
-        "value": 5000000
+        "value": 5000000,
+        "level": 0
       }
     ],
     "order": 0,

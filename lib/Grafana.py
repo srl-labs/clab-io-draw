@@ -34,7 +34,7 @@ class GrafanaDashboard:
                 "legend_format": 'oper_state:{{source}}:{{interface_name}}',
             },
             "EgressTraffic2": {
-                "rule_expr": "rate(port_ethernet_statistics_out_octets[10s])*8",
+                "rule_expr": "irate(port_ethernet_statistics_out_octets[$__rate_interval])*8",
                 "legend_format": '{{source}}:{{interface_name}}:out',
             },
         }

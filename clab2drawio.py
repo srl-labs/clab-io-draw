@@ -215,8 +215,8 @@ def add_ports(diagram, styles, verbose=True):
                 style=styles['connector_style']
             )
 
-            diagram.add_link(source=source_cID, target=midpoint_id, style=styles["link_style"], label='rate', link_id=f"{source_cID}")
-            diagram.add_link(source=target_cID, target=midpoint_id, style=styles["link_style"], label='rate', link_id=f"{target_cID}")
+            diagram.add_link(source=source_cID, target=midpoint_id, style=styles["link_style"], label='\u200B', link_id=f"{source_cID}")
+            diagram.add_link(source=target_cID, target=midpoint_id, style=styles["link_style"], label='\u200B', link_id=f"{target_cID}")
 
 
    # Create groups for each node and its connectors

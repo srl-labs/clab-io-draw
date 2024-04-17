@@ -16,7 +16,7 @@ connector_width:  8
 connector_height: 8 
 
 # Style for links between nodes
-link_style: "rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startSize=6;endArrow=classicThin;endFill=1;endSize=2;fontSize=8;strokeColor=#98A2AE;fontSize=6;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;jumpStyle=gap;"
+link_style: "rounded=0;orthogonalLoop=1;html=1;startSize=6;endArrow=classicThin;endFill=1;endSize=2;fontSize=10;strokeColor=#98A2AE;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;jumpStyle=gap;"
 
 # Styles for labels on the source and target ends of a link
 src_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=6;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;"
