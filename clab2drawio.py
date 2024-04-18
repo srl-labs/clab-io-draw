@@ -3,6 +3,7 @@ from lib.CustomDrawioDiagram import CustomDrawioDiagram
 from lib.Link import Link
 from lib.Node import Node
 from lib.Grafana import GrafanaDashboard
+from lib.Yaml_processor import YAMLProcessor
 from collections import defaultdict
 from prompt_toolkit.shortcuts import checkboxlist_dialog, yes_no_dialog
 import yaml, argparse, os, re, random
@@ -646,7 +647,7 @@ def load_styles_from_config(config_path):
 
     return styles
 
-def interactive_mode(nodes, icon_to_group_mapping):
+def interactive_mode(nodes, icon_to_group_mapping, containerlab_data, output_file, processor):
     # Initialize previous summary with existing node labels
     previous_summary = {"Levels": {}, "Icons": {}}
     for node_name, node in nodes.items():
@@ -690,6 +691,13 @@ def interactive_mode(nodes, icon_to_group_mapping):
                 summary["Levels"].setdefault(level, []).append(node_name)
                 tmp_nodes.remove(node_name)
 
+                # Check if 'labels' section exists, create it if necessary
+                if "labels" not in containerlab_data["topology"]["nodes"][node_name]:
+                    containerlab_data["topology"]["nodes"][node_name]["labels"] = {}
+
+                # Update containerlab_data with graph-level
+                containerlab_data["topology"]["nodes"][node_name]["labels"]["graph-level"] = level
+
         tmp_nodes = list(nodes.keys())
         icons = list(icon_to_group_mapping.keys())
 
@@ -718,6 +726,13 @@ def interactive_mode(nodes, icon_to_group_mapping):
                 summary["Icons"].setdefault(icon, []).append(node_name)
                 tmp_nodes.remove(node_name)
 
+                # Check if 'labels' section exists, create it if necessary
+                if "labels" not in containerlab_data["topology"]["nodes"][node_name]:
+                    containerlab_data["topology"]["nodes"][node_name]["labels"] = {}
+
+                # Update containerlab_data with graph-icon
+                containerlab_data["topology"]["nodes"][node_name]["labels"]["graph-icon"] = icon
+
         # Generate summary tree for user confirmation
         summary_tree = ""
         for key, info in summary.items():
@@ -738,6 +753,17 @@ def interactive_mode(nodes, icon_to_group_mapping):
             return  # Exit the function if cancel button is clicked
         elif result:
             break  # Exit the loop if user confirms the summary
+
+    # Prompt user if they want to update the ContainerLab file
+    update_file = yes_no_dialog(title='Update ContainerLab File', text="Do you want to update the ContainerLab file with the new configuration?").run()
+
+    if update_file:
+        # Save the updated containerlab_data to the output file using processor.save_yaml
+        modified_output_file = os.path.splitext(output_file)[0] + ".mod.yaml"   
+        processor.save_yaml(containerlab_data, modified_output_file)
+        print(f"ContainerLab file has been updated: {modified_output_file}")
+    else:
+        print("ContainerLab file has not been updated.")
 
     return summary
 
@@ -858,7 +884,8 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
         diagram.nodes = nodes
 
     if interactive:
-        interactive_mode(diagram.nodes, styles['icon_to_group_mapping'])
+        processor = YAMLProcessor()
+        interactive_mode(diagram.nodes, styles['icon_to_group_mapping'], containerlab_data, input_file, processor)
 
     assign_graphlevels(diagram, verbose=False)
     calculate_positions(diagram, layout=layout, verbose=verbose)

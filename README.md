@@ -71,7 +71,7 @@ pip install -r requirements.txt
 
 This section provides a brief overview on how to use the `drawio2clab` and `clab2drawio` tools. For detailed instructions, including command-line options and examples, please refer to the dedicated usage sections in their respective documentation files.
 
-Detailed Usages: [drawio2clab.md](docs/drawio2clab.md#usage) and [clab2drawio.md](docs/drawio2clab.md#usage)
+Detailed Usages: [drawio2clab.md](docs/drawio2clab.md#usage) and [clab2drawio.md](docs/clab2drawio.md#usage)
 
 ## drawio2clab
 
