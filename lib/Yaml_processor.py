@@ -40,7 +40,7 @@ class YAMLProcessor:
                 if flow_style is None:
                     yaml.dump(data, file, Dumper=self.CustomDumper, sort_keys=False, default_flow_style=False, indent=2)
                 else:
-                    yaml.dump(data, file, sort_keys=False, default_flow_style=flow_style, indent=2)
+                    yaml.dump(data, file, default_flow_style=False, sort_keys=False)
 
             print(f"YAML file saved as '{output_file}'.")
 

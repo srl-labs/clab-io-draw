@@ -1,10 +1,6 @@
-import argparse
+import argparse, os
 import xml.etree.ElementTree as ET
-from xml.etree.ElementTree import ParseError
-import yaml
-import re
-import os
-
+from lib.Yaml_processor import YAMLProcessor
 def report_error(message):
     """Prints an error message to the console."""
     print(f"Error: {message}")
@@ -44,7 +40,7 @@ def parse_xml(file_path, diagram_name=None):
     print("No diagrams found in the file.")
     return None
 
-def extract_nodes(mxGraphModel):
+def extract_nodes(mxGraphModel, default_kind):
     """
     Extracts and returns node names and their IDs from the mxGraphModel.
     Handles both standalone mxCell elements with their own IDs and
@@ -60,7 +56,7 @@ def extract_nodes(mxGraphModel):
         mgmt_ipv4 = obj.get('mgmt-ipv4', None)
         group = obj.get('group', None)
         labels = obj.get('labels', None)  # Assuming 'labels' is stored directly; adjust if it's more complex
-        node_kind = obj.get('kind', 'nokia_srlinux')
+        node_kind = obj.get('kind', default_kind)
 
         # If label is not directly on the object, try to find it in a child mxCell
         if not node_label:
@@ -92,7 +88,7 @@ def extract_nodes(mxGraphModel):
             if node_label:
                 node_details[node_id] = {
                     'label': node_label,
-                    'kind': node_kind
+                    'kind': default_kind
                 }
 
     return node_details
@@ -205,15 +201,7 @@ def compile_link_information(links_info, style='block'):
         source_label = sorted_labels[0]['value']
         target_label = sorted_labels[-1]['value']
         
-        if style == 'block':
-            endpoints = [f"{info['source']}:{source_label}", f"{info['target']}:{target_label}"]
-        elif style == 'flow':
-            # For flow style, prepare endpoints in a list first for consistent sorting
-            endpoints_list = [f"{info['source']}:{source_label}", f"{info['target']}:{target_label}"]
-            # Ensure consistent sorting for flow style before converting to string
-            endpoints_list.sort(key=lambda x: x.split(':')[0])
-            endpoints = f"[\"{endpoints_list[0]}\", \"{endpoints_list[1]}\"]"
-            
+        endpoints = [f"{info['source']}:{source_label}", f"{info['target']}:{target_label}"]            
         compiled_links.append({'endpoints': endpoints})
 
     # Sort the compiled_links list by the source of the endpoint
@@ -251,9 +239,14 @@ def generate_yaml_structure(filtered_node_details, compiled_links, input_file):
 
         # Dynamically construct the kinds dictionary with default settings for known kinds
         if node_kind not in kinds:
-            kinds[node_kind] = {'image': 'ghcr.io/nokia/srlinux', 'type': 'ixrd3'} if node_kind == 'nokia_srlinux' \
-                else {'image': 'ghcr.io/hellt/network-multitool'} if node_kind == 'linux' \
-                else {'image' : None }  # Add more conditions as necessary for other kinds
+            if node_kind == 'nokia_srlinux':
+                kinds[node_kind] = {'image': 'ghcr.io/nokia/srlinux', 'type': 'ixrd3'}
+            elif node_kind == 'linux':
+                kinds[node_kind] = {'image': 'ghcr.io/hellt/network-multitool'}
+            elif node_kind == 'vr-sros':
+                kinds[node_kind] = {'image': 'registry.srlinux.dev/pub/vr-sros:23.10'}
+            else:
+                kinds[node_kind] = {'image': None}  # Add more conditions as necessary for other kinds
 
         # Prepare node information, conditionally including 'type' if it exists and is not None
         node_info = {'kind': node_kind}
@@ -277,45 +270,8 @@ def generate_yaml_structure(filtered_node_details, compiled_links, input_file):
             'links': compiled_links
         }
     }
-
-def write_yaml_file(yaml_data, file_name, style='block'):
-    """
-    Writes the generated YAML structure to a file. Adjusts the style of lists based on the 'style' argument.
-    """
-
-    with open(file_name, 'w') as file:
-        yaml.dump(yaml_data, file, default_flow_style=False, sort_keys=False)
-    print(f"YAML file generated successfully at {file_name}.")
-
-
-def post_process_yaml_file_for_flow_style(file_name):
-    """
-    Post-processes the YAML file to ensure 'endpoints' within 'links' are in flow style without single quotes.
-    """
-    # Read the original YAML content
-    with open(file_name, 'r') as file:
-        content = file.read()
-
-    # Regular expression to match 'endpoints' lines with single-quoted flow-style lists
-    # Note the use of triple quotes to allow for internal single and double quotes without needing to escape them
-    pattern = re.compile(r"""- endpoints: '\["([^"]+)", "([^"]+)"\]'""")
-
-    # Function to replace matched patterns with unquoted flow-style lists
-    def replace_with_unquoted_flow_style(match):
-        # Extracting the two endpoint items
-        endpoint1, endpoint2 = match.group(1), match.group(2)
-        # Formatting as an unquoted flow-style list
-        return f'  - endpoints: ["{endpoint1}", "{endpoint2}"]'
-
-    # Replace the matched patterns with unquoted flow-style lists
-    new_content = pattern.sub(replace_with_unquoted_flow_style, content)
-
-    # Write the modified content back to the file
-    with open(file_name, 'w') as file:
-        file.write(new_content)
-        
-
-def main(input_file, output_file, style='block', diagram_name=None):
+      
+def main(input_file, output_file, style='block', diagram_name=None, default_kind='nokia_srlinux'):
     """
     The main function orchestrates the parsing, extraction, and processing of .drawio XML content,
     and then generates and writes the YAML file. It ties together all the steps necessary to convert
@@ -325,32 +281,29 @@ def main(input_file, output_file, style='block', diagram_name=None):
         output_file = os.path.splitext(input_file)[0] + ".yaml"
 
     root = parse_xml(input_file, diagram_name)
-    node_details = extract_nodes(root)
+    node_details = extract_nodes(root, default_kind)
     links_info = extract_links(root, node_details)
     extract_link_labels(root, links_info)
-
-    # Debug print for links info with label geometry
-    print("Links Info with Label Geometry:")
-    for link_id, info in links_info.items():
-        labels_str = "; ".join([f"{label['value']} (x: {label['x_position']}, y: {label['y_position']})" for label in info.get('labels', [])])
-        print(f"Link ID: {link_id}, Source: {info['source']}, Target: {info['target']}, Labels: {labels_str}")
-
 
     node_details = aggregate_node_information(node_details)
     compiled_links = compile_link_information(links_info, style)
     filtered_nodes = filter_nodes(links_info, node_details)
     yaml_data = generate_yaml_structure(filtered_nodes, compiled_links, input_file)
-    write_yaml_file(yaml_data, output_file, style)
+
+    processor = YAMLProcessor()
+
     if style == "flow":
-        post_process_yaml_file_for_flow_style(output_file)
+        processor.save_yaml(yaml_data, output_file)
+    else:
+        processor.save_yaml(yaml_data, output_file, flow_style='block')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse a draw.io XML file and generate a YAML file with a specified style.")
     parser.add_argument("-i", "--input", dest="input_file", required=True, help="The input XML file to be parsed.")
     parser.add_argument("-o", "--output", dest="output_file", required=False, help="The output YAML file.")
-    parser.add_argument("--style", dest="style", choices=['block', 'flow'], default="block", help="The style for YAML endpoints. Choose 'block' or 'flow'. Default is 'block'.")
+    parser.add_argument("--style", dest="style", choices=['block', 'flow'], default="flow", help="The style for YAML endpoints. Choose 'block' or 'flow'. Default is 'block'.")
     parser.add_argument("--diagram-name", dest="diagram_name", required=False, help="The name of the diagram (tab) to be parsed.")
-
+    parser.add_argument("--default-kind", dest="default_kind", default="nokia_srlinux", help="The default kind for nodes. Default is 'nokia_srlinux'.")
     args = parser.parse_args()
 
-    main(args.input_file, args.output_file, args.style, args.diagram_name)
+    main(args.input_file, args.output_file, args.style, args.diagram_name, args.default_kind)
