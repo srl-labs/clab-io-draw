@@ -744,7 +744,7 @@ def interactive_mode(nodes, icon_to_group_mapping, containerlab_data, output_fil
                 if i % 3 == 0 and i < len(node_list):
                     node_items.append("\n" + indent)
             # Join the node items, now including the newline and indentation at the correct position
-            summary_tree += ", ".join(node_items).replace(", \n", "\n") + "\n"
+            summary_tree += ", ".join(node_items).replace(indent + ", ", indent) + "\n"
         summary_tree += "\nDo you want to keep it like this? Select < No > to edit your configuration."
 
         # Prompt user for confirmation
