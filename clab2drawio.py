@@ -735,10 +735,16 @@ def interactive_mode(nodes, icon_to_group_mapping, containerlab_data, output_fil
         for level, node_list in summary["Levels"].items():
             summary_tree += f"Level {level}: "
             node_items = []
-            for node in node_list:
+            # Calculate the indentation based on "Level {level}: "
+            indent = " " * (len(f"Level {level}: "))
+            for i, node in enumerate(node_list, start=1):
                 icon = nodes[node].graph_icon
+                # Append the node and its icon to the node_items list
                 node_items.append(f"{node} ({icon})")
-            summary_tree += ", ".join(node_items) + "\n"
+                if i % 3 == 0 and i < len(node_list):
+                    node_items.append("\n" + indent)
+            # Join the node items, now including the newline and indentation at the correct position
+            summary_tree += ", ".join(node_items).replace(", \n", "\n") + "\n"
         summary_tree += "\nDo you want to keep it like this? Select < No > to edit your configuration."
 
         # Prompt user for confirmation
