@@ -54,3 +54,4 @@ python drawio2clab.py -i input_file.xml -o output_file.yaml --diagram-name "Diag
 - `-o`, `--output`: Output YAML file.
 - `--style`: YAML style (`block` or `flow`). Default is `block`.
 - `--diagram-name`: Name of the diagram to parse.
+- `--default-kind`: The default kind for nodes. Default is 'nokia_srlinux'

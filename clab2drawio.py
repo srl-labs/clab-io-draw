@@ -3,7 +3,9 @@ from lib.CustomDrawioDiagram import CustomDrawioDiagram
 from lib.Link import Link
 from lib.Node import Node
 from lib.Grafana import GrafanaDashboard
+from lib.Yaml_processor import YAMLProcessor
 from collections import defaultdict
+from prompt_toolkit.shortcuts import checkboxlist_dialog, yes_no_dialog
 import yaml, argparse, os, re, random
 
 def add_ports(diagram, styles, verbose=True):
@@ -450,9 +452,6 @@ def calculate_positions(diagram, layout='vertical', verbose=False):
     else:
         adjust_intermediary_nodes(intermediaries_y, layout=diagram.layout, verbose=verbose)
 
-
-
-
 def adjust_node_levels(diagram):
     used_levels = diagram.get_used_levels()
     max_level = diagram.get_max_level()
@@ -607,6 +606,7 @@ def assign_graphlevels(diagram, verbose=False):
     return sorted_nodes
 
 
+
 def load_styles_from_config(config_path):
     try:
         with open(config_path, 'r') as file:
@@ -644,7 +644,131 @@ def load_styles_from_config(config_path):
 
     return styles
 
-def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False):
+def interactive_mode(nodes, icon_to_group_mapping, containerlab_data, output_file, processor):
+    # Initialize previous summary with existing node labels
+    previous_summary = {"Levels": {}, "Icons": {}}
+    for node_name, node in nodes.items():
+        try:
+            level = node.graph_level
+            previous_summary["Levels"].setdefault(level, []).append(node_name)
+
+            icon = node.graph_icon
+            previous_summary["Icons"].setdefault(icon, []).append(node_name)
+        except AttributeError:
+            continue
+
+    while True:
+        summary = {"Levels": {}, "Icons": {}}
+        tmp_nodes = list(nodes.keys())
+        level = 0
+
+        # Assign levels to nodes
+        while tmp_nodes:
+            level += 1
+            valid_nodes = [(node, node) for node in tmp_nodes]
+            if valid_nodes:
+                level_nodes = checkboxlist_dialog(
+                    title=f"Level {level} nodes",
+                    text=f"Choose the nodes for level {level}:",
+                    values=valid_nodes,
+                    default_values=previous_summary["Levels"].get(level, [])
+                ).run()
+            else:
+                break
+
+            if level_nodes is None:
+                return  # Exit the function if cancel button is clicked
+
+            if len(level_nodes) == 0:
+                continue
+
+            # Update node labels and summary with assigned levels
+            for node_name in level_nodes:
+                nodes[node_name].graph_level = level
+                summary["Levels"].setdefault(level, []).append(node_name)
+                tmp_nodes.remove(node_name)
+
+                # Check if 'labels' section exists, create it if necessary
+                if "labels" not in containerlab_data["topology"]["nodes"][node_name]:
+                    containerlab_data["topology"]["nodes"][node_name]["labels"] = {}
+
+                # Update containerlab_data with graph-level
+                containerlab_data["topology"]["nodes"][node_name]["labels"]["graph-level"] = level
+
+        tmp_nodes = list(nodes.keys())
+        icons = list(icon_to_group_mapping.keys())
+
+        # Assign icons to nodes
+        for icon in icons:
+            valid_nodes = [(node, node) for node in tmp_nodes]
+            if valid_nodes:
+                icon_nodes = checkboxlist_dialog(
+                    title=f"Choose {icon} nodes",
+                    text=f"Select the nodes for the {icon} icon:",
+                    values=valid_nodes,
+                    default_values=previous_summary["Icons"].get(icon, [])
+                ).run()
+            else:
+                icon_nodes = []
+
+            if icon_nodes is None:
+                return  # Exit the function if cancel button is clicked
+
+            if not icon_nodes:
+                continue
+
+            # Update node labels and summary with assigned icons
+            for node_name in icon_nodes:
+                nodes[node_name].graph_icon = icon
+                summary["Icons"].setdefault(icon, []).append(node_name)
+                tmp_nodes.remove(node_name)
+
+                # Check if 'labels' section exists, create it if necessary
+                if "labels" not in containerlab_data["topology"]["nodes"][node_name]:
+                    containerlab_data["topology"]["nodes"][node_name]["labels"] = {}
+
+                # Update containerlab_data with graph-icon
+                containerlab_data["topology"]["nodes"][node_name]["labels"]["graph-icon"] = icon
+
+        # Generate summary tree with combined levels and icons
+        summary_tree = ""
+        for level, node_list in summary["Levels"].items():
+            summary_tree += f"Level {level}: "
+            node_items = []
+            # Calculate the indentation based on "Level {level}: "
+            indent = " " * (len(f"Level {level}: "))
+            for i, node in enumerate(node_list, start=1):
+                icon = nodes[node].graph_icon
+                # Append the node and its icon to the node_items list
+                node_items.append(f"{node} ({icon})")
+                if i % 3 == 0 and i < len(node_list):
+                    node_items.append("\n" + indent)
+            # Join the node items, now including the newline and indentation at the correct position
+            summary_tree += ", ".join(node_items).replace(indent + ", ", indent) + "\n"
+        summary_tree += "\nDo you want to keep it like this? Select < No > to edit your configuration."
+
+        # Prompt user for confirmation
+        result = yes_no_dialog(title='SUMMARY', text=summary_tree).run()
+
+        if result is None:
+            return  # Exit the function if cancel button is clicked
+        elif result:
+            break  # Exit the loop if user confirms the summary
+
+    # Prompt user if they want to update the ContainerLab file
+    update_file = yes_no_dialog(title='Update ContainerLab File', text="Do you want to save a new ContainerLab file with the new configuration?").run()
+
+    if update_file:
+        # Save the updated containerlab_data to the output file using processor.save_yaml
+        modified_output_file = os.path.splitext(output_file)[0] + ".mod.yaml"   
+        processor.save_yaml(containerlab_data, modified_output_file)
+        print(f"ContainerLab file has been updated: {modified_output_file}")
+    else:
+        print("ContainerLab file has not been updated.")
+
+    return summary
+
+def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False, interactive=False):
     """
     Generates a diagram from a given topology definition file, organizing and displaying nodes and links.
     
@@ -697,7 +821,7 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
         nodes[node_name] = node
 
     diagram.nodes = nodes
-
+    
     # Prepare the links list by extracting source and target from each link's 'endpoints'
     links_from_clab = []
     for link in containerlab_data['topology'].get('links', []):
@@ -755,8 +879,14 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
       
     if not include_unlinked_nodes:
         connected_nodes = {name: node for name, node in nodes.items() if node.links}
-    diagram.nodes = connected_nodes
-    nodes = diagram.nodes
+        diagram.nodes = connected_nodes
+        nodes = diagram.nodes
+    else:
+        diagram.nodes = nodes
+
+    if interactive:
+        processor = YAMLProcessor()
+        interactive_mode(diagram.nodes, styles['icon_to_group_mapping'], containerlab_data, input_file, processor)
 
     assign_graphlevels(diagram, verbose=False)
     calculate_positions(diagram, layout=layout, verbose=verbose)
@@ -823,6 +953,7 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
 
     print("Saved file to:", output_file)
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Generate a topology diagram from a containerlab YAML or draw.io XML file.')
     parser.add_argument('-i', '--input', required=True, help='The filename of the input file (containerlab YAML for diagram generation).')
@@ -833,11 +964,13 @@ def parse_arguments():
     parser.add_argument('--layout', type=str, default='vertical', choices=['vertical', 'horizontal'], help='Specify the layout of the topology diagram (vertical or horizontal)')
     parser.add_argument('--theme', default='nokia_bright', help='Specify the theme for the diagram (nokia_bright, nokia_dark, grafana_dark) or the path to a custom style config file.')  
     parser.add_argument('--verbose', action='store_true', help='Enable verbose output for debugging purposes')  
+    parser.add_argument('-I', '--interactive', action='store_true', required=False, help='Define graph-levels and graph-icons in interactive mode')
     return parser.parse_args()
     
 if __name__ == "__main__":
     args = parse_arguments()
 
     script_dir = os.path.dirname(__file__)
+    
+    main(args.input, args.output, args.gf_dashboard, args.theme, args.include_unlinked_nodes, args.no_links, args.layout, args.verbose, args.interactive)
 
-    main(args.input, args.output, args.gf_dashboard, args.theme, args.include_unlinked_nodes, args.no_links, args.layout, args.verbose)
