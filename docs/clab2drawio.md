@@ -7,10 +7,15 @@
 ## Features
 
 - **Automatic Diagram Generation**: Converts containerlab YAML configurations into detailed Draw.io diagrams in vertical and horizontal layouts.
-- **Intelligent Node Placement**: Attempts to determine the best placement for nodes automatically. However, for complex topologies, this can be challenging.
-- **Graph-level-Based Layout**: Organizes nodes into graph-level based on their connectivity for clearer topology visualization. Users can influence node placement by specifying graph-level directly in the containerlab configuration.
+- **Automatic Node Placement**: Attempts to determine the best placement for nodes automatically. However, for complex topologies, this can be challenging.
+- **Graph-level-Based Layout**: Organizes nodes into graph-level based on their connectivity for clearer topology visualization. Users can influence node placement by specifying graph-level directly in the containerlab configuration. Also possible with `-I` to set it interactive
 - **Graph-icon Support**: Enhances node visualization by allowing users to specify graph-icon labels such as router, switch, or host to define custom icons for nodes in the generated diagrams.
 - **Customizable Styles**: Supports customization of node and link styles within the diagrams.
+- **Grafana Dahsboards**: Supports to autogenerate Grafana dashboards in Grafana style. (WIP)
+ 
+  ![Grafana ](img/grafana.png)
+  
+  - For more detailed information about this feature, including compatibility, usage guidelines, and future enhancements, please see the [Grafana Dashboard Documentation](./grafana.md).
 
 ## Usage
 To generate a network topology diagram from a containerlab YAML file, run the following command:
@@ -59,11 +64,14 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
     ```bash
     python clab2drawio.py -i <path_to_your_yaml_file> -o <path_to_output_file>
     ```
-- `-g, --gf_dashboard`: Generates a grafana dashboard in grafana style. (WIP)
+- `-g, --gf_dashboard`: Generates a Grafana dashboard in Grafana style. (WIP)
 
     ```bash
-    python clab2drawio.py -i <path_to_your_yaml_file> -g
+    python clab2drawio.py -i <path_to_your_yaml_file> -g --theme grafana_dark
     ```
+
+    For more detailed information about this feature, including compatibility, usage guidelines, and future enhancements, please see the [Grafana Dashboard Documentation](./grafana.md).
+
 - `--include-unlinked-nodes`: Include nodes without any links in the topology diagram. By default, only nodes with at least one connection are included.
 
 - `--no-links`: Do not draw links between nodes in the topology diagram. This option can be useful for focusing on node placement or when the connectivity between nodes is not relevant.

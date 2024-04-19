@@ -8,7 +8,7 @@ The `clab-io-draw` project unifies two tools, `clab2drawio` and `drawio2clab`. T
 
 `clab2drawio` is a Python script that automatically generates Draw.io diagrams from Containerlab YAML configurations. It aims to simplify the visualization of network designs by providing a graphical representation of container-based network topologies.
 
-For detailed information on `clab2drawio`, including features, options, and usage instructions, please refer to the [clab2drawio.md](docs/clab2drawio.md) file located in the same directory as this README.
+For detailed information on `clab2drawio`, including features (like [`Grafana`](docs/grafana.md) Dashboard creation), options, and usage instructions, please refer to the [clab2drawio.md](docs/clab2drawio.md) file located in the same directory as this README.
 
 ## drawio2clab
 
@@ -33,8 +33,9 @@ docker pull ghcr.io/srl-labs/clab-io-draw:latest
 Run drawio2clab or clab2drawio within a Docker container by mounting the directory containing your .drawio/.yaml files as a volume. Specify the input and output file paths relative to the mounted volume:
 
 ```bash
-docker run -v "$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i lab-examples/clos03/cfg-clos.clab.yml
+docker run -it -v "$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i lab-examples/clos03/cfg-clos.clab.yml
 ```
+*Note: The `-it` option is for interactive mode and is only needed if using `-I`.*
 
 ```bash
 docker run -v "$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i output.drawio
