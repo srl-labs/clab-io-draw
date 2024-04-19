@@ -82,6 +82,8 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
     python clab2drawio.py --theme <path_to_custom_style_file> -i <path_to_your_yaml_file>
     ```
 
+- `-I`, `--interactive`: Define graph-levels and graph-icons in interactive mode
+
 - `--verbose`: Enable verbose output for debugging purposes.
 
 
