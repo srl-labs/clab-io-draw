@@ -452,9 +452,6 @@ def calculate_positions(diagram, layout='vertical', verbose=False):
     else:
         adjust_intermediary_nodes(intermediaries_y, layout=diagram.layout, verbose=verbose)
 
-
-
-
 def adjust_node_levels(diagram):
     used_levels = diagram.get_used_levels()
     max_level = diagram.get_max_level()
@@ -733,18 +730,16 @@ def interactive_mode(nodes, icon_to_group_mapping, containerlab_data, output_fil
                 # Update containerlab_data with graph-icon
                 containerlab_data["topology"]["nodes"][node_name]["labels"]["graph-icon"] = icon
 
-        # Generate summary tree for user confirmation
+        # Generate summary tree with combined levels and icons
         summary_tree = ""
-        for key, info in summary.items():
-            summary_tree += f"\n### {key} ###\n"
-            for item, node_list in info.items():
-                summary_tree += f"[ {item} ]\n"
-                for node in node_list:
-                    summary_tree += f"    - {node}\n"
-        summary_tree += "\n\nDo you want to keep it like this? Select < No > to edit your configuration."
-
-        # Update previous summary for the next iteration
-        previous_summary = summary
+        for level, node_list in summary["Levels"].items():
+            summary_tree += f"Level {level}: "
+            node_items = []
+            for node in node_list:
+                icon = nodes[node].graph_icon
+                node_items.append(f"{node} ({icon})")
+            summary_tree += ", ".join(node_items) + "\n"
+        summary_tree += "\nDo you want to keep it like this? Select < No > to edit your configuration."
 
         # Prompt user for confirmation
         result = yes_no_dialog(title='SUMMARY', text=summary_tree).run()
@@ -755,7 +750,7 @@ def interactive_mode(nodes, icon_to_group_mapping, containerlab_data, output_fil
             break  # Exit the loop if user confirms the summary
 
     # Prompt user if they want to update the ContainerLab file
-    update_file = yes_no_dialog(title='Update ContainerLab File', text="Do you want to update the ContainerLab file with the new configuration?").run()
+    update_file = yes_no_dialog(title='Update ContainerLab File', text="Do you want to save a new ContainerLab file with the new configuration?").run()
 
     if update_file:
         # Save the updated containerlab_data to the output file using processor.save_yaml
