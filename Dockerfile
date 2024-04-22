@@ -17,6 +17,7 @@ RUN chmod +x /app/entrypoint.sh
 
 # Set the working directory in the container
 WORKDIR /data
+ENV APP_BASE_DIR=/app
 
 # Use the entrypoint script to handle script execution
 ENTRYPOINT ["/app/entrypoint.sh"]

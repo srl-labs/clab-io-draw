@@ -119,7 +119,9 @@ class GrafanaDashboard:
         Dictionary containing information relevant to the traffic Rules
         """
         # Load the traffic rule template from file
-        with open("lib/templates/traffic_rule_template.json") as f:
+        base_dir = os.getenv('APP_BASE_DIR', '')
+
+        with open(os.path.join(base_dir, "lib/templates/traffic_rule_template.json"), "r") as f:
             rule = json.load(f)
 
         rule["alias"] = ruleName
@@ -135,7 +137,9 @@ class GrafanaDashboard:
         Dictionary containing information relevant to the Operational State Rules
         """
         # Load the operstate rule template from file
-        with open("lib/templates/operstate_rule_template.json") as f:
+        base_dir = os.getenv('APP_BASE_DIR', '')
+
+        with open(os.path.join(base_dir,"lib/templates/operstate_rule_template.json"), "r") as f:
             rule = json.load(f)
 
         rule["alias"] = ruleName
@@ -151,7 +155,9 @@ class GrafanaDashboard:
         Embedding of the XML diagram, the Rules and the Targets
         """
         # Load the panel template from file
-        with open("lib/templates/panel_template.json") as f:
+        base_dir = os.getenv('APP_BASE_DIR', '')
+
+        with open(os.path.join(base_dir,"lib/templates/panel_template.json"), "r") as f:
             panel = json.load(f)
 
         panel[0]["flowchartsData"]["flowcharts"][0]["xml"] = xml
@@ -165,8 +171,11 @@ class GrafanaDashboard:
         """
         Dictionary containing information relevant to the Grafana Dashboard Root JSON object
         """
+
+        base_dir = os.getenv('APP_BASE_DIR', '')
+
         # Load the dashboard template from file
-        with open("lib/templates/dashboard_template.json") as f:
+        with open(os.path.join(base_dir, "lib/templates/traffic_rule_template.json")) as f:
             dashboard = json.load(f)
 
         dashboard["panels"] = panels
