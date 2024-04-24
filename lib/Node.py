@@ -1,6 +1,7 @@
 class Node:
-    def __init__(self, name, kind, mgmt_ipv4=None, graph_level=None, graph_icon=None, **kwargs):
+    def __init__(self, name, label, kind, mgmt_ipv4=None, graph_level=None, graph_icon=None, **kwargs):
         self.name = name
+        self.label = label
         self.kind = kind
         self.mgmt_ipv4 = mgmt_ipv4
         self.graph_level = graph_level if graph_level is not None else -1

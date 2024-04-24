@@ -93,6 +93,7 @@ def add_ports(diagram, styles, verbose=True):
 
     connector_dict = {}
     # Create connectors and links using the calculated port positions
+    processed_connections = set()
     for node in nodes.values():
 
         downstream_links = node.get_downstream_links()
@@ -100,125 +101,128 @@ def add_ports(diagram, styles, verbose=True):
 
         links = downstream_links + lateral_links
         
-
         for link in links:
-            # source connector
-            source_cID = f"{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
-            source_label = re.findall(r'\d+', link.source_intf)[-1]
-            source_connector_pos = link.port_pos
-            connector_width = styles['connector_width']
-            connector_height = styles['connector_height']
+            connection_id = frozenset({(link.source.name, link.source_intf), (link.target.name, link.target_intf)})
+            if connection_id not in processed_connections:
+                processed_connections.add(connection_id)
+                #print(connection_id)
+                # source connector
+                source_cID = f"{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
+                source_label = re.findall(r'\d+', link.source_intf)[-1]
+                source_connector_pos = link.port_pos
+                connector_width = styles['connector_width']
+                connector_height = styles['connector_height']
 
-            # Add the source connector ID to the source connector dictionary
-            if link.source.name not in connector_dict:
-                connector_dict[link.source.name] = []
-            connector_dict[link.source.name].append(source_cID)
+                # Add the source connector ID to the source connector dictionary
+                if link.source.name not in connector_dict:
+                    connector_dict[link.source.name] = []
+                connector_dict[link.source.name].append(source_cID)
 
-            # target connector
-            target_cID = f"{link.target.name}:{link.target_intf}:{link.source.name}:{link.source_intf}"
-            target_link = diagram.get_target_link(link)
-            target_connector_pos = target_link.port_pos
-            target_label = re.findall(r'\d+', target_link.source_intf)[-1]
+                # target connector
+                target_cID = f"{link.target.name}:{link.target_intf}:{link.source.name}:{link.source_intf}"
+                target_link = diagram.get_target_link(link)
+                target_connector_pos = target_link.port_pos
+                target_label = re.findall(r'\d+', target_link.source_intf)[-1]
 
-            if link.target.name not in connector_dict:
-                connector_dict[link.target.name] = []
-            connector_dict[link.target.name].append(target_cID)
+                if link.target.name not in connector_dict:
+                    connector_dict[link.target.name] = []
+                connector_dict[link.target.name].append(target_cID)
 
-            # Adjust port positions if source and target have different numbers of links
-            source_downstream_links = link.source.get_downstream_links()
-            target_upstream_links = link.target.get_upstream_links()
-            if diagram.layout == 'vertical':
-                if link.source.pos_x == link.target.pos_x:
-                    if len(source_downstream_links) != len(target_upstream_links):
-                        if len(source_downstream_links) < len(target_upstream_links):
-                            # Adjust source port position to align with the corresponding target port
-                            adjusted_x = target_connector_pos[0]
-                            source_connector_pos = (adjusted_x, source_connector_pos[1])
-                        else:
-                            # Adjust target port position to align with the corresponding source port
-                            adjusted_x = source_connector_pos[0]
-                            target_connector_pos = (adjusted_x, target_connector_pos[1])
-            elif diagram.layout == 'horizontal':
-                if link.source.pos_y == link.target.pos_y:
-                    pass
-                    if len(source_downstream_links) != len(target_upstream_links):
-                        if len(source_downstream_links) < len(target_upstream_links):
-                            # Adjust source port position to align with the corresponding target port
-                            adjusted_y = target_connector_pos[1]
-                            source_connector_pos = (source_connector_pos[0], adjusted_y)
-                        else:
-                            # Adjust target port position to align with the corresponding source port
-                            adjusted_y = source_connector_pos[1]
-                            target_connector_pos = (target_connector_pos[0], adjusted_y)
+                # Adjust port positions if source and target have different numbers of links
+                source_downstream_links = link.source.get_downstream_links()
+                target_upstream_links = link.target.get_upstream_links()
+                if diagram.layout == 'vertical':
+                    if link.source.pos_x == link.target.pos_x:
+                        if len(source_downstream_links) != len(target_upstream_links):
+                            if len(source_downstream_links) < len(target_upstream_links):
+                                # Adjust source port position to align with the corresponding target port
+                                adjusted_x = target_connector_pos[0]
+                                source_connector_pos = (adjusted_x, source_connector_pos[1])
+                            else:
+                                # Adjust target port position to align with the corresponding source port
+                                adjusted_x = source_connector_pos[0]
+                                target_connector_pos = (adjusted_x, target_connector_pos[1])
+                elif diagram.layout == 'horizontal':
+                    if link.source.pos_y == link.target.pos_y:
+                        #pass
+                        if len(source_downstream_links) != len(target_upstream_links):
+                            if len(source_downstream_links) < len(target_upstream_links):
+                                # Adjust source port position to align with the corresponding target port
+                                adjusted_y = target_connector_pos[1]
+                                source_connector_pos = (source_connector_pos[0], adjusted_y)
+                            else:
+                                # Adjust target port position to align with the corresponding source port
+                                adjusted_y = source_connector_pos[1]
+                                target_connector_pos = (target_connector_pos[0], adjusted_y)
 
 
-            diagram.add_node(
-                id=source_cID,
-                label=source_label,
-                x_pos=source_connector_pos[0],
-                y_pos=source_connector_pos[1],
-                width=connector_width,
-                height=connector_height,
-                style=styles['port_style']
-            )
+                diagram.add_node(
+                    id=source_cID,
+                    label=source_label,
+                    x_pos=source_connector_pos[0],
+                    y_pos=source_connector_pos[1],
+                    width=connector_width,
+                    height=connector_height,
+                    style=styles['port_style']
+                )
 
-            diagram.add_node(
-                id=target_cID,
-                label=target_label,
-                x_pos=target_connector_pos[0],
-                y_pos=target_connector_pos[1],
-                width=connector_width,
-                height=connector_height,
-                style=styles['port_style']
-            )
+                diagram.add_node(
+                    id=target_cID,
+                    label=target_label,
+                    x_pos=target_connector_pos[0],
+                    y_pos=target_connector_pos[1],
+                    width=connector_width,
+                    height=connector_height,
+                    style=styles['port_style']
+                )
 
-            # Calculate center positions
-            source_center = (source_connector_pos[0] + connector_width / 2, source_connector_pos[1] + connector_height / 2)
-            target_center = (target_connector_pos[0] + connector_width / 2, target_connector_pos[1] + connector_height / 2)
+                # Calculate center positions
+                source_center = (source_connector_pos[0] + connector_width / 2, source_connector_pos[1] + connector_height / 2)
+                target_center = (target_connector_pos[0] + connector_width / 2, target_connector_pos[1] + connector_height / 2)
 
-            # Calculate the real middle between the centers for the midpoint connector
-            midpoint_center_x = (source_center[0] + target_center[0]) / 2
-            midpoint_center_y = (source_center[1] + target_center[1]) / 2
+                # Calculate the real middle between the centers for the midpoint connector
+                midpoint_center_x = (source_center[0] + target_center[0]) / 2
+                midpoint_center_y = (source_center[1] + target_center[1]) / 2
 
-            # Generate a random offset within the range of ±10
-            random_offset = random.choice([random.uniform(-20, -10), random.uniform(10, 20)])
+                # Generate a random offset within the range of ±10
+                random_offset = random.choice([random.uniform(-20, -10), random.uniform(10, 20)])
 
-            # Determine the direction of the link
-            dx = target_center[0] - source_center[0]
-            dy = target_center[1] - source_center[1]
+                # Determine the direction of the link
+                dx = target_center[0] - source_center[0]
+                dy = target_center[1] - source_center[1]
 
-            # Calculate the normalized direction vector for the line
-            magnitude = (dx**2 + dy**2)**0.5
-            if magnitude != 0:
-                direction_dx = dx / magnitude
-                direction_dy = dy / magnitude
-            else:
-                # If the magnitude is zero, the source and target are at the same position
-                # In this case, we don't need to move the midpoint
-                direction_dx = 0
-                direction_dy = 0
+                # Calculate the normalized direction vector for the line
+                magnitude = (dx**2 + dy**2)**0.5
+                if magnitude != 0:
+                    direction_dx = dx / magnitude
+                    direction_dy = dy / magnitude
+                else:
+                    # If the magnitude is zero, the source and target are at the same position
+                    # In this case, we don't need to move the midpoint
+                    direction_dx = 0
+                    direction_dy = 0
 
-            # Apply the offset
-            midpoint_center_x += direction_dx * random_offset
-            midpoint_center_y += direction_dy * random_offset
+                # Apply the offset
+                midpoint_center_x += direction_dx * random_offset
+                midpoint_center_y += direction_dy * random_offset
 
-            midpoint_top_left_x = midpoint_center_x - 2
-            midpoint_top_left_y = midpoint_center_y - 2
+                midpoint_top_left_x = midpoint_center_x - 2
+                midpoint_top_left_y = midpoint_center_y - 2
 
-            # Create midpoint connector between source and target ports
-            midpoint_id = f"mid:{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
-            diagram.add_node(
-                id=midpoint_id,
-                label='\u200B',
-                x_pos=midpoint_top_left_x,
-                y_pos=midpoint_top_left_y,
-                width=4,
-                height=4,
-                style=styles['connector_style']
-            )
+                # Create midpoint connector between source and target ports
+                midpoint_id = f"mid:{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
+                diagram.add_node(
+                    id=midpoint_id,
+                    label='\u200B',
+                    x_pos=midpoint_top_left_x,
+                    y_pos=midpoint_top_left_y,
+                    width=4,
+                    height=4,
+                    style=styles['connector_style']
+                )
 
-            diagram.add_link(source=source_cID, target=midpoint_id, style=styles["link_style"], label='\u200B', link_id=f"{source_cID}")
-            diagram.add_link(source=target_cID, target=midpoint_id, style=styles["link_style"], label='\u200B', link_id=f"{target_cID}")
+                diagram.add_link(source=source_cID, target=midpoint_id, style=styles["link_style"], label='\u200B', link_id=f"{source_cID}")
+                diagram.add_link(source=target_cID, target=midpoint_id, style=styles["link_style"], label='\u200B', link_id=f"{target_cID}")
 
 
    # Create groups for each node and its connectors
@@ -307,7 +311,7 @@ def add_nodes(diagram, nodes, styles):
         style = custom_styles.get(group, base_style)
         x_pos, y_pos = node.pos_x, node.pos_y
         # Add each node to the diagram with the given x and y position.
-        diagram.add_node(id=node.name, label=node.name, x_pos=x_pos, y_pos=y_pos, style=style, width=node.width, height=node.height)
+        diagram.add_node(id=node.name, label=node.label, x_pos=x_pos, y_pos=y_pos, style=style, width=node.width, height=node.height)
 
 def adjust_intermediary_nodes(intermediaries, layout, verbose=False):
 
@@ -768,6 +772,14 @@ def interactive_mode(nodes, icon_to_group_mapping, containerlab_data, output_fil
 
     return summary
 
+def format_node_name(base_name, prefix, lab_name):
+    if prefix == "":
+        return base_name
+    elif prefix == "clab" and not prefix:
+        return f"clab-{lab_name}-{base_name}"
+    else:
+        return f"{prefix}-{lab_name}-{base_name}"
+
 def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, no_links=False, layout='vertical', verbose=False, interactive=False):
     """
     Generates a diagram from a given topology definition file, organizing and displaying nodes and links.
@@ -801,11 +813,18 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
     diagram.layout = layout
 
     nodes_from_clab = containerlab_data['topology']['nodes']
+    # Determine the prefix
+    prefix = containerlab_data.get('prefix', 'clab')
+    lab_name = containerlab_data.get('name', '')
 
     nodes = {}
     for node_name, node_data in nodes_from_clab.items():
+
+        formatted_node_name = format_node_name(node_name, prefix, lab_name)
+
         node = Node(
-            name=node_name,
+            name=formatted_node_name,
+            label=node_name,
             kind=node_data.get('kind', ''),
             mgmt_ipv4=node_data.get('mgmt_ipv4', ''),
             graph_level=node_data.get('labels', {}).get('graph-level', None),
@@ -818,7 +837,7 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
             height=styles.get('node_height', 75),
             group=node_data.get('group', '')
         )
-        nodes[node_name] = node
+        nodes[formatted_node_name] = node
 
     diagram.nodes = nodes
     
@@ -829,15 +848,24 @@ def main(input_file, output_file, grafana, theme, include_unlinked_nodes=False, 
         if endpoints:
             source_node, source_intf = endpoints[0].split(":")
             target_node, target_intf = endpoints[1].split(":")
-            # Add link only if both source and target nodes exist
-            if source_node in nodes_from_clab and target_node in nodes_from_clab:
-                links_from_clab.append({'source': source_node, 'target': target_node, 'source_intf': source_intf, 'target_intf': target_intf})
 
+            source_node = format_node_name(source_node, prefix, lab_name)
+            target_node = format_node_name(target_node, prefix, lab_name)
+
+            # Add link only if both source and target nodes exist
+            if source_node in nodes and target_node in nodes:
+                links_from_clab.append({
+                    'source': source_node,
+                    'target': target_node,
+                    'source_intf': source_intf,
+                    'target_intf': target_intf
+                })
     # Create Link instances and attach them to nodes
     links = []
     for link_data in links_from_clab:
         source_node = nodes.get(link_data['source'])
         target_node = nodes.get(link_data['target'])
+
         if source_node and target_node:
             # Create two links, one for downstream and one for upstream
             downstream_link = Link(
