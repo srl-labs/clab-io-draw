@@ -1,5 +1,14 @@
 class Node:
-    def __init__(self, name, label, kind, mgmt_ipv4=None, graph_level=None, graph_icon=None, **kwargs):
+    def __init__(
+        self,
+        name,
+        label,
+        kind,
+        mgmt_ipv4=None,
+        graph_level=None,
+        graph_icon=None,
+        **kwargs,
+    ):
         self.name = name
         self.label = label
         self.kind = kind
@@ -9,13 +18,13 @@ class Node:
         self.links = []
         self.categories = []
         self.properties = kwargs
-        self.base_style = kwargs.get('base_style', '')
-        self.custom_style = kwargs.get('custom_style', '')
-        self.pos_x = kwargs.get('pos_x', '')
-        self.pos_y = kwargs.get('pos_y', '')
-        self.width = kwargs.get('width', '')
-        self.height = kwargs.get('height', '')
-        self.group = kwargs.get('group', '')
+        self.base_style = kwargs.get("base_style", "")
+        self.custom_style = kwargs.get("custom_style", "")
+        self.pos_x = kwargs.get("pos_x", "")
+        self.pos_y = kwargs.get("pos_y", "")
+        self.width = kwargs.get("width", "")
+        self.height = kwargs.get("height", "")
+        self.group = kwargs.get("group", "")
 
     def add_link(self, link):
         self.links.append(link)
@@ -25,22 +34,33 @@ class Node:
 
     def get_connection_count(self):
         return len(self.links)
-    
+
     def get_connection_count_within_level(self):
-        return len([link for link in self.links if link.source.graph_level == self.graph_level or link.target.graph_level == self.graph_level])
-    
+        return len(
+            [
+                link
+                for link in self.links
+                if link.source.graph_level == self.graph_level
+                or link.target.graph_level == self.graph_level
+            ]
+        )
+
     def get_downstream_links(self):
-        return [link for link in self.links if link.direction == 'downstream']
-    
+        return [link for link in self.links if link.direction == "downstream"]
+
     def get_upstream_links(self):
-        return [link for link in self.links if link.direction == 'upstream']
-    
+        return [link for link in self.links if link.direction == "upstream"]
+
     def get_upstream_links_towards_level(self, level):
-        return [link for link in self.links if link.direction == 'upstream' and link.target.graph_level == level]
+        return [
+            link
+            for link in self.links
+            if link.direction == "upstream" and link.target.graph_level == level
+        ]
 
     def get_lateral_links(self):
-        return [link for link in self.links if link.direction == 'lateral']
-    
+        return [link for link in self.links if link.direction == "lateral"]
+
     def get_all_links(self):
         return self.links
 
@@ -52,7 +72,7 @@ class Node:
             else:
                 neighbors.add(link.source)
         return list(neighbors)
-    
+
     def is_connected_to(self, node):
         for link in self.links:
             if link.source == node or link.target == node:
@@ -77,11 +97,11 @@ class Node:
             target_level = link.target.graph_level
             link.level_diff = target_level - source_level
             if link.level_diff > 0:
-                link.direction = 'downstream'
+                link.direction = "downstream"
             elif link.level_diff < 0:
-                link.direction = 'upstream'
+                link.direction = "upstream"
             else:
-                link.direction = 'lateral'
+                link.direction = "lateral"
 
     def __repr__(self):
         return f"Node(name='{self.name}', kind='{self.kind}')"

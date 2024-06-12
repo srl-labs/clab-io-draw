@@ -2,40 +2,40 @@ import json
 import os
 import xml.etree.ElementTree as ET
 
+
 class GrafanaDashboard:
     def __init__(self, diagram=None):
         self.diagram = diagram
         self.links = self.diagram.get_links_from_nodes()
         self.dashboard_filename = self.diagram.grafana_dashboard_file
 
-
     def create_dashboard(self):
         # We just need the subtree objects from mxGraphModel.Single page drawings only
         xmlTree = ET.fromstring(self.diagram.dump_xml())
-        subXmlTree = xmlTree.findall('.//mxGraphModel')[0]
+        subXmlTree = xmlTree.findall(".//mxGraphModel")[0]
 
         # Define Query rules for the Panel, rule_expr needs to match the collector metric name
         # Legend format needs to match the format expected by the metric
         panelQueryList = {
             "IngressTraffic": {
                 "rule_expr": "interface_traffic_rate_in_bps",
-                "legend_format": '{{source}}:{{interface_name}}:in',
+                "legend_format": "{{source}}:{{interface_name}}:in",
             },
             "EgressTraffic": {
                 "rule_expr": "interface_traffic_rate_out_bps",
-                "legend_format": '{{source}}:{{interface_name}}:out',
+                "legend_format": "{{source}}:{{interface_name}}:out",
             },
             "ItfOperState": {
                 "rule_expr": "interface_oper_state",
-                "legend_format": 'oper_state:{{source}}:{{interface_name}}',
+                "legend_format": "oper_state:{{source}}:{{interface_name}}",
             },
             "ItfOperState2": {
                 "rule_expr": "port_oper_state",
-                "legend_format": 'oper_state:{{source}}:{{interface_name}}',
+                "legend_format": "oper_state:{{source}}:{{interface_name}}",
             },
             "EgressTraffic2": {
                 "rule_expr": "irate(port_ethernet_statistics_out_octets[$__rate_interval])*8",
-                "legend_format": '{{source}}:{{interface_name}}:out',
+                "legend_format": "{{source}}:{{interface_name}}:out",
             },
         }
         # Create a targets list to embed in the JSON object, we add all the other default JSON attributes to the list
@@ -53,7 +53,7 @@ class GrafanaDashboard:
         rulesData = []
         i = 0
         for link in self.links:
-            link_id =  f"link_id:{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
+            link_id = f"link_id:{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
 
             # Traffic out
             rulesData.append(
@@ -64,10 +64,10 @@ class GrafanaDashboard:
                     order=i,
                 )
             )
-             
+
             i = i + 2
-            
-            port_id =  f"{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
+
+            port_id = f"{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
             # Port State:
             rulesData.append(
                 self.gf_flowchart_rule_operstate(
@@ -96,15 +96,14 @@ class GrafanaDashboard:
         )
         return dashboard_json
 
-    def gf_dashboard_datasource_target(self, rule_expr="promql_query", legend_format=None, refId="Query1"):
+    def gf_dashboard_datasource_target(
+        self, rule_expr="promql_query", legend_format=None, refId="Query1"
+    ):
         """
         Dictionary containing information relevant to the Targets queried
         """
         target = {
-            "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-            },
+            "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
             "editorMode": "code",
             "expr": rule_expr,
             "instant": False,
@@ -114,14 +113,18 @@ class GrafanaDashboard:
         }
         return target
 
-    def gf_flowchart_rule_traffic(self, ruleName="traffic:inOrOut", metric=None, link_id=None, order=1):
+    def gf_flowchart_rule_traffic(
+        self, ruleName="traffic:inOrOut", metric=None, link_id=None, order=1
+    ):
         """
         Dictionary containing information relevant to the traffic Rules
         """
         # Load the traffic rule template from file
-        base_dir = os.getenv('APP_BASE_DIR', '')
+        base_dir = os.getenv("APP_BASE_DIR", "")
 
-        with open(os.path.join(base_dir, "lib/templates/traffic_rule_template.json"), "r") as f:
+        with open(
+            os.path.join(base_dir, "lib/templates/traffic_rule_template.json"), "r"
+        ) as f:
             rule = json.load(f)
 
         rule["alias"] = ruleName
@@ -132,14 +135,18 @@ class GrafanaDashboard:
 
         return rule
 
-    def gf_flowchart_rule_operstate(self, ruleName="oper_state", metric=None, link_id=None, order=1):
+    def gf_flowchart_rule_operstate(
+        self, ruleName="oper_state", metric=None, link_id=None, order=1
+    ):
         """
         Dictionary containing information relevant to the Operational State Rules
         """
         # Load the operstate rule template from file
-        base_dir = os.getenv('APP_BASE_DIR', '')
+        base_dir = os.getenv("APP_BASE_DIR", "")
 
-        with open(os.path.join(base_dir,"lib/templates/operstate_rule_template.json"), "r") as f:
+        with open(
+            os.path.join(base_dir, "lib/templates/operstate_rule_template.json"), "r"
+        ) as f:
             rule = json.load(f)
 
         rule["alias"] = ruleName
@@ -149,15 +156,19 @@ class GrafanaDashboard:
 
         return rule
 
-    def gf_flowchart_panel_template(self, xml=None, rulesData=None, targetsList=None, panelTitle="Network Topology"):
+    def gf_flowchart_panel_template(
+        self, xml=None, rulesData=None, targetsList=None, panelTitle="Network Topology"
+    ):
         """
         Dictionary containing information relevant to the Panels Section in the JSON Dashboard
         Embedding of the XML diagram, the Rules and the Targets
         """
         # Load the panel template from file
-        base_dir = os.getenv('APP_BASE_DIR', '')
+        base_dir = os.getenv("APP_BASE_DIR", "")
 
-        with open(os.path.join(base_dir,"lib/templates/panel_template.json"), "r") as f:
+        with open(
+            os.path.join(base_dir, "lib/templates/panel_template.json"), "r"
+        ) as f:
             panel = json.load(f)
 
         panel[0]["flowchartsData"]["flowcharts"][0]["xml"] = xml
@@ -172,10 +183,12 @@ class GrafanaDashboard:
         Dictionary containing information relevant to the Grafana Dashboard Root JSON object
         """
 
-        base_dir = os.getenv('APP_BASE_DIR', '')
+        base_dir = os.getenv("APP_BASE_DIR", "")
 
         # Load the dashboard template from file
-        with open(os.path.join(base_dir, "lib/templates/traffic_rule_template.json")) as f:
+        with open(
+            os.path.join(base_dir, "lib/templates/traffic_rule_template.json")
+        ) as f:
             dashboard = json.load(f)
 
         dashboard["panels"] = panels
