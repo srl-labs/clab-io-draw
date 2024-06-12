@@ -479,7 +479,6 @@ def calculate_positions(diagram, layout="vertical", verbose=False):
 
     x_start, y_start = 100, 100
     padding_x, padding_y = 150, 175
-    min_margin = 150
 
     if verbose:
         print("Nodes before calculate_positions:", nodes)
@@ -594,13 +593,8 @@ def adjust_node_levels(diagram):
             continue
 
         nodes_at_current_level = diagram.get_nodes_by_level(current_level)
-        nodes_at_next_level = diagram.get_nodes_by_level(current_level + 1)
-        # print(f"Processing level {current_level}:")
-        # print(f"Nodes at current level: {{current_level}} {[node.name for node in nodes_at_current_level.values()]}")
-        next_level = current_level + 1
         before_level = current_level - 1
         nodes_to_move = []
-        # if nodes_at_next_level:
 
         if len(nodes_at_current_level.items()) == 1:
             # print(f"Only one node found at level {current_level}. No adjustment needed.")
@@ -613,16 +607,11 @@ def adjust_node_levels(diagram):
 
             if not has_upstream_connection:
                 nodes_to_move.append(node)
-            # else:
-            # print(f"Node {node_name} has {len(node.get_upstream_links_towards_level(before_level))} upstream links against Level {before_level} No adjustment needed.")
 
         if len(nodes_to_move) == len(nodes_at_current_level):
             # print(f"Nothing to move here")
             current_level += 1
             continue
-        # else:
-        # for node in nodes_to_move:
-        # print(f"!Node {node.name} does not have an upstream connection to level {before_level}. Marked for movement.")
 
         if nodes_to_move:
             # print(f"Because we need to move, we are increasing all node_graphlevels from the next Levels Nodes by one level")
