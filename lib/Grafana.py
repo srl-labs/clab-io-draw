@@ -59,7 +59,7 @@ class GrafanaDashboard:
             rulesData.append(
                 self.gf_flowchart_rule_traffic(
                     ruleName=f"{link.source.name}:{link.source_intf}:out",
-                    metric=f"{link.source.name}:{link.source_intf}:out",
+                    metric=f"{link.source.name.lower()}:{link.source_intf}:out",
                     link_id=link_id,
                     order=i,
                 )
@@ -72,7 +72,7 @@ class GrafanaDashboard:
             rulesData.append(
                 self.gf_flowchart_rule_operstate(
                     ruleName=f"oper_state:{link.source.name}:{link.source_intf}",
-                    metric=f"oper_state:{link.source.name}:{link.source_intf}",
+                    metric=f"oper_state:{link.source.name.lower()}:{link.source_intf}",
                     link_id=port_id,
                     order=i + 3,
                 )
