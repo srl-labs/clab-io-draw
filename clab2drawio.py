@@ -1,4 +1,4 @@
-#from N2G import drawio_diagram
+# from N2G import drawio_diagram
 from lib.CustomDrawioDiagram import CustomDrawioDiagram
 from lib.Link import Link
 from lib.Node import Node
@@ -381,8 +381,8 @@ def calculate_positions(diagram, layout='vertical', verbose=False):
     nodes =  sorted(nodes.values(), key=lambda node: (node.graph_level, node.name))
 
     x_start, y_start = 100, 100
-    padding_x, padding_y = 200, 200
-    min_margin = 200
+    padding_x, padding_y = 150, 175
+    min_margin = 150
 
     if verbose:
         print("Nodes before calculate_positions:", nodes)
@@ -609,8 +609,6 @@ def assign_graphlevels(diagram, verbose=False):
     sorted_nodes =  sorted(nodes.values(), key=lambda node: (node.graph_level, node.name))
     return sorted_nodes
 
-
-
 def load_styles_from_config(config_path):
     try:
         with open(config_path, 'r') as file:
@@ -624,22 +622,32 @@ def load_styles_from_config(config_path):
         print(error_message)
         exit()
 
-    # Initialize the styles dictionary with defaults and override with config values
+    # Parse the base style into a dictionary
+    base_style_dict = {item.split('=')[0]: item.split('=')[1] for item in config.get('base_style', '').split(';') if item}
+
+    # Initialize styles dictionary with configuration values
     styles = {
+        'background': config.get('background', "#FFFFFF"),
+        'shadow': config.get('shadow', "1"),
+        'grid': config.get('grid', "1"),
+        'pagew': config.get('pagew', "827"),
+        'pageh': config.get('pageh', "1169"),
         'base_style': config.get('base_style', ''),
         'link_style': config.get('link_style', ''),
         'src_label_style': config.get('src_label_style', ''),
         'trgt_label_style': config.get('trgt_label_style', ''),
         'port_style': config.get('port_style', ''), 
-        'connector_style': config.get('connector_style', ''), 
-        'background': config.get('background', "#FFFFFF"),
-        'shadow': config.get('shadow', "1"),
-        'pagew': config.get('pagew', "827"),
-        'pageh': config.get('pageh', "1169"),
-        'grid': config.get('grid', "1"),
-        'custom_styles': {key: config.get('base_style', '') + value for key, value in config.get('custom_styles', {}).items()},
+        'connector_style': config.get('connector_style', ''),
         'icon_to_group_mapping': config.get('icon_to_group_mapping', {}),
+        'custom_styles': {}
     }
+
+    # Merge base style with custom styles
+    for key, custom_style in config.get('custom_styles', {}).items():
+        custom_style_dict = {item.split('=')[0]: item.split('=')[1] for item in custom_style.split(';') if item}
+        merged_style_dict = {**base_style_dict, **custom_style_dict}  # custom style overrides base style
+        merged_style = ';'.join(f"{k}={v}" for k, v in merged_style_dict.items())
+        styles['custom_styles'][key] = merged_style
 
     # Read all other configuration values
     for key, value in config.items():
@@ -647,6 +655,7 @@ def load_styles_from_config(config_path):
             styles[key] = value
 
     return styles
+
 
 def interactive_mode(nodes, icon_to_group_mapping, containerlab_data, output_file, processor):
     # Initialize previous summary with existing node labels
