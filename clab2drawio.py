@@ -787,7 +787,7 @@ def load_styles_from_config(config_path):
 
 
 def interactive_mode(
-    nodes, icon_to_group_mapping, containerlab_data, output_file, processor
+    nodes, icon_to_group_mapping, containerlab_data, output_file, processor, prefix, lab_name
 ):
     # Initialize previous summary with existing node labels
     previous_summary = {"Levels": {}, "Icons": {}}
@@ -832,12 +832,15 @@ def interactive_mode(
                 summary["Levels"].setdefault(level, []).append(node_name)
                 tmp_nodes.remove(node_name)
 
+                # Get the unformatted node name
+                unformatted_node_name = node_name.replace(f"{prefix}-{lab_name}-", "")
+
                 # Check if 'labels' section exists, create it if necessary
-                if "labels" not in containerlab_data["topology"]["nodes"][node_name]:
-                    containerlab_data["topology"]["nodes"][node_name]["labels"] = {}
+                if "labels" not in containerlab_data["topology"]["nodes"][unformatted_node_name]:
+                    containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"] = {}
 
                 # Update containerlab_data with graph-level
-                containerlab_data["topology"]["nodes"][node_name]["labels"][
+                containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"][
                     "graph-level"
                 ] = level
 
@@ -869,12 +872,15 @@ def interactive_mode(
                 summary["Icons"].setdefault(icon, []).append(node_name)
                 tmp_nodes.remove(node_name)
 
+                # Get the unformatted node name
+                unformatted_node_name = node_name.replace(f"{prefix}-{lab_name}-", "")
+
                 # Check if 'labels' section exists, create it if necessary
-                if "labels" not in containerlab_data["topology"]["nodes"][node_name]:
-                    containerlab_data["topology"]["nodes"][node_name]["labels"] = {}
+                if "labels" not in containerlab_data["topology"]["nodes"][unformatted_node_name]:
+                    containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"] = {}
 
                 # Update containerlab_data with graph-icon
-                containerlab_data["topology"]["nodes"][node_name]["labels"][
+                containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"][
                     "graph-icon"
                 ] = icon
 
@@ -1080,6 +1086,8 @@ def main(
             containerlab_data,
             input_file,
             processor,
+            prefix,
+            lab_name
         )
 
     assign_graphlevels(diagram, verbose=False)
