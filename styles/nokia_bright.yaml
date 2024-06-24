@@ -1,7 +1,7 @@
 #General Diagram settings:
 background: "#FFFFFF"
 shadow: "0"
-grid: "1"
+grid: "0"
 pagew: "auto"
 pageh: "auto"
 
