@@ -98,42 +98,41 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
 ## Customization
 The tool allows for customization of node and link styles within the generated diagrams, making it possible to adjust the appearance to fit specific requirements or preferences.
 
-
 Below are some example images of the available custom styles:
 
-<div style="display: flex; flex-wrap: wrap; justify-content: space-around;">
+<div style="display: flex; flex-wrap: wrap; justify-content: center;">
 
-  <div style="text-align: center; margin: 10px;">
+  <div style="text-align: center; margin: 20px; flex: 1 1 calc(50% - 40px); box-sizing: border-box;">
     <a href="img/nokia_bright.png" target="_blank">
-      <img src="img/nokia_bright.png" alt="Nokia Bright Mode" style="width: 200px;">
+      <img src="img/nokia_bright.png" alt="Nokia Bright Mode" style="width: 100%;">
     </a>
     <p>nokia_bright</p>
   </div>
 
-  <div style="text-align: center; margin: 10px;">
+  <div style="text-align: center; margin: 20px; flex: 1 1 calc(50% - 40px); box-sizing: border-box;">
     <a href="img/nokia_dark.png" target="_blank">
-      <img src="img/nokia_dark.png" alt="Nokia Dark Mode" style="width: 200px;">
+      <img src="img/nokia_dark.png" alt="Nokia Dark Mode" style="width: 100%;">
     </a>
     <p>nokia_dark</p>
   </div>
 
-  <div style="text-align: center; margin: 10px;">
+  <div style="text-align: center; margin: 20px; flex: 1 1 calc(50% - 40px); box-sizing: border-box;">
     <a href="img/modern_bright.png" target="_blank">
-      <img src="img/modern_bright.png" alt="Modern Bright Mode" style="width: 200px;">
+      <img src="img/modern_bright.png" alt="Modern Bright Mode" style="width: 100%;">
     </a>
     <p>nokia_modern_bright</p>
   </div>
 
-  <div style="text-align: center; margin: 10px;">
+  <div style="text-align: center; margin: 20px; flex: 1 1 calc(50% - 40px); box-sizing: border-box;">
     <a href="img/modern_dark.png" target="_blank">
-      <img src="img/modern_dark.png" alt="Modern Dark Mode" style="width: 200px;">
+      <img src="img/modern_dark.png" alt="Modern Dark Mode" style="width: 100%;">
     </a>
     <p>nokia_modern_dark</p>
   </div>
 
-  <div style="text-align: center; margin: 10px;">
+  <div style="text-align: center; margin: 20px; flex: 1 1 calc(50% - 40px); box-sizing: border-box;">
     <a href="img/grafana_dark.png" target="_blank">
-      <img src="img/grafana_dark.png" alt="Grafana Dark Mode" style="width: 200px;">
+      <img src="img/grafana_dark.png" alt="Grafana Dark Mode" style="width: 100%;">
     </a>
     <p>grafana_dark</p>
   </div>
