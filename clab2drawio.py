@@ -299,6 +299,7 @@ def add_ports(diagram, styles, verbose=True):
 
 def add_links(diagram, styles):
     nodes = diagram.nodes
+    global_seen_links = set()
 
     for node in nodes.values():
         downstream_links = node.get_downstream_links()
@@ -306,9 +307,20 @@ def add_links(diagram, styles):
 
         links = downstream_links + lateral_links
 
+        # Filter links globally
+        filtered_links = []
+        for link in links:
+            source_id = f"{link.source.name}:{link.source_intf}"
+            target_id = f"{link.target.name}:{link.target_intf}"
+            link_pair = tuple(sorted([source_id, target_id]))
+
+            if link_pair not in global_seen_links:
+                global_seen_links.add(link_pair)
+                filtered_links.append(link)
+
         # Group links by their target
         target_groups = {}
-        for link in links:
+        for link in filtered_links:
             target = link.target
             if target not in target_groups:
                 target_groups[target] = []
@@ -361,6 +373,7 @@ def add_links(diagram, styles):
                     ) = link.get_label_positions(entryX, entryY, exitX, exitY, styles)
 
                     diagram.add_link(
+                        link_id=f"link:{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}",
                         source=link.source.name,
                         target=link.target.name,
                         style=style,
@@ -389,6 +402,7 @@ def add_links(diagram, styles):
                     )
                 else:
                     diagram.add_link(
+                        link_id=f"link:{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}",
                         source=link.source.name,
                         target=link.target.name,
                         src_label=link.source_intf,
