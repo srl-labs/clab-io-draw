@@ -39,14 +39,12 @@ def add_ports(diagram, styles, verbose=True):
                     spacing = styles["node_width"] / (num_links + 1)
                     for i, link in enumerate(sorted_links):
                         port_x = (
-                            node.pos_x
-                            + (i + 1) * spacing
-                            - styles["connector_width"] / 2
+                            node.pos_x + (i + 1) * spacing - styles["port_width"] / 2
                         )
                         port_y = (
                             node.pos_y
                             + styles["node_height"]
-                            - styles["connector_height"] / 2
+                            - styles["port_height"] / 2
                         )
                         link.port_pos = (port_x, port_y)
                 elif direction == "upstream":
@@ -58,11 +56,9 @@ def add_ports(diagram, styles, verbose=True):
                     spacing = styles["node_width"] / (num_links + 1)
                     for i, link in enumerate(sorted_links):
                         port_x = (
-                            node.pos_x
-                            + (i + 1) * spacing
-                            - styles["connector_width"] / 2
+                            node.pos_x + (i + 1) * spacing - styles["port_width"] / 2
                         )
-                        port_y = node.pos_y - styles["connector_height"] / 2
+                        port_y = node.pos_y - styles["port_height"] / 2
                         link.port_pos = (port_x, port_y)
                 else:
                     # Sort lateral links by y position of source and target
@@ -143,8 +139,8 @@ def add_ports(diagram, styles, verbose=True):
                 source_cID = f"{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
                 source_label = re.findall(r"\d+", link.source_intf)[-1]
                 source_connector_pos = link.port_pos
-                connector_width = styles["connector_width"]
-                connector_height = styles["connector_height"]
+                port_width = styles["port_width"]
+                port_height = styles["port_height"]
 
                 # Add the source connector ID to the source connector dictionary
                 if link.source.name not in connector_dict:
@@ -209,8 +205,8 @@ def add_ports(diagram, styles, verbose=True):
                     label=source_label,
                     x_pos=source_connector_pos[0],
                     y_pos=source_connector_pos[1],
-                    width=connector_width,
-                    height=connector_height,
+                    width=port_width,
+                    height=port_height,
                     style=styles["port_style"],
                 )
 
@@ -219,19 +215,19 @@ def add_ports(diagram, styles, verbose=True):
                     label=target_label,
                     x_pos=target_connector_pos[0],
                     y_pos=target_connector_pos[1],
-                    width=connector_width,
-                    height=connector_height,
+                    width=port_width,
+                    height=port_height,
                     style=styles["port_style"],
                 )
 
                 # Calculate center positions
                 source_center = (
-                    source_connector_pos[0] + connector_width / 2,
-                    source_connector_pos[1] + connector_height / 2,
+                    source_connector_pos[0] + port_width / 2,
+                    source_connector_pos[1] + port_height / 2,
                 )
                 target_center = (
-                    target_connector_pos[0] + connector_width / 2,
-                    target_connector_pos[1] + connector_height / 2,
+                    target_connector_pos[0] + port_width / 2,
+                    target_connector_pos[1] + port_height / 2,
                 )
 
                 # Calculate the real middle between the centers for the midpoint connector
@@ -272,8 +268,8 @@ def add_ports(diagram, styles, verbose=True):
                     label="\u200b",
                     x_pos=midpoint_top_left_x,
                     y_pos=midpoint_top_left_y,
-                    width=4,
-                    height=4,
+                    width=styles["connector_width"],
+                    height=styles["connector_height"],
                     style=styles["connector_style"],
                 )
 
@@ -353,15 +349,54 @@ def add_links(diagram, styles):
                         entryY = exitY = step
                 style = f"{styles['link_style']}entryY={entryY};exitY={exitY};entryX={entryX};exitX={exitX};"
 
-                diagram.add_link(
-                    source=link.source.name,
-                    target=link.target.name,
-                    src_label=link.source_intf,
-                    trgt_label=link.target_intf,
-                    src_label_style=styles["src_label_style"],
-                    trgt_label_style=styles["trgt_label_style"],
-                    style=style,
-                )
+                # Create label nodes for source and target interfaces
+                source_label_id = f"label:{link.source.name}:{link.source_intf}"
+                target_label_id = f"label:{link.target.name}:{link.target_intf}"
+
+                if not styles["default_labels"]:
+                    # Calculate label positions using the get_label_positions method
+                    (
+                        (source_label_x, source_label_y),
+                        (target_label_x, target_label_y),
+                    ) = link.get_label_positions(entryX, entryY, exitX, exitY, styles)
+
+                    diagram.add_link(
+                        source=link.source.name,
+                        target=link.target.name,
+                        style=style,
+                    )
+
+                    # Add label nodes
+                    diagram.add_node(
+                        id=source_label_id,
+                        # label should node name + interface name
+                        label=f"{link.source_intf}",
+                        x_pos=source_label_x,
+                        y_pos=source_label_y,
+                        width=styles["label_width"],
+                        height=styles["label_height"],
+                        style=styles["src_label_style"],
+                    )
+
+                    diagram.add_node(
+                        id=target_label_id,
+                        label=f"{link.target_intf}",
+                        x_pos=target_label_x,
+                        y_pos=target_label_y,
+                        width=styles["label_width"],
+                        height=styles["label_height"],
+                        style=styles["trgt_label_style"],
+                    )
+                else:
+                    diagram.add_link(
+                        source=link.source.name,
+                        target=link.target.name,
+                        src_label=link.source_intf,
+                        trgt_label=link.target_intf,
+                        src_label_style=styles["src_label_style"],
+                        trgt_label_style=styles["trgt_label_style"],
+                        style=style,
+                    )
 
 
 def add_nodes(diagram, nodes, styles):
@@ -787,7 +822,13 @@ def load_styles_from_config(config_path):
 
 
 def interactive_mode(
-    nodes, icon_to_group_mapping, containerlab_data, output_file, processor, prefix, lab_name
+    nodes,
+    icon_to_group_mapping,
+    containerlab_data,
+    output_file,
+    processor,
+    prefix,
+    lab_name,
 ):
     # Initialize previous summary with existing node labels
     previous_summary = {"Levels": {}, "Icons": {}}
@@ -836,8 +877,13 @@ def interactive_mode(
                 unformatted_node_name = node_name.replace(f"{prefix}-{lab_name}-", "")
 
                 # Check if 'labels' section exists, create it if necessary
-                if "labels" not in containerlab_data["topology"]["nodes"][unformatted_node_name]:
-                    containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"] = {}
+                if (
+                    "labels"
+                    not in containerlab_data["topology"]["nodes"][unformatted_node_name]
+                ):
+                    containerlab_data["topology"]["nodes"][unformatted_node_name][
+                        "labels"
+                    ] = {}
 
                 # Update containerlab_data with graph-level
                 containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"][
@@ -876,8 +922,13 @@ def interactive_mode(
                 unformatted_node_name = node_name.replace(f"{prefix}-{lab_name}-", "")
 
                 # Check if 'labels' section exists, create it if necessary
-                if "labels" not in containerlab_data["topology"]["nodes"][unformatted_node_name]:
-                    containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"] = {}
+                if (
+                    "labels"
+                    not in containerlab_data["topology"]["nodes"][unformatted_node_name]
+                ):
+                    containerlab_data["topology"]["nodes"][unformatted_node_name][
+                        "labels"
+                    ] = {}
 
                 # Update containerlab_data with graph-icon
                 containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"][
@@ -965,14 +1016,30 @@ def main(
         print(error_message)
         exit()
 
-    if theme in ["nokia_bright", "nokia_dark", "grafana_dark"]:
-        config_path = os.path.join(script_dir, f"styles/{theme}.yaml")
-    else:
-        # Assume the user has provided a custom path
-        config_path = theme
+    # Load the theme file
+    try:
+        if os.path.isabs(theme):
+            theme_path = theme
+        else:
+            theme_path = os.path.join(script_dir, "styles", f"{theme}.yaml")
+
+        # Check if the theme file exists
+        if not os.path.exists(theme_path):
+            raise FileNotFoundError(
+                f"The specified theme file '{theme_path}' does not exist."
+            )
+
+    except FileNotFoundError as e:
+        error_message = str(e)
+        print(error_message)
+        exit()
+    except Exception as e:
+        error_message = f"An error occurred while loading the theme: {e}"
+        print(error_message)
+        exit()
 
     # Load styles
-    styles = load_styles_from_config(config_path)
+    styles = load_styles_from_config(theme_path)
 
     diagram = CustomDrawioDiagram()
     diagram.layout = layout
@@ -1087,7 +1154,7 @@ def main(
             input_file,
             processor,
             prefix,
-            lab_name
+            lab_name,
         )
 
     assign_graphlevels(diagram, verbose=False)
@@ -1127,6 +1194,9 @@ def main(
     add_nodes(diagram, diagram.nodes, styles)
 
     if grafana:
+        styles["ports"] = True
+
+    if styles["ports"]:
         add_ports(diagram, styles)
         if not output_file:
             grafana_output_file = os.path.splitext(input_file)[0] + ".grafana.json"
