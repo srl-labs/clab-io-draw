@@ -1,197 +1,120 @@
 import json
 import os
 import xml.etree.ElementTree as ET
-
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
+import yaml
 
 class GrafanaDashboard:
-    def __init__(self, diagram=None):
+    def __init__(self, diagram=None, panel_config=None):
         self.diagram = diagram
         self.links = self.diagram.get_links_from_nodes()
         self.dashboard_filename = self.diagram.grafana_dashboard_file
 
-    def create_dashboard(self):
-        # We just need the subtree objects from mxGraphModel.Single page drawings only
-        xmlTree = ET.fromstring(self.diagram.dump_xml())
-        subXmlTree = xmlTree.findall(".//mxGraphModel")[0]
-
-        # Define Query rules for the Panel, rule_expr needs to match the collector metric name
-        # Legend format needs to match the format expected by the metric
-        panelQueryList = {
-            "IngressTraffic": {
-                "rule_expr": "interface_traffic_rate_in_bps",
-                "legend_format": "{{source}}:{{interface_name}}:in",
-            },
-            "EgressTraffic": {
-                "rule_expr": "interface_traffic_rate_out_bps",
-                "legend_format": "{{source}}:{{interface_name}}:out",
-            },
-            "ItfOperState": {
-                "rule_expr": "interface_oper_state",
-                "legend_format": "oper_state:{{source}}:{{interface_name}}",
-            },
-            "ItfOperState2": {
-                "rule_expr": "port_oper_state",
-                "legend_format": "oper_state:{{source}}:{{interface_name}}",
-            },
-            "EgressTraffic2": {
-                "rule_expr": "irate(port_ethernet_statistics_out_octets[$__rate_interval])*8",
-                "legend_format": "{{source}}:{{interface_name}}:out",
-            },
-        }
-        # Create a targets list to embed in the JSON object, we add all the other default JSON attributes to the list
-        targetsList = []
-        for query in panelQueryList:
-            targetsList.append(
-                self.gf_dashboard_datasource_target(
-                    rule_expr=panelQueryList[query]["rule_expr"],
-                    legend_format=panelQueryList[query]["legend_format"],
-                    refId=query,
-                )
-            )
-
-        # Create the Rules Data
-        rulesData = []
-        i = 0
-        for link in self.links:
-            link_id = f"link_id:{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
-
-            # Traffic out
-            rulesData.append(
-                self.gf_flowchart_rule_traffic(
-                    ruleName=f"{link.source.name}:{link.source_intf}:out",
-                    metric=f"{link.source.name.lower()}:{link.source_intf}:out",
-                    link_id=link_id,
-                    order=i,
-                )
-            )
-
-            i = i + 2
-
-            port_id = f"{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
-            # Port State:
-            rulesData.append(
-                self.gf_flowchart_rule_operstate(
-                    ruleName=f"oper_state:{link.source.name}:{link.source_intf}",
-                    metric=f"oper_state:{link.source.name.lower()}:{link.source_intf}",
-                    link_id=port_id,
-                    order=i + 3,
-                )
-            )
-            i = i + 2
-
-        # Create the Panel
-        flowchart_panel = self.gf_flowchart_panel_template(
-            xml=ET.tostring(subXmlTree, encoding="unicode"),
-            rulesData=rulesData,
-            panelTitle="Network Telemetry",
-            targetsList=targetsList,
-        )
-        # Create a dashboard from the panel
-        dashboard_json = json.dumps(
-            self.gf_dashboard_template(
-                panels=flowchart_panel,
-                dashboard_name=os.path.splitext(self.dashboard_filename)[0],
-            ),
-            indent=4,
-        )
-        return dashboard_json
-
-    def gf_dashboard_datasource_target(
-        self, rule_expr="promql_query", legend_format=None, refId="Query1"
-    ):
-        """
-        Dictionary containing information relevant to the Targets queried
-        """
-        target = {
-            "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
-            "editorMode": "code",
-            "expr": rule_expr,
-            "instant": False,
-            "legendFormat": legend_format,
-            "range": True,
-            "refId": refId,
-        }
-        return target
-
-    def gf_flowchart_rule_traffic(
-        self, ruleName="traffic:inOrOut", metric=None, link_id=None, order=1
-    ):
-        """
-        Dictionary containing information relevant to the traffic Rules
-        """
-        # Load the traffic rule template from file
+    def create_dashboard(self, panel_config):
+        # Path to the dashboard JSON template
         base_dir = os.getenv("APP_BASE_DIR", "")
-
-        with open(
-            os.path.join(base_dir, "lib/templates/traffic_rule_template.json"), "r"
-        ) as f:
-            rule = json.load(f)
-
-        rule["alias"] = ruleName
-        rule["pattern"] = metric
-        rule["mapsDat"]["shapes"]["dataList"][0]["pattern"] = link_id
-        rule["mapsDat"]["texts"]["dataList"][0]["pattern"] = link_id
-        rule["order"] = order
-
-        return rule
-
-    def gf_flowchart_rule_operstate(
-        self, ruleName="oper_state", metric=None, link_id=None, order=1
-    ):
-        """
-        Dictionary containing information relevant to the Operational State Rules
-        """
-        # Load the operstate rule template from file
-        base_dir = os.getenv("APP_BASE_DIR", "")
-
-        with open(
-            os.path.join(base_dir, "lib/templates/operstate_rule_template.json"), "r"
-        ) as f:
-            rule = json.load(f)
-
-        rule["alias"] = ruleName
-        rule["pattern"] = metric
-        rule["mapsDat"]["shapes"]["dataList"][0]["pattern"] = link_id
-        rule["order"] = order
-
-        return rule
-
-    def gf_flowchart_panel_template(
-        self, xml=None, rulesData=None, targetsList=None, panelTitle="Network Topology"
-    ):
-        """
-        Dictionary containing information relevant to the Panels Section in the JSON Dashboard
-        Embedding of the XML diagram, the Rules and the Targets
-        """
-        # Load the panel template from file
-        base_dir = os.getenv("APP_BASE_DIR", "")
-
-        with open(
-            os.path.join(base_dir, "lib/templates/panel_template.json"), "r"
-        ) as f:
-            panel = json.load(f)
-
-        panel[0]["flowchartsData"]["flowcharts"][0]["xml"] = xml
-        panel[0]["rulesData"]["rulesData"] = rulesData
-        panel[0]["targets"] = targetsList
-        panel[0]["title"] = panelTitle
-
-        return panel
-
-    def gf_dashboard_template(self, panels=None, dashboard_name="lab-telemetry"):
-        """
-        Dictionary containing information relevant to the Grafana Dashboard Root JSON object
-        """
-
-        base_dir = os.getenv("APP_BASE_DIR", "")
+        template_path = os.path.join(base_dir, "lib/templates/flow_panel_template.json")
 
         # Load the dashboard template from file
-        with open(
-            os.path.join(base_dir, "lib/templates/traffic_rule_template.json")
-        ) as f:
-            dashboard = json.load(f)
+        with open(template_path, 'r') as file:
+            dashboard_json = json.load(file)
 
-        dashboard["panels"] = panels
-        dashboard["title"] = dashboard_name
 
-        return dashboard
+        # Insert the YAML configuration as a string into the panelConfig of the relevant panel
+        for panel in dashboard_json['panels']:
+            if 'options' in panel:
+                panel['options']['panelConfig'] = panel_config
+
+        return json.dumps(dashboard_json, indent=2)
+
+    def create_panel_yaml(self):
+        from ruamel.yaml import YAML, CommentedMap, CommentedSeq
+
+        yaml = YAML()
+        yaml.explicit_start = True  # To include '---' at the start
+        yaml.width = 4096  # prevent line wrapping
+
+        root = CommentedMap()
+
+        # Anchors and Aliases
+        thresholds_operstate = CommentedSeq()
+        thresholds_operstate.append({'color': 'red', 'level': 0})
+        thresholds_operstate.append({'color': 'green', 'level': 1})
+
+        thresholds_operstate.yaml_set_anchor('thresholds-operstate', always_dump=True)
+
+        thresholds_traffic = CommentedSeq()
+        thresholds_traffic.append({'color': 'gray', 'level': 0})
+        thresholds_traffic.append({'color': 'green', 'level': 199999})
+        thresholds_traffic.append({'color': 'yellow', 'level': 500000})
+        thresholds_traffic.append({'color': 'orange', 'level': 1000000})
+        thresholds_traffic.append({'color': 'red', 'level': 5000000})
+
+        thresholds_traffic.yaml_set_anchor('thresholds-traffic', always_dump=True)
+
+        label_config = CommentedMap()
+        label_config['separator'] = "replace"
+        label_config['units'] = "bps"
+        label_config['decimalPoints'] = 1
+        label_config['valueMappings'] = [
+            {'valueMax': 199999, 'text': "\u200B"},
+            {'valueMin': 200000}
+        ]
+
+        label_config.yaml_set_anchor('label-config', always_dump=True)
+
+        # Anchors entry in root
+        root['anchors'] = anchors = CommentedMap()
+
+        anchors['thresholds-operstate'] = thresholds_operstate
+        anchors['thresholds-traffic'] = thresholds_traffic
+        anchors['label-config'] = label_config
+
+        # cellIdPreamble
+        root['cellIdPreamble'] = 'cell-'
+
+        # cells
+        cells = CommentedMap()
+        root['cells'] = cells
+        for link in self.links:
+            source_name = link.source.name
+            source_intf = link.source_intf
+            target_name = link.target.name
+            target_intf = link.target_intf
+
+            # Operstate cell
+            cell_id_operstate = f"{source_name}:{source_intf}:{target_name}:{target_intf}"
+            dataRef_operstate = f"oper-state:{source_name}:{source_intf}"
+
+            # fillColor thresholds referencing the anchor
+            fillColor_operstate = CommentedMap()
+            fillColor_operstate['thresholds'] = thresholds_operstate  # reference anchor
+
+            cell_operstate = CommentedMap()
+            cell_operstate['dataRef'] = dataRef_operstate
+            cell_operstate['fillColor'] = fillColor_operstate
+
+            cells[cell_id_operstate] = cell_operstate
+
+            # Traffic cell
+            cell_id_traffic = f"link_id:{source_name}:{source_intf}:{target_name}:{target_intf}"
+
+            dataRef_traffic = f"{source_name}:{source_intf}:out"
+
+            strokeColor_traffic = CommentedMap()
+            strokeColor_traffic['thresholds'] = thresholds_traffic  # reference anchor
+
+            cell_traffic = CommentedMap()
+            cell_traffic['dataRef'] = dataRef_traffic
+            cell_traffic['label'] = label_config  # reference anchor
+            cell_traffic['strokeColor'] = strokeColor_traffic
+
+            cells[cell_id_traffic] = cell_traffic
+
+        # Now write root to YAML
+        import io
+        stream = io.StringIO()
+        yaml.dump(root, stream)
+        panel_yaml = stream.getvalue()
+        return panel_yaml

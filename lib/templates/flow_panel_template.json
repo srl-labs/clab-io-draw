@@ -1,0 +1,106 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "prometheus"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 3,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+      {
+        "datasource": {
+          "type": "prometheus"
+        },
+        "gridPos": {
+          "h": 23,
+          "w": 13,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "options": {
+          "animationControlEnabled": true,
+          "animationsEnabled": true,
+          "debuggingCtr": {
+            "colorsCtr": 1,
+            "dataCtr": 0,
+            "displaySvgCtr": 0,
+            "mappingsCtr": 0,
+            "timingsCtr": 0
+          },
+          "highlighterEnabled": true,
+          "panZoomEnabled": true,
+          "panelConfig": "",
+          "siteConfig": "",
+          "svg": "",
+          "testDataEnabled": false,
+          "timeSliderEnabled": true
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus"
+            },
+            "editorMode": "code",
+            "expr": "interface_oper_state",
+            "instant": false,
+            "legendFormat": "oper-state:{{source}}:{{interface_name}}",
+            "range": true,
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "prometheus"
+            },
+            "editorMode": "code",
+            "expr": "interface_traffic_rate_out_bps",
+            "hide": false,
+            "instant": false,
+            "legendFormat": "{{source}}:{{interface_name}}:out",
+            "range": true,
+            "refId": "B"
+          },
+          {
+            "datasource": {
+              "type": "prometheus"
+            },
+            "editorMode": "code",
+            "expr": "interface_traffic_rate_in_bps",
+            "hide": false,
+            "instant": false,
+            "legendFormat": "{{source}}:{{interface_name}}:in",
+            "range": true,
+            "refId": "C"
+          }
+        ],
+        "title": "Network Telemetry",
+        "type": "andrewbmchugh-flow-panel"
+      }
+    ],
+    "refresh": "5s",
+    "schemaVersion": 38,
+    "tags": [],
+    "time": {
+      "from": "now-5m",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Network Telemetry",
+    "version": 6,
+    "weekStart": ""
+  }
