@@ -1218,12 +1218,23 @@ def main(
         output_filename = os.path.basename(grafana_output_file)
         diagram.grafana_dashboard_file = grafana_output_file
         os.makedirs(output_folder, exist_ok=True)
+        
         grafana = GrafanaDashboard(diagram)
-        grafana_json = grafana.create_dashboard()
-        # dump the json to the file
+
+        # Create flow panel YAML
+        panel_config = grafana.create_panel_yaml()        
+        
+        # Write flow panel YAML to file
+        flow_panel_output_file = os.path.splitext(grafana_output_file)[0] + ".flow_panel.yaml"
+        with open(flow_panel_output_file, "w") as f:
+            f.write(panel_config)
+        print("Saved flow panel YAML to:", flow_panel_output_file)
+        
+        grafana_json = grafana.create_dashboard(panel_config)
+        # Dump the JSON to the file
         with open(grafana_output_file, "w") as f:
             f.write(grafana_json)
-        print("Saved file to:", grafana_output_file)
+        print("Saved Grafana dashboard JSON to:", grafana_output_file)
     else:
         add_links(diagram, styles)
 
