@@ -1068,7 +1068,7 @@ def main(
         formatted_node_name = format_node_name(node_name, prefix, lab_name)
 
         node = Node(
-            name=formatted_node_name,
+            name=formatted_node_name.lower(),
             label=node_name,
             kind=node_data.get("kind", ""),
             mgmt_ipv4=node_data.get("mgmt_ipv4", ""),
