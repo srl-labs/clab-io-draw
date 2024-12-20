@@ -1,9 +1,17 @@
-class GraphLevelManager:
-    def __init__(self):
-        pass
+import logging
 
-    def update_links(self, links):
-        # Same logic as before
+logger = logging.getLogger(__name__)
+
+class GraphLevelManager:
+    """
+    Manages graph-level assignments and adjustments for nodes in the diagram.
+    """
+
+    def update_links(self, links: list) -> None:
+        """
+        Update the direction and level difference of links after changes in node graph levels.
+        """
+        logger.debug("Updating link directions and level differences...")
         for link in links:
             source_level = link.source.graph_level
             target_level = link.target.graph_level
@@ -15,13 +23,17 @@ class GraphLevelManager:
             else:
                 link.direction = "lateral"
 
-    def adjust_node_levels(self, diagram):
+    def adjust_node_levels(self, diagram) -> None:
+        """
+        Adjust node levels to reduce inconsistencies and improve layout clarity.
+        """
+        logger.debug("Adjusting node levels for better layout...")
         used_levels = diagram.get_used_levels()
         max_level = diagram.get_max_level()
         min_level = diagram.get_min_level()
 
         if len(used_levels) <= 1:
-            return  # Only one level present, no adjustment needed
+            return
 
         current_level = min_level
         while current_level < max_level + 1:
@@ -83,15 +95,23 @@ class GraphLevelManager:
                             max_level = diagram.get_max_level()
                             break
 
-    def assign_graphlevels(self, diagram, verbose=False):
+    def assign_graphlevels(self, diagram, verbose=False) -> list:
+        """
+        Assign initial graph levels to nodes and adjust them as necessary.
+
+        :param diagram: CustomDrawioDiagram instance.
+        :param verbose: Whether to print debugging info.
+        :return: Sorted list of nodes by level and name.
+        """
+        logger.debug("Assigning graph levels to nodes...")
         nodes = diagram.get_nodes()
 
-        # Check if all nodes already have a graphlevel != -1
         if all(node.graph_level != -1 for node in nodes.values()):
             already_set = True
         else:
             already_set = False
-            print(
+            if verbose:
+                print(
                 "Not all graph levels set in the .clab file. Assigning graph levels based on downstream links. Expect experimental output. Please consider assigning graph levels to your .clab file, or use it with -I for interactive mode. Find more information here: https://github.com/srl-labs/clab-io-draw/blob/grafana_style/docs/clab2drawio.md#influencing-node-placement"
             )
 
@@ -127,4 +147,5 @@ class GraphLevelManager:
         sorted_nodes = sorted(
             nodes.values(), key=lambda node: (node.graph_level, node.name)
         )
+        logger.debug("Graph levels assigned.")
         return sorted_nodes

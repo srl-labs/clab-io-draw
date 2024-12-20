@@ -2,7 +2,17 @@ import re
 import random
 
 class DiagramBuilder:
+    """
+    Builds diagram elements such as nodes, ports, and links into the Draw.io diagram.
+    """
     def add_ports(self, diagram, styles, verbose=True):
+        """
+        Add ports to the diagram nodes based on their links and layout.
+
+        :param diagram: CustomDrawioDiagram instance.
+        :param styles: Dictionary of style parameters.
+        :param verbose: Whether to print debugging information.
+        """
         nodes = diagram.nodes
 
         for node in nodes.values():
@@ -237,6 +247,12 @@ class DiagramBuilder:
             )
 
     def add_links(self, diagram, styles):
+        """
+        Add links to the diagram, including link labels and styling.
+
+        :param diagram: CustomDrawioDiagram instance.
+        :param styles: Dictionary of style parameters.
+        """
         nodes = diagram.nodes
         global_seen_links = set()
 
@@ -340,6 +356,13 @@ class DiagramBuilder:
                         )
 
     def add_nodes(self, diagram, nodes, styles):
+        """
+        Add nodes to the diagram with their computed positions and styling.
+
+        :param diagram: CustomDrawioDiagram instance.
+        :param nodes: Dictionary of node_name -> Node instances.
+        :param styles: Dictionary of style parameters.
+        """
         base_style = styles["base_style"]
         custom_styles = styles["custom_styles"]
         icon_to_group_mapping = styles["icon_to_group_mapping"]

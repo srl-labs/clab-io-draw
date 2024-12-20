@@ -1,6 +1,11 @@
 import argparse
 
 def parse_arguments():
+    """
+    Parse command-line arguments for drawio2clab tool.
+
+    :return: argparse.Namespace object with parsed arguments.
+    """
     parser = argparse.ArgumentParser(
         description="Convert a .drawio file to a Containerlab YAML file."
     )

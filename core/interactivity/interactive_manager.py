@@ -3,17 +3,31 @@ import os
 import re
 
 class InteractiveManager:
+    """
+    Manages interactive mode for assigning graph-levels and graph-icons via a CLI interface.
+    """
     def run_interactive_mode(
         self,
-        nodes,
-        icon_to_group_mapping,
-        containerlab_data,
-        output_file,
+        nodes: dict,
+        icon_to_group_mapping: dict,
+        containerlab_data: dict,
+        output_file: str,
         processor,
-        prefix,
-        lab_name,
-    ):
-        # Original logic from interactive_mode() copied here without changes:
+        prefix: str,
+        lab_name: str,
+    ) -> dict:
+        """
+        Run the interactive mode dialogs to set graph-levels and icons for nodes.
+
+        :param nodes: Dictionary of node_name -> Node instances.
+        :param icon_to_group_mapping: Mapping from icon names to style groups.
+        :param containerlab_data: Parsed containerlab topology data.
+        :param output_file: Path to the output containerlab YAML file.
+        :param processor: YAMLProcessor instance for saving updated YAML.
+        :param prefix: Node name prefix.
+        :param lab_name: Lab name string.
+        :return: Summary dictionary of the chosen configuration.
+        """
         previous_summary = {"Levels": {}, "Icons": {}}
         for node_name, node in nodes.items():
             try:

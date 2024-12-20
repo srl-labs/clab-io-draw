@@ -1,11 +1,29 @@
 import yaml
 import sys
+import logging
+
+logger = logging.getLogger(__name__)
+
+class ThemeManagerError(Exception):
+    """Raised when loading the theme fails."""
 
 class ThemeManager:
-    def __init__(self, config_path):
+    """
+    Loads and merges theme configuration from a YAML file.
+    """
+    def __init__(self, config_path: str):
+        """
+        :param config_path: Path to the theme configuration file.
+        """
         self.config_path = config_path
 
-    def load_theme(self):
+    def load_theme(self) -> dict:
+        """
+        Load the theme configuration and return a dictionary of styles.
+
+        :return: Dictionary containing styles and configuration parameters.
+        """
+        logger.debug(f"Loading theme from: {self.config_path}")
         try:
             with open(self.config_path, "r") as file:
                 config = yaml.safe_load(file)
@@ -13,11 +31,11 @@ class ThemeManager:
             error_message = (
                 f"Error: The specified config file '{self.config_path}' does not exist."
             )
-            print(error_message)
+            logger.error(error_message)
             sys.exit(1)
         except Exception as e:
             error_message = f"An error occurred while loading the config: {e}"
-            print(error_message)
+            logger.error(error_message)
             sys.exit(1)
 
         base_style_dict = {
@@ -42,7 +60,6 @@ class ThemeManager:
             "custom_styles": {},
         }
 
-        # Merge base style with custom styles
         for key, custom_style in config.get("custom_styles", {}).items():
             custom_style_dict = {
                 item.split("=")[0]: item.split("=")[1]
@@ -53,7 +70,6 @@ class ThemeManager:
             merged_style = ";".join(f"{k}={v}" for k, v in merged_style_dict.items())
             styles["custom_styles"][key] = merged_style
 
-        # Read all other configuration values
         for key, value in config.items():
             if key not in styles:
                 styles[key] = value

@@ -2,7 +2,16 @@ from core.layout.layout_manager import LayoutManager
 from collections import defaultdict
 
 class VerticalLayout(LayoutManager):
-    def apply(self, diagram, verbose=False):
+    """
+    Applies a vertical layout strategy to arrange nodes in the diagram.
+    """
+    def apply(self, diagram, verbose=False) -> None:
+        """
+        Apply a vertical layout to the diagram nodes.
+
+        :param diagram: CustomDrawioDiagram instance with nodes.
+        :param verbose: Whether to print debugging information.
+        """
         self.diagram = diagram
         self.verbose = verbose
         self._calculate_positions()

@@ -2,7 +2,16 @@ from core.models.node import Node
 from core.models.link import Link
 
 class NodeLinkBuilder:
-    def __init__(self, containerlab_data, styles, prefix, lab_name):
+    """
+    Builds Node and Link objects from containerlab topology data and styling information.
+    """
+    def __init__(self, containerlab_data: dict, styles: dict, prefix: str, lab_name: str):
+        """
+        :param containerlab_data: Parsed containerlab topology data.
+        :param styles: Dictionary of style parameters.
+        :param prefix: Prefix used in node names.
+        :param lab_name: Name of the lab.
+        """
         self.containerlab_data = containerlab_data
         self.styles = styles
         self.prefix = prefix
@@ -17,11 +26,23 @@ class NodeLinkBuilder:
             return f"{self.prefix}-{self.lab_name}-{base_name}"
 
     def build_nodes_and_links(self):
+        """
+        Build Node and Link objects from the provided containerlab data and return them.
+
+        :return: A tuple (nodes_dict, links_list) where:
+                 nodes_dict is a mapping of node_name -> Node instance.
+                 links_list is a list of Link instances.
+        """
         nodes = self._build_nodes()
         links = self._build_links(nodes)
         return nodes, links
 
     def _build_nodes(self):
+        """
+        Internal method to build Node objects.
+
+        :return: Dictionary of node_name -> Node instances.
+        """
         nodes_from_clab = self.containerlab_data["topology"]["nodes"]
 
         node_width = self.styles.get("node_width", 75)
@@ -51,6 +72,12 @@ class NodeLinkBuilder:
         return nodes
 
     def _build_links(self, nodes):
+        """
+        Internal method to build Link objects and attach them to nodes.
+
+        :param nodes: Dictionary of node_name -> Node instances.
+        :return: List of Link instances.
+        """
         links_from_clab = []
         for link in self.containerlab_data["topology"].get("links", []):
             endpoints = link.get("endpoints")

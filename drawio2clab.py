@@ -5,7 +5,22 @@ from core.utils.yaml_processor import YAMLProcessor
 from core.drawio.drawio_parser import DrawioParser
 from core.drawio.converter import Drawio2ClabConverter
 
-def main(input_file, output_file, style="flow", diagram_name=None, default_kind="nokia_srlinux"):
+def main(
+    input_file: str,
+    output_file: str,
+    style: str="flow",
+    diagram_name: str=None,
+    default_kind: str="nokia_srlinux"
+) -> None:
+    """
+    Main function to convert a .drawio file to a Containerlab YAML file.
+
+    :param input_file: Path to the .drawio XML file.
+    :param output_file: Output YAML file path.
+    :param style: YAML style ("block" or "flow").
+    :param diagram_name: Name of the diagram to parse within the .drawio file.
+    :param default_kind: Default kind for nodes if not specified in the diagram.
+    """
     parser = DrawioParser(input_file, diagram_name)
     mxGraphModel_root = parser.parse_xml()
 

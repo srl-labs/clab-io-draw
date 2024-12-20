@@ -1,6 +1,11 @@
 import argparse
 
 def parse_arguments():
+    """
+    Parse command-line arguments for clab2drawio tool.
+
+    :return: argparse.Namespace object with parsed arguments.
+    """
     parser = argparse.ArgumentParser(
         description="Generate a topology diagram from a containerlab YAML or draw.io XML file."
     )
