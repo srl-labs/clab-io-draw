@@ -25,7 +25,7 @@ class HorizontalLayout(LayoutManager):
 
         x_start, y_start = 100, 100
 
-        logger.debug("Nodes before calculate_positions:", nodes)
+        logger.debug("Nodes before calculate_positions:" + str(nodes))
 
         def prioritize_placement(nodes, level):
             diagram = self.diagram
