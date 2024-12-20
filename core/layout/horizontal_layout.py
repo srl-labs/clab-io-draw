@@ -1,51 +1,37 @@
+import logging
 from core.layout.layout_manager import LayoutManager
 from collections import defaultdict
 
+logger = logging.getLogger(__name__)
+
 class HorizontalLayout(LayoutManager):
     """
-    Applies a horizontal layout strategy to arrange nodes in the diagram.
+    Applies a horizontal layout strategy to arrange nodes.
     """
-    def apply(self, diagram, verbose=False) -> None:
-        """
-        Apply a horizontal layout to the diagram nodes.
 
-        :param diagram: CustomDrawioDiagram instance with nodes.
-        :param verbose: Whether to print debugging information.
-        """
+    def apply(self, diagram, verbose=False) -> None:
+        logger.debug("Applying horizontal layout...")
         self.diagram = diagram
         self.verbose = verbose
         self._calculate_positions()
 
     def _calculate_positions(self):
-        # Similar logic as vertical, but swapped x/y usage
-        # The original code: 
-        # if layout == "horizontal": node.pos_x = x_start + graphlevel * padding_x; node.pos_y = y_start + i * padding_y
-        # We'll do something similar here.
-
         nodes = self.diagram.nodes
         nodes = sorted(nodes.values(), key=lambda node: (node.graph_level, node.name))
 
         x_start, y_start = 100, 100
         padding_x, padding_y = 150, 175
 
-        if self.verbose:
-            print("Nodes before calculate_positions:", nodes)
+        logger.debug("Nodes before calculate_positions:", nodes)
 
         def prioritize_placement(nodes, level):
-            # same prioritize logic as vertical, since it does not differ by layout
             diagram = self.diagram
             if level == diagram.get_max_level():
                 ordered_nodes = sorted(nodes, key=lambda node: node.name)
             else:
-                multi_connection_nodes = [
-                    node for node in nodes if node.get_connection_count_within_level() > 1
-                ]
-                single_connection_nodes = [
-                    node for node in nodes if node.get_connection_count_within_level() == 1
-                ]
-                zero_connection_nodes = [
-                    node for node in nodes if node.get_connection_count_within_level() == 0
-                ]
+                multi_connection_nodes = [node for node in nodes if node.get_connection_count_within_level() > 1]
+                single_connection_nodes = [node for node in nodes if node.get_connection_count_within_level() == 1]
+                zero_connection_nodes = [node for node in nodes if node.get_connection_count_within_level() == 0]
 
                 multi_connection_nodes_with_lateral = []
                 multi_connection_nodes_without_lateral = []
@@ -73,9 +59,7 @@ class HorizontalLayout(LayoutManager):
                 sorted_multi_connection_nodes_with_lateral = sorted(
                     sorted_multi_connection_nodes_with_lateral, key=lambda node: node.name
                 )
-                single_connection_nodes = sorted(
-                    single_connection_nodes, key=lambda node: node.name
-                )
+                single_connection_nodes = sorted(single_connection_nodes, key=lambda node: node.name)
 
                 ordered_nodes = (
                     single_connection_nodes[: len(single_connection_nodes) // 2]
@@ -99,16 +83,12 @@ class HorizontalLayout(LayoutManager):
                 node.pos_y = y_start + i * padding_y
 
         self._center_align_nodes(nodes_by_graphlevel, layout="horizontal", verbose=self.verbose)
-
         intermediaries_x, intermediaries_y = self.diagram.get_nodes_between_interconnected()
-
-        # horizontal layout means we adjust intermediaries_y
         self._adjust_intermediary_nodes(intermediaries_y, layout="horizontal", verbose=self.verbose)
 
     def _adjust_intermediary_nodes(self, intermediaries, layout, verbose=False):
         if not intermediaries:
             return
-
         intermediaries_by_level = defaultdict(list)
         for node in intermediaries:
             intermediaries_by_level[node.graph_level].append(node)
@@ -140,9 +120,7 @@ class HorizontalLayout(LayoutManager):
             graphlevel_centers = [getattr(node, attr_x) for node in nodes]
 
             if prev_graphlevel_center is None:
-                prev_graphlevel_center = (
-                    min(graphlevel_centers) + max(graphlevel_centers)
-                ) / 2
+                prev_graphlevel_center = (min(graphlevel_centers) + max(graphlevel_centers)) / 2
             else:
                 graphlevel_center = sum(graphlevel_centers) / len(nodes)
                 offset = prev_graphlevel_center - graphlevel_center

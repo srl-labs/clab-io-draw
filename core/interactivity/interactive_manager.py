@@ -1,11 +1,13 @@
+import logging
 from prompt_toolkit.shortcuts import checkboxlist_dialog, yes_no_dialog
-import os
-import re
+
+logger = logging.getLogger(__name__)
 
 class InteractiveManager:
     """
     Manages interactive mode for assigning graph-levels and graph-icons via a CLI interface.
     """
+
     def run_interactive_mode(
         self,
         nodes: dict,
@@ -17,34 +19,24 @@ class InteractiveManager:
         lab_name: str,
     ) -> dict:
         """
-        Run the interactive mode dialogs to set graph-levels and icons for nodes.
+        Run dialogs to set graph-levels and icons interactively.
 
-        :param nodes: Dictionary of node_name -> Node instances.
-        :param icon_to_group_mapping: Mapping from icon names to style groups.
-        :param containerlab_data: Parsed containerlab topology data.
-        :param output_file: Path to the output containerlab YAML file.
-        :param processor: YAMLProcessor instance for saving updated YAML.
-        :param prefix: Node name prefix.
-        :param lab_name: Lab name string.
         :return: Summary dictionary of the chosen configuration.
         """
+        logger.debug("Starting interactive mode for node configuration...")
         previous_summary = {"Levels": {}, "Icons": {}}
         for node_name, node in nodes.items():
-            try:
                 level = node.graph_level
                 previous_summary["Levels"].setdefault(level, []).append(node_name)
-
                 icon = node.graph_icon
                 previous_summary["Icons"].setdefault(icon, []).append(node_name)
-            except AttributeError:
-                continue
 
         while True:
             summary = {"Levels": {}, "Icons": {}}
             tmp_nodes = list(nodes.keys())
             level = 0
 
-            # Assign levels to nodes
+            # Assign levels
             while tmp_nodes:
                 level += 1
                 valid_nodes = [(node, node) for node in tmp_nodes]
@@ -59,33 +51,25 @@ class InteractiveManager:
                     break
 
                 if level_nodes is None:
-                    return  # Exit if cancel clicked
+                    logger.debug("User canceled interactive mode.")
+                    return
 
                 if len(level_nodes) == 0:
                     continue
 
-                # Update node labels and summary with assigned levels
                 for node_name in level_nodes:
                     nodes[node_name].graph_level = level
                     summary["Levels"].setdefault(level, []).append(node_name)
                     tmp_nodes.remove(node_name)
 
                     unformatted_node_name = node_name.replace(f"{prefix}-{lab_name}-", "")
-
-                    if (
-                        "labels"
-                        not in containerlab_data["topology"]["nodes"][unformatted_node_name]
-                    ):
+                    if "labels" not in containerlab_data["topology"]["nodes"][unformatted_node_name]:
                         containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"] = {}
+                    containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"]["graph-level"] = level
 
-                    containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"][
-                        "graph-level"
-                    ] = level
-
+            # Assign icons
             tmp_nodes = list(nodes.keys())
             icons = list(icon_to_group_mapping.keys())
-
-            # Assign icons to nodes
             for icon in icons:
                 valid_nodes = [(node, node) for node in tmp_nodes]
                 if valid_nodes:
@@ -99,7 +83,8 @@ class InteractiveManager:
                     icon_nodes = []
 
                 if icon_nodes is None:
-                    return  # Exit if cancel clicked
+                    logger.debug("User canceled interactive icon assignment.")
+                    return
 
                 if not icon_nodes:
                     continue
@@ -110,22 +95,15 @@ class InteractiveManager:
                     tmp_nodes.remove(node_name)
 
                     unformatted_node_name = node_name.replace(f"{prefix}-{lab_name}-", "")
-
-                    if (
-                        "labels"
-                        not in containerlab_data["topology"]["nodes"][unformatted_node_name]
-                    ):
+                    if "labels" not in containerlab_data["topology"]["nodes"][unformatted_node_name]:
                         containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"] = {}
-
-                    containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"][
-                        "graph-icon"
-                    ] = icon
+                    containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"]["graph-icon"] = icon
 
             summary_tree = ""
-            for level, node_list in summary["Levels"].items():
-                summary_tree += f"Level {level}: "
+            for lvl, node_list in summary["Levels"].items():
+                summary_tree += f"Level {lvl}: "
                 node_items = []
-                indent = " " * (len(f"Level {level}: "))
+                indent = " " * (len(f"Level {lvl}: "))
                 for i, node in enumerate(node_list, start=1):
                     icon = nodes[node].graph_icon
                     node_items.append(f"{node} ({icon})")
@@ -137,6 +115,7 @@ class InteractiveManager:
             result = yes_no_dialog(title="SUMMARY", text=summary_tree).run()
 
             if result is None:
+                logger.debug("User canceled at summary.")
                 return
             elif result:
                 break
@@ -147,7 +126,7 @@ class InteractiveManager:
         ).run()
 
         if update_file:
-            modified_output_file = os.path.splitext(output_file)[0] + ".mod.yaml"
+            modified_output_file = output_file.rsplit('.', 1)[0] + ".mod.yml"
             processor.save_yaml(containerlab_data, modified_output_file)
             print(f"ContainerLab file has been updated: {modified_output_file}")
         else:

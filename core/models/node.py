@@ -1,4 +1,8 @@
 class Node:
+    """
+    Represents a single node in the topology.
+    """
+
     def __init__(
         self,
         name,
@@ -28,9 +32,6 @@ class Node:
 
     def add_link(self, link):
         self.links.append(link)
-
-    def remove_link(self, link):
-        self.upstream_links.remove(link)
 
     def get_connection_count(self):
         return len(self.links)
@@ -67,15 +68,15 @@ class Node:
     def get_neighbors(self):
         neighbors = set()
         for link in self.get_all_links():
-            if link.source == self.name:
+            if link.source.name == self.name:
                 neighbors.add(link.target)
             else:
                 neighbors.add(link.source)
         return list(neighbors)
 
-    def is_connected_to(self, node):
+    def is_connected_to(self, other_node):
         for link in self.links:
-            if link.source == node or link.target == node:
+            if link.source == other_node or link.target == other_node:
                 return True
         return False
 

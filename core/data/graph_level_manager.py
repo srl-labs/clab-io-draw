@@ -110,8 +110,7 @@ class GraphLevelManager:
             already_set = True
         else:
             already_set = False
-            if verbose:
-                print(
+            print(
                 "Not all graph levels set in the .clab file. Assigning graph levels based on downstream links. Expect experimental output. Please consider assigning graph levels to your .clab file, or use it with -I for interactive mode. Find more information here: https://github.com/srl-labs/clab-io-draw/blob/grafana_style/docs/clab2drawio.md#influencing-node-placement"
             )
 

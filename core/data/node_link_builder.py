@@ -1,10 +1,14 @@
+import logging
 from core.models.node import Node
 from core.models.link import Link
+
+logger = logging.getLogger(__name__)
 
 class NodeLinkBuilder:
     """
     Builds Node and Link objects from containerlab topology data and styling information.
     """
+
     def __init__(self, containerlab_data: dict, styles: dict, prefix: str, lab_name: str):
         """
         :param containerlab_data: Parsed containerlab topology data.
@@ -17,7 +21,13 @@ class NodeLinkBuilder:
         self.prefix = prefix
         self.lab_name = lab_name
 
-    def format_node_name(self, base_name):
+    def format_node_name(self, base_name: str) -> str:
+        """
+        Format node name with given prefix and lab_name.
+
+        :param base_name: Original node name from containerlab data.
+        :return: Formatted node name string.
+        """
         if self.prefix == "":
             return base_name
         elif self.prefix == "clab" and not self.prefix:
@@ -27,21 +37,21 @@ class NodeLinkBuilder:
 
     def build_nodes_and_links(self):
         """
-        Build Node and Link objects from the provided containerlab data and return them.
+        Build Node and Link objects from the provided containerlab data.
 
-        :return: A tuple (nodes_dict, links_list) where:
-                 nodes_dict is a mapping of node_name -> Node instance.
-                 links_list is a list of Link instances.
+        :return: A tuple (nodes_dict, links_list)
         """
+        logger.debug("Building nodes...")
         nodes = self._build_nodes()
+        logger.debug("Building links...")
         links = self._build_links(nodes)
         return nodes, links
 
     def _build_nodes(self):
         """
-        Internal method to build Node objects.
+        Internal method to build Node instances from containerlab topology data.
 
-        :return: Dictionary of node_name -> Node instances.
+        :return: Dictionary of node_name -> Node
         """
         nodes_from_clab = self.containerlab_data["topology"]["nodes"]
 
@@ -73,10 +83,10 @@ class NodeLinkBuilder:
 
     def _build_links(self, nodes):
         """
-        Internal method to build Link objects and attach them to nodes.
+        Internal method to build Link instances and attach them to their respective nodes.
 
-        :param nodes: Dictionary of node_name -> Node instances.
-        :return: List of Link instances.
+        :param nodes: Dictionary of node_name -> Node
+        :return: List of Link objects
         """
         links_from_clab = []
         for link in self.containerlab_data["topology"].get("links", []):
@@ -88,7 +98,6 @@ class NodeLinkBuilder:
                 source_node = self.format_node_name(source_node)
                 target_node = self.format_node_name(target_node)
 
-                # Add link only if both source and target nodes exist
                 if source_node in nodes and target_node in nodes:
                     links_from_clab.append(
                         {
@@ -114,10 +123,6 @@ class NodeLinkBuilder:
                     link_style=self.styles.get("link_style", ""),
                     src_label_style=self.styles.get("src_label_style", ""),
                     trgt_label_style=self.styles.get("trgt_label_style", ""),
-                    entryY=link_data.get("entryY", 0),
-                    exitY=link_data.get("exitY", 0),
-                    entryX=link_data.get("entryX", 0),
-                    exitX=link_data.get("exitX", 0),
                     direction="downstream",
                 )
                 upstream_link = Link(
@@ -129,16 +134,12 @@ class NodeLinkBuilder:
                     link_style=self.styles.get("link_style", ""),
                     src_label_style=self.styles.get("src_label_style", ""),
                     trgt_label_style=self.styles.get("trgt_label_style", ""),
-                    entryY=link_data.get("entryY", 0),
-                    exitY=link_data.get("exitY", 0),
-                    entryX=link_data.get("entryX", 0),
-                    exitX=link_data.get("exitX", 0),
                     direction="upstream",
                 )
                 links.append(downstream_link)
                 links.append(upstream_link)
 
-                # Add the links to the source and target nodes
+                # Attach links to nodes
                 source_node.add_link(downstream_link)
                 target_node.add_link(upstream_link)
 

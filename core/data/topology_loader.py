@@ -1,5 +1,4 @@
 import yaml
-import sys
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,12 +10,14 @@ class TopologyLoader:
     """
     Loads containerlab topology data from a YAML file.
     """
+
     def load(self, input_file: str) -> dict:
         """
-        Load the containerlab YAML topology file and return its contents as a dictionary.
+        Load the containerlab YAML topology file.
 
         :param input_file: Path to the containerlab YAML file.
         :return: Parsed containerlab topology data.
+        :raises TopologyLoaderError: If file not found or parse error occurs.
         """
         logger.debug(f"Loading topology from file: {input_file}")
         try:

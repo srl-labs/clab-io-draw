@@ -1,4 +1,8 @@
 class Link:
+    """
+    Represents a link between two nodes, including styling and interface labels.
+    """
+
     def __init__(self, source, target, source_intf=None, target_intf=None, **kwargs):
         self.source = source
         self.target = target
@@ -39,29 +43,23 @@ class Link:
         node_width = styles["node_width"]
         node_height = styles["node_height"]
 
-        # Calculate absolute positions for exit and entry based on normalized values
         source_exit_x = source_x + node_width * exitX
         source_exit_y = source_y + node_height * exitY
         target_entry_x = target_x + node_width * entryX
         target_entry_y = target_y + node_height * entryY
 
-        # Vector from source exit to target entry
         dx = target_entry_x - source_exit_x
         dy = target_entry_y - source_exit_y
-
-        # Normalize the vector
         vector_length = (dx**2 + dy**2) ** 0.5
         unit_dx = dx / vector_length if vector_length != 0 else 0
         unit_dy = dy / vector_length if vector_length != 0 else 0
 
-        # Apply the label offset along the vector
         label_offset = styles["label_offset"]
         source_label_x = source_exit_x + unit_dx * label_offset
         source_label_y = source_exit_y + unit_dy * label_offset
         target_label_x = target_entry_x - unit_dx * label_offset
         target_label_y = target_entry_y - unit_dy * label_offset
 
-        # Adjust labels based on width, height, and alignment
         label_width = styles["label_width"]
         label_height = styles["label_height"]
 
@@ -81,4 +79,4 @@ class Link:
         return (source_label_x, source_label_y), (target_label_x, target_label_y)
 
     def __repr__(self):
-        return f"Link(source='{self.source}', target='{self.target}')"
+        return f"Link(source='{self.source.name}', target='{self.target.name}')"
