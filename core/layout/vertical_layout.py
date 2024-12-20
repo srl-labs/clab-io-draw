@@ -19,8 +19,11 @@ class VerticalLayout(LayoutManager):
         nodes = self.diagram.nodes
         nodes = sorted(nodes.values(), key=lambda node: (node.graph_level, node.name))
 
+        # Get padding from styles
+        padding_x = self.diagram.styles['padding_x']
+        padding_y = self.diagram.styles['padding_y']
+
         x_start, y_start = 100, 100
-        padding_x, padding_y = 150, 175
 
         logger.debug("Nodes before calculate_positions:", nodes)
 

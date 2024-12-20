@@ -79,6 +79,7 @@ def main(
 
     diagram = CustomDrawioDiagram()
     diagram.layout = layout
+    diagram.styles = styles
 
     nodes_from_clab = containerlab_data["topology"]["nodes"]
     # Determine the prefix
