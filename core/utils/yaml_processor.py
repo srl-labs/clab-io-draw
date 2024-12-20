@@ -1,13 +1,11 @@
 import yaml
 import sys
 
-
 class YAMLProcessor:
     class CustomDumper(yaml.SafeDumper):
         """
         Custom YAML dumper that adjusts the indentation for lists and maintains certain lists in inline format.
         """
-
         pass
 
     def custom_list_representer(self, dumper, data):
@@ -34,7 +32,6 @@ class YAMLProcessor:
             # Load YAML data
             data = yaml.safe_load(yaml_str)
             return data
-
         except yaml.YAMLError as e:
             print(f"Error loading YAML: {str(e)}")
             sys.exit(1)

@@ -1,5 +1,6 @@
 from N2G import drawio_diagram
 import xml.etree.ElementTree as ET
+from collections import defaultdict
 
 
 class CustomDrawioDiagram(drawio_diagram):

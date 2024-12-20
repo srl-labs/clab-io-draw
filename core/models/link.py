@@ -66,21 +66,14 @@ class Link:
         label_height = styles["label_height"]
 
         if styles["label_alignment"] == "left":
-            source_label_x -= (
-                label_width + 2
-            )  # Move left by full width for left alignment
-            target_label_x -= label_width + 2
+            source_label_x -= (label_width + 2)
+            target_label_x -= (label_width + 2)
         elif styles["label_alignment"] == "right":
-            source_label_x += (
-                label_width / 2
-            )  # Move right by half width for right alignment
-            target_label_x += label_width / 2
+            source_label_x += (label_width / 2)
+            target_label_x += (label_width / 2)
         elif styles["label_alignment"] == "center":
-            # No additional adjustment for x-axis; the label is already centered along the vector
-            source_label_x -= (
-                label_width / 2
-            )  # Move right by half width for right alignment
-            target_label_x -= label_width / 2
+            source_label_x -= (label_width / 2)
+            target_label_x -= (label_width / 2)
 
         source_label_y -= label_height / 2
         target_label_y -= label_height / 2

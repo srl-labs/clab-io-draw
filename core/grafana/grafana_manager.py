@@ -14,12 +14,11 @@ class GrafanaDashboard:
     def create_dashboard(self, panel_config):
         # Path to the dashboard JSON template
         base_dir = os.getenv("APP_BASE_DIR", "")
-        template_path = os.path.join(base_dir, "lib/templates/flow_panel_template.json")
+        template_path = os.path.join(base_dir, "core/grafana/templates/flow_panel_template.json")
 
         # Load the dashboard template from file
         with open(template_path, 'r') as file:
             dashboard_json = json.load(file)
-
 
         # Insert the YAML configuration as a string into the panelConfig of the relevant panel
         for panel in dashboard_json['panels']:
@@ -112,7 +111,6 @@ class GrafanaDashboard:
 
             cells[cell_id_traffic] = cell_traffic
 
-        # Now write root to YAML
         import io
         stream = io.StringIO()
         yaml.dump(root, stream)
