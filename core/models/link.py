@@ -9,7 +9,7 @@ class Link:
         self.source_intf = source_intf
         self.target_intf = target_intf
         self.direction = kwargs.get("direction", "")
-        self.theme = kwargs.get("theme", "nokia_bright")
+        self.theme = kwargs.get("theme", "nokia")
         self.base_style = kwargs.get("base_style", "")
         self.link_style = kwargs.get("link_style", "")
         self.src_label_style = kwargs.get("src_label_style", "")

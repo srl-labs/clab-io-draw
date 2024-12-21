@@ -53,7 +53,7 @@ def parse_arguments():
     )
     parser.add_argument(
         "--theme",
-        default="nokia_bright",
+        default="nokia",
         help="Specify the theme for the diagram or path to a custom style config file.",
     )
     parser.add_argument(

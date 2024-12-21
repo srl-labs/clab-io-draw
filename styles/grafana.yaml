@@ -1,5 +1,5 @@
 #General Diagram settings:
-background: "#FFFFFF"
+background: "none"
 shadow: "0"
 grid: "0"
 pagew: "auto"
@@ -15,8 +15,8 @@ padding_y: 175
 base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;"
 
 #Nodes with ports if ports:true (-g option for grafana will set always to true)
-ports: false
-port_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=6;strokeColor=#98A2AE;fillColor=#BEC8D2;"
+ports: true
+port_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=8;strokeColor=#98A2AE;fillColor=#BEC8D2;"
 connector_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=6;fillColor=#BEC8D2;strokeColor=none;noLabel=1;"
 
 port_width:  12
@@ -26,13 +26,13 @@ connector_width:  4
 connector_height: 4
 
 # Style for links between nodes
-link_style: "endArrow=none;jumpStyle=gap;"
+link_style: "rounded=0;orthogonalLoop=1;html=1;startSize=6;endArrow=classicThin;endFill=1;endSize=2;fontSize=14;strokeColor=#98A2AE;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;jumpStyle=gap;strokeWidth=3;"
 
-# Style for labels
-src_label_style: "rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=6;horizontal=1;fontStyle=1"
-trgt_label_style: "rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=6;horizontal=1;fontStyle=1"
+# Styles for labels on the source and target ends of a link
+src_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=6;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;"
+trgt_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=6;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;"
 
-default_labels: false
+default_labels: true
 label_offset: 20
 label_height: 10
 label_width: 20

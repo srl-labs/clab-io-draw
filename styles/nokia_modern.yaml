@@ -1,5 +1,5 @@
 #General Diagram settings:
-background: "#FFFFFF"
+background: "none"
 shadow: "0"
 grid: "0"
 pagew: "auto"
@@ -28,11 +28,11 @@ connector_height: 4
 # Style for links between nodes
 link_style: "endArrow=none;jumpStyle=gap;"
 
-# Styles for labels on the source and target ends of a link
-src_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];"
-trgt_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];"
+# Style for labels
+src_label_style: "rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1"
+trgt_label_style: "rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1"
 
-default_labels: true
+default_labels: false
 label_offset: 20
 label_height: 10
 label_width: 20

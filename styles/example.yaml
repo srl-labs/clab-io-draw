@@ -1,5 +1,5 @@
 # General diagram settings control the background color, grid, page size, etc.
-background: "#4D5766"    # The background color of the entire Draw.io diagram (in hex).
+background: "none"    # The background color of the entire Draw.io diagram (in hex).
 shadow: "0"              # Whether shadows are shown in the diagram. "0" means disabled.
 grid: "0"                # Controls whether the diagram grid is visible. "0" means no visible grid.
 pagew: "auto"            # Page width. "auto" means it will adjust based on content size.
@@ -32,7 +32,7 @@ base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPositi
 ports: true
 
 # Style definitions for ports or connectors if "ports" is enabled.
-port_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=6;strokeColor=#98A2AE;fillColor=#BEC8D2;"
+port_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=8;strokeColor=#98A2AE;fillColor=#BEC8D2;"
 #   ellipse        -> The port shape is a small ellipse.
 #   fontColor=#FFFFFF -> Color of any port label text (white).
 #   strokeColor=#98A2AE -> The port’s outline color (grayish).

@@ -1,5 +1,5 @@
 #General Diagram settings:
-background: "#4D5766"
+background: "none"
 shadow: "0"
 grid: "0"
 pagew: "auto"
@@ -12,7 +12,7 @@ padding_x: 150
 padding_y: 175
 
 # Base style for nodes; defines the general appearance for all nodes.
-base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;fontColor=#F0F0F0;"
+base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;"
 
 #Nodes with ports if ports:true (-g option for grafana will set always to true)
 ports: false
@@ -26,11 +26,11 @@ connector_width:  4
 connector_height: 4
 
 # Style for links between nodes
-link_style: "endArrow=none;html=1;startSize=6;fontSize=14;strokeColor=#98A2AE;fontColor=#FFFFFF;textOpacity=100;labelBackgroundColor=#4D5766;jumpStyle=gap;strokeWidth=3;"
+link_style: "endArrow=none;jumpStyle=gap;"
 
-# Style for labels
-src_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#FFFFFF;labelBackgroundColor=#4D5766"
-trgt_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontColor=#FFFFFF;labelBackgroundColor=#4D5766"
+# Styles for labels on the source and target ends of a link
+src_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];"
+trgt_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];"
 
 default_labels: true
 label_offset: 20

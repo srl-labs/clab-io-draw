@@ -78,7 +78,7 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
 
 - `--layout`: Specifies the layout of the topology diagram (either `vertical` or `horizontal`). The default layout is `vertical`.
 
-- `--theme`: Specifies the theme for the diagram (`nokia_bright`,  `nokia_dark`, or ... ) or the path to a custom style config file. By default, the `bright` theme is used. Users can also create their own style file and place it in any directory, specifying its path with this option. Feel free to contribute your own styles.
+- `--theme`: Specifies the theme for the diagram (`nokia`,  `nokia_modern`, or ... ) or the path to a custom style config file. By default, the `nokia` theme is used. Users can also create their own style file and place it in any directory, specifying its path with this option. Feel free to contribute your own styles.
 
     ```bash
     python clab2drawio.py --theme nokia_dark -i <path_to_your_yaml_file>
@@ -104,37 +104,25 @@ Below are some example images of the available custom styles:
   <tr>
     <td style="text-align: center;">
       <a href="img/nokia_bright.png" target="_blank">
-        <img src="img/nokia_bright.png" alt="Nokia Bright Mode" style="width: 200px;">
+        <img src="img/nokia_bright.png" alt="Nokia" style="width: 200px;">
       </a>
-      <p>nokia_bright</p>
-    </td>
-    <td style="text-align: center;">
-      <a href="img/nokia_dark.png" target="_blank">
-        <img src="img/nokia_dark.png" alt="Nokia Dark Mode" style="width: 200px;">
-      </a>
-      <p>nokia_dark</p>
+      <p>nokia</p>
     </td>
   </tr>
   <tr>
     <td style="text-align: center;">
       <a href="img/modern_bright.png" target="_blank">
-        <img src="img/modern_bright.png" alt="Modern Bright Mode" style="width: 200px;">
+        <img src="img/modern_bright.png" alt="Modern" style="width: 200px;">
       </a>
-      <p>nokia_modern_bright</p>
-    </td>
-    <td style="text-align: center;">
-      <a href="img/modern_dark.png" target="_blank">
-        <img src="img/modern_dark.png" alt="Modern Dark Mode" style="width: 200px;">
-      </a>
-      <p>nokia_modern_dark</p>
+      <p>nokia_modern</p>
     </td>
   </tr>
   <tr>
     <td style="text-align: center;">
       <a href="img/grafana_dark.png" target="_blank">
-        <img src="img/grafana_dark.png" alt="Grafana Dark Mode" style="width: 200px;">
+        <img src="img/grafana_dark.png" alt="Grafana" style="width: 200px;">
       </a>
-      <p>grafana_dark</p>
+      <p>grafana</p>
     </td>
   </tr>
 </table>
@@ -142,13 +130,22 @@ Below are some example images of the available custom styles:
 **_NOTE:_**  drawio diagrams created with default_labels: true, cannot be used by drawio2clab
 
 ### Custom Styles
-To customize styles, you can edit or copy the `nokia_bright.yaml` configuration file. This file defines the base style, link style, source and target label styles, and custom styles for different types of nodes based on their roles (e.g., routers, switches, servers).
+To customize styles, you can edit or copy the `example.yaml` configuration file. This file defines the base style, link style, source and target label styles, and custom styles for different types of nodes based on their roles (e.g., routers, switches, servers).
 
-An example snippet from `nokia_bright.yaml`:
+An example snippet from `nokia.yaml`:
 ```yaml
 #General Diagram settings:
+background: "none"
+shadow: "0"
+grid: "0"
 pagew: "auto"
 pageh: "auto"
+
+node_width: 75
+node_height: 75
+
+padding_x: 150
+padding_y: 175
 
 base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;"
 link_style: "endArrow=none;jumpStyle=gap;"
@@ -167,7 +164,7 @@ icon_to_group_mapping:
 ```
 
 ### Applying Styles
-Custom styles are applied to nodes and links based on the configurations specified in the style configuration files (`nokia_bright.yaml` for the bright theme and `nokia_dark.yaml` for the dark theme), located in the `styles` directory by default. To apply a new style to a node type, update its corresponding style definition in the appropriate YAML file. These styles determine the appearance of nodes and links in the generated diagram, including shapes, colors, and icons.
+Custom styles are applied to nodes and links based on the configurations specified in the style configuration files located in the `styles` directory by default. To apply a new style to a node type, update its corresponding style definition in the appropriate YAML file. These styles determine the appearance of nodes and links in the generated diagram, including shapes, colors, and icons.
 
 If you wish to create a completely new style, you can create a new YAML file with your custom configurations. This file can be placed in any directory, and you can specify its path when running the script using the `--theme` option.
 
