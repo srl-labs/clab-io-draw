@@ -28,6 +28,7 @@ def main(
     layout: str="vertical",
     verbose: bool=False,
     interactive: bool=False,
+    grafana_config_path: str=None,
 ) -> None:
     """
     Main function to generate a topology diagram from a containerlab YAML or draw.io XML file.
@@ -175,15 +176,15 @@ def main(
         diagram.grafana_dashboard_file = grafana_output_file
         os.makedirs(output_folder, exist_ok=True)
         
-        grafana = GrafanaDashboard(diagram)
-        panel_config = grafana.create_panel_yaml()
+        grafana_dashboard = GrafanaDashboard(diagram, grafana_config_path=grafana_config_path)
+        panel_config = grafana_dashboard.create_panel_yaml()
 
         flow_panel_output_file = os.path.splitext(grafana_output_file)[0] + ".flow_panel.yaml"
         with open(flow_panel_output_file, "w") as f:
             f.write(panel_config)
         print("Saved flow panel YAML to:", flow_panel_output_file)
 
-        grafana_json = grafana.create_dashboard(panel_config)
+        grafana_json = grafana_dashboard.create_dashboard(panel_config)
         with open(grafana_output_file, "w") as f:
             f.write(grafana_json)
         print("Saved Grafana dashboard JSON to:", grafana_output_file)
@@ -213,13 +214,14 @@ if __name__ == "__main__":
     configure_logging(level=log_level)
 
     main(
-        args.input,
-        args.output,
-        args.gf_dashboard,
-        args.theme,
-        args.include_unlinked_nodes,
-        args.no_links,
-        args.layout,
-        args.verbose,
-        args.interactive,
+        input_file=args.input,
+        output_file=args.output,
+        grafana=args.gf_dashboard,
+        theme=args.theme,
+        include_unlinked_nodes=args.include_unlinked_nodes,
+        no_links=args.no_links,
+        layout=args.layout,
+        verbose=args.verbose,
+        interactive=args.interactive,
+        grafana_config_path=args.grafana_config,
     )

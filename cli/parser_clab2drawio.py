@@ -29,6 +29,12 @@ def parse_arguments():
         help="Generate Grafana Dashboard Flag.",
     )
     parser.add_argument(
+        "--grafana-config",
+        type=str,
+        default=None,
+        help="Path to a Grafana YAML config file. If omitted, defaults are used."
+    )
+    parser.add_argument(
         "--include-unlinked-nodes",
         action="store_true",
         help="Include nodes without any links in the topology diagram",

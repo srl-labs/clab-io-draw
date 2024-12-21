@@ -1,0 +1,43 @@
+# Default Grafana Flow Panel configuration
+
+targets:
+  - datasource: prometheus
+    expr: "interface_oper_state"
+    legend_format: "oper-state:{{source}}:{{interface_name}}"
+    instant: false
+    range: true
+    hide: false
+
+  - datasource: prometheus
+    expr: "interface_traffic_rate_out_bps"
+    legend_format: "{{source}}:{{interface_name}}:out"
+    instant: false
+    range: true
+    hide: false
+
+  - datasource: prometheus
+    expr: "interface_traffic_rate_in_bps"
+    legend_format: "{{source}}:{{interface_name}}:in"
+    instant: false
+    range: true
+    hide: false
+
+thresholds:
+  operstate:
+    - { color: 'red',   level: 0 }
+    - { color: 'green', level: 1 }
+
+  traffic:
+    - { color: 'gray',   level: 0 }
+    - { color: 'green',  level: 199999 }
+    - { color: 'yellow', level: 500000 }
+    - { color: 'orange', level: 1000000 }
+    - { color: 'red',    level: 5000000 }
+
+label_config:
+  separator: "replace"
+  units: "bps"
+  decimalPoints: 1
+  valueMappings:
+    - { valueMax: 199999, text: "\u200B" }
+    - { valueMin: 200000 }
