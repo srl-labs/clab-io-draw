@@ -1,44 +1,98 @@
-#General Diagram settings:
-background: "#4D5766"
-shadow: "0"
-grid: "0"
-pagew: "auto"
-pageh: "auto"
+# General diagram settings control the background color, grid, page size, etc.
+background: "#4D5766"    # The background color of the entire Draw.io diagram (in hex).
+shadow: "0"              # Whether shadows are shown in the diagram. "0" means disabled.
+grid: "0"                # Controls whether the diagram grid is visible. "0" means no visible grid.
+pagew: "auto"            # Page width. "auto" means it will adjust based on content size.
+pageh: "auto"            # Page height. "auto" means it will adjust based on content size.
 
-node_width: 75
-node_height: 75
+# Basic node geometry
+node_width: 75           # Default width (in pixels) of each node shape.
+node_height: 75          # Default height (in pixels) of each node shape.
 
-padding_x: 150
-padding_y: 175
+# Spacing between nodes
+padding_x: 150           # Horizontal spacing between nodes.
+padding_y: 175           # Vertical spacing between nodes.
 
-# Base style for nodes; defines the general appearance for all nodes.
+# The base style for nodes; these key-value pairs describe how each node is rendered in Draw.io.
 base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;fontColor=#F0F0F0;"
+# Explanation of major style properties (semicolon-delimited):
+#   shape=image         -> Renders the node as an image shape.
+#   imageAlign=center   -> Aligns the image horizontally in the center of the shape.
+#   imageVerticalAlign=middle -> Aligns the image vertically in the center.
+#   labelPosition=left  -> Label is positioned to the left of the shape (by default).
+#   align=right         -> Text alignment set to right.
+#   verticalLabelPosition=top  -> The label is vertically at the top (if changed).
+#   spacingLeft=0       -> No extra left padding.
+#   verticalAlign=bottom-> The shape's own content is aligned to bottom (with the label top).
+#   spacingTop=0        -> No extra top spacing around text.
+#   spacing=0           -> Removes default spacing for text placement.
+#   fontColor=#F0F0F0   -> The color of the text used for labels (a near-white color).
 
 #Nodes with ports if ports:true (-g option for grafana will set always to true)
 ports: true
+
+# Style definitions for ports or connectors if "ports" is enabled.
 port_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=6;strokeColor=#98A2AE;fillColor=#BEC8D2;"
+#   ellipse        -> The port shape is a small ellipse.
+#   fontColor=#FFFFFF -> Color of any port label text (white).
+#   strokeColor=#98A2AE -> The port’s outline color (grayish).
+#   fillColor=#BEC8D2   -> Background color inside port (light gray).
+#   fontSize=6     -> Very small text, since ports are small.
+
+# Similar to port_style, but used for intermediate connectors or link midpoints. 
 connector_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=6;fillColor=#BEC8D2;strokeColor=none;noLabel=1;"
+# strokeColor=none -> no outline stroke. 
+# noLabel=1        -> No label is shown for connector elements.
 
-port_width:  12
-port_height: 12
+# Dimensions for ports/connectors
+port_width:  12   # The width (in px) of a port shape.
+port_height: 12   # The height (in px) of a port shape.
 
-connector_width:  4
-connector_height: 4
+connector_width:  4  # The width (in px) of a small connector or midpoint shape.
+connector_height: 4  # The height (in px) of a small connector or midpoint shape.
 
-# Style for links between nodes
+# Style for links (the connecting lines) between nodes.
 link_style: "rounded=0;orthogonalLoop=1;html=1;startSize=6;endArrow=classicThin;endFill=1;endSize=2;fontSize=14;strokeColor=#98A2AE;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;jumpStyle=gap;strokeWidth=3;"
+#   rounded=0        -> No round corners. 
+#   orthogonalLoop=1 -> Edges can loop orthogonally if needed. 
+#   startSize=6      -> Arrowhead/circle size at the start (if any).
+#   endArrow=classicThin -> A thin arrow shape at the end of the line.
+#   endFill=1        -> Fill that arrow with color.
+#   endSize=2        -> Arrow size factor.
+#   fontSize=14      -> Size of link labels if drawn directly on the edge.
+#   strokeColor=#98A2AE -> Grayish line color for the link.
+#   fontColor=#FFFFFF   -> White text color for link labels.
+#   textOpacity=60   -> Makes text partially transparent (60%).
+#   labelBackgroundColor=#4D5766 -> The background behind link label text is dark grey.
+#   jumpStyle=gap    -> If lines cross, they do so with a small gap styling.
+#   strokeWidth=3    -> The thickness in pixels for the link’s stroke.
 
-# Styles for labels on the source and target ends of a link
+# Label styles for source/target text along links. Often placed near the edges.
 src_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=6;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;"
+#   edgeLabel    -> Means it's a label that belongs on an edge. 
+#   align=center -> The text is center-aligned within its small bounding box.
+#   verticalAlign=middle -> The text is centered vertically.
+#   fontSize=6   -> Label text size is quite small.
+#   fontColor=#FFFFFF -> White text color.
+#   textOpacity=60 -> 60% opaque text (semi-transparent).
+#   labelBackgroundColor=#4D5766 -> The label background is dark gray.
+
 trgt_label_style: "edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=6;fontColor=#FFFFFF;textOpacity=60;labelBackgroundColor=#4D5766;"
+# Same concept, but typically used for the target side of a link label. 
+# Identical style except it might appear on the opposite side from src_label.
 
+# If default_labels is true, then link labels are drawn automatically at the source/target and not as seperate text. 
 default_labels: true
-label_offset: 20
-label_height: 10
-label_width: 20
-label_alignment: center
 
-# Custom styles for different types of nodes, allowing for unique visual representation based on node role or function
+# The offset and sizing for any textual label placed externally to the node or link.
+label_offset: 20   # Shift the label a certain number of pixels from the attach point.
+label_height: 10   # Height (in px) allocated for the label shape.
+label_width: 20    # Width (in px) allocated for the label shape.
+label_alignment: center  # The label text alignment (left, center, or right).
+
+# The custom_styles dictionary maps style names (like "default", "spine", "leaf", etc.) 
+# to a string containing many styling details, often including an embedded SVG. 
+# These are used to differentiate different node roles visually.
 custom_styles:
   default: "shape=image;editableCssRules=\\.st[0-2]$;verticalLabelPosition=top;labelBackgroundColor=none;verticalAlign=bottom;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwO2VkaXRhYmxlQ3NzUnVsZXM9Lio7IiB2aWV3Qm94PSIwIDAgMTIwIDEyMCIgeT0iMHB4IiB4PSIwcHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiPiYjeGE7PHN0eWxlIHR5cGU9InRleHQvY3NzIj4mI3hhOwkuc3Qwe2ZpbGw6IzAwMTEzNTt9JiN4YTsJLnN0MXtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Qye2ZpbGw6I0ZGRkZGRjt9JiN4YTsJLnN0M3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDR7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0NXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q2e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0N3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q5e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTB7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxMXtmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMzt9JiN4YTsJLnN0MTJ7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxM3tmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDE0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0MTV7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO30mI3hhOwkuc3QxNntmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE3e2ZpbGw6IzI2MjYyNjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTs8L3N0eWxlPiYjeGE7PHJlY3QgaGVpZ2h0PSIxMjAiIHdpZHRoPSIxMjAiIGNsYXNzPSJzdDAiLz4mI3hhOzxnPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNzEuNywxOS43VjQ4aDI4IiBjbGFzcz0ic3QxIi8+JiN4YTsJCTxwYXRoIGQ9Ik05MS4yLDM4LjVsNy41LDcuNmMxLjMsMS4zLDEuMywzLjEsMCw0LjNMOTEuMSw1OCIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTIwLDQ3LjhoMjguNHYtMjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTM4LjgsMjguM2w3LjYtNy41YzEuMy0xLjMsMy4xLTEuMyw0LjMsMGw3LjcsNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNDgsMTAwLjNWNzJIMjAiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTI4LjUsODEuNUwyMSw3My45Yy0xLjMtMS4zLTEuMy0zLjEsMC00LjNsNy42LTcuNyIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTEwMCw3MS45SDcxLjZ2MjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTgxLjIsOTEuNGwtNy42LDcuNWMtMS4zLDEuMy0zLjEsMS4zLTQuMywwbC03LjctNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7PC9nPiYjeGE7PC9zdmc+;"
   spine: "shape=image;editableCssRules=\\.st[0-2]$;verticalLabelPosition=top;labelBackgroundColor=none;verticalAlign=bottom;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwO2VkaXRhYmxlQ3NzUnVsZXM9Lio7IiB2aWV3Qm94PSIwIDAgMTIwIDEyMCIgeT0iMHB4IiB4PSIwcHgiIGlkPSJMYXllcl8xIiB2ZXJzaW9uPSIxLjEiPiYjeGE7PHN0eWxlIHR5cGU9InRleHQvY3NzIj4mI3hhOwkuc3Qwe2ZpbGw6IzAwMTEzNTt9JiN4YTsJLnN0MXtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Qye2ZpbGw6I0ZGRkZGRjt9JiN4YTsJLnN0M3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDR7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0NXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q2e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0N3tmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q5e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTB7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxMXtmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMzt9JiN4YTsJLnN0MTJ7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxM3tmaWxsLXJ1bGU6ZXZlbm9kZDtjbGlwLXJ1bGU6ZXZlbm9kZDtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDE0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NC4yMzMzO3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTsJLnN0MTV7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO30mI3hhOwkuc3QxNntmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE3e2ZpbGw6IzI2MjYyNjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTh7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDt9JiN4YTs8L3N0eWxlPiYjeGE7PHJlY3QgaGVpZ2h0PSIxMjAiIHdpZHRoPSIxMjAiIGNsYXNzPSJzdDAiLz4mI3hhOzxnPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNzEuNywxOS43VjQ4aDI4IiBjbGFzcz0ic3QxIi8+JiN4YTsJCTxwYXRoIGQ9Ik05MS4yLDM4LjVsNy41LDcuNmMxLjMsMS4zLDEuMywzLjEsMCw0LjNMOTEuMSw1OCIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTIwLDQ3LjhoMjguNHYtMjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTM4LjgsMjguM2w3LjYtNy41YzEuMy0xLjMsMy4xLTEuMyw0LjMsMGw3LjcsNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNNDgsMTAwLjNWNzJIMjAiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTI4LjUsODEuNUwyMSw3My45Yy0xLjMtMS4zLTEuMy0zLjEsMC00LjNsNy42LTcuNyIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTEwMCw3MS45SDcxLjZ2MjgiIGNsYXNzPSJzdDEiLz4mI3hhOwkJPHBhdGggZD0iTTgxLjIsOTEuNGwtNy42LDcuNWMtMS4zLDEuMy0zLjEsMS4zLTQuMywwbC03LjctNy42IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7PC9nPiYjeGE7PC9zdmc+;"
@@ -46,9 +100,12 @@ custom_styles:
   dcgw: "shape=image;editableCssRules=\\.st[0-2]$;verticalLabelPosition=top;labelBackgroundColor=none;verticalAlign=bottom;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwOyIgdmlld0JveD0iMCAwIDEyMCAxMjAiIHk9IjBweCIgeD0iMHB4IiBpZD0iTGF5ZXJfMSIgdmVyc2lvbj0iMS4xIj4mI3hhOzxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+JiN4YTsJLnN0MHtmaWxsOiMwMDExMzU7fSYjeGE7CS5zdDF7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MntmaWxsOiNGRkZGRkY7fSYjeGE7CS5zdDN7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7fSYjeGE7CS5zdDV7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0NntmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMztzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDd7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q4e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0OXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDEwe2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTF7ZmlsbDojMjYyNjI2O3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0LjIzMzM7fSYjeGE7CS5zdDEye2ZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTN7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxNHtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMztzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7fSYjeGE7CS5zdDE1e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbGluZWNhcDpyb3VuZDt9JiN4YTsJLnN0MTZ7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxN3tmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE4e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7fSYjeGE7PC9zdHlsZT4mI3hhOzxyZWN0IGhlaWdodD0iMTIwIiB3aWR0aD0iMTIwIiBjbGFzcz0ic3QwIiB4PSIwIi8+JiN4YTs8Zz4mI3hhOwk8Zz4mI3hhOwkJPHBhdGggZD0iTTQ5LjcsNzBMMjAuMSw5OS44IiBjbGFzcz0ic3QxIi8+JiN4YTsJPC9nPiYjeGE7CTxnPiYjeGE7CQk8cGF0aCBkPSJNOTcuNyw5Ny40TDY4LDY3LjkiIGNsYXNzPSJzdDEiLz4mI3hhOwk8L2c+JiN4YTsJPGc+JiN4YTsJCTxwYXRoIGQ9Ik03MC40LDQ5LjdMOTkuOSwyMCIgY2xhc3M9InN0MSIvPiYjeGE7CTwvZz4mI3hhOwk8cGF0aCBkPSJNMjIuMywyMi4zTDUyLDUxLjkiIGNsYXNzPSJzdDEiLz4mI3hhOwk8cGF0aCBkPSJNMjAuMSwzMy45bDAtMTAuN2MwLTEuOCwxLjMtMywzLjEtMy4xbDEwLjgsMCIgY2xhc3M9InN0MSIvPiYjeGE7CTxwYXRoIGQ9Ik0zOC40LDY4bDEwLjcsMGMxLjgsMCwzLDEuMywzLjEsMy4xbDAsMTAuOCIgY2xhc3M9InN0MSIvPiYjeGE7CTxwYXRoIGQ9Ik05OS44LDg2LjJsMCwxMC43YzAsMS44LTEuMywzLTMuMSwzLjFsLTEwLjgsMCIgY2xhc3M9InN0MSIvPiYjeGE7CTxwYXRoIGQ9Ik04MS44LDUxLjlsLTEwLjcsMGMtMS44LDAtMy0xLjMtMy4xLTMuMUw2OCwzOCIgY2xhc3M9InN0MSIvPiYjeGE7PC9nPiYjeGE7PC9zdmc+;"
   server: "shape=image;editableCssRules=\\.st[0-2]$;verticalLabelPosition=top;labelBackgroundColor=none;verticalAlign=bottom;aspect=fixed;imageAspect=0;image=data:image/svg+xml,PHN2ZyB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWw6c3BhY2U9InByZXNlcnZlIiBzdHlsZT0iZW5hYmxlLWJhY2tncm91bmQ6bmV3IDAgMCAxMjAgMTIwOyIgdmlld0JveD0iMCAwIDEyMCAxMjAiIHk9IjBweCIgeD0iMHB4IiBpZD0iTGF5ZXJfMSIgdmVyc2lvbj0iMS4xIj4mI3hhOzxzdHlsZSB0eXBlPSJ0ZXh0L2NzcyI+JiN4YTsJLnN0MHtmaWxsOiMwMDExMzU7fSYjeGE7CS5zdDF7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MntmaWxsOiNGRkZGRkY7fSYjeGE7CS5zdDN7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q0e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7fSYjeGE7CS5zdDV7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1saW5lam9pbjpyb3VuZDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0NntmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMztzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDd7ZmlsbDpub25lO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O3N0cm9rZS1saW5lY2FwOnJvdW5kO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3Q4e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0OXtmaWxsOiNGRkZGRkY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7fSYjeGE7CS5zdDEwe2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDt9JiN4YTsJLnN0MTF7ZmlsbDojMjYyNjI2O3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0LjIzMzM7fSYjeGE7CS5zdDEye2ZpbGwtcnVsZTpldmVub2RkO2NsaXAtcnVsZTpldmVub2RkO2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbWl0ZXJsaW1pdDoxMDt9JiN4YTsJLnN0MTN7ZmlsbC1ydWxlOmV2ZW5vZGQ7Y2xpcC1ydWxlOmV2ZW5vZGQ7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS13aWR0aDo0O30mI3hhOwkuc3QxNHtmaWxsOm5vbmU7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQuMjMzMztzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7fSYjeGE7CS5zdDE1e2ZpbGw6bm9uZTtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbGluZWNhcDpyb3VuZDt9JiN4YTsJLnN0MTZ7ZmlsbDojRkZGRkZGO3N0cm9rZTojRkZGRkZGO3N0cm9rZS1taXRlcmxpbWl0OjEwO30mI3hhOwkuc3QxN3tmaWxsOiMyNjI2MjY7c3Ryb2tlOiNGRkZGRkY7c3Ryb2tlLXdpZHRoOjQ7c3Ryb2tlLW1pdGVybGltaXQ6MTA7fSYjeGE7CS5zdDE4e2ZpbGw6I0ZGRkZGRjtzdHJva2U6I0ZGRkZGRjtzdHJva2Utd2lkdGg6NDtzdHJva2UtbGluZWNhcDpyb3VuZDtzdHJva2UtbGluZWpvaW46cm91bmQ7fSYjeGE7PC9zdHlsZT4mI3hhOzxyZWN0IGhlaWdodD0iMTIwIiB3aWR0aD0iMTIwIiBjbGFzcz0ic3QwIi8+JiN4YTs8Zz4mI3hhOwk8cGF0aCBkPSJNMTAwLDkxLjFIMjBIMTAweiBNODkuMSwzMi41YzAtMC41LDAtMS0wLjItMS40Yy0wLjItMC41LTAuNC0wLjktMC44LTEuMmMtMC4zLTAuMy0wLjgtMC42LTEuMi0wLjgmIzEwOyYjOTsmIzk7Yy0wLjUtMC4yLTAuOS0wLjItMS40LTAuMkgzNC42Yy0wLjUsMC0xLDAtMS40LDAuMmMtMC41LDAuMi0wLjksMC40LTEuMiwwLjhjLTAuMywwLjMtMC42LDAuOC0wLjgsMS4yYy0wLjIsMC41LTAuMiwwLjktMC4yLDEuNCYjMTA7JiM5OyYjOTtWNzZoNTguMlYzMi41eiIgY2xhc3M9InN0NCIvPiYjeGE7PC9nPiYjeGE7PC9zdmc+;"
 
+# The css_overrides section is used (by ThemeManager) to inject CSS changes
+# into embedded SVG images. For example, we can override fill colors for .st0 
+# or other class names if the embedded SVG has them.
 css_overrides:
   default:
-    st0_fill: "#008000"
+    st0_fill: "#008000"   # For nodes with the "default" style, fill st0 with green
   spine:
     st0_fill: "#008000"
   leaf:
