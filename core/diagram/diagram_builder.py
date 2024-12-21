@@ -212,14 +212,14 @@ class DiagramBuilder:
                         source=source_cID,
                         target=midpoint_id,
                         style=styles["link_style"],
-                        label="\u200b",
+                        label="rate",
                         link_id=f"{source_cID}",
                     )
                     diagram.add_link(
                         source=target_cID,
                         target=midpoint_id,
                         style=styles["link_style"],
-                        label="\u200b",
+                        label="rate",
                         link_id=f"{target_cID}",
                     )
 
