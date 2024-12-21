@@ -65,16 +65,17 @@ class DiagramBuilder:
                         num_links = len(sorted_links)
                         spacing = styles["node_height"] / (num_links + 1)
                         for i, link in enumerate(sorted_links):
-                            port_x = node.pos_x + styles["node_width"]
-                            port_y = node.pos_y + (i + 1) * spacing
+                            port_x = node.pos_x + styles["node_width"] - styles["port_width"] / 2
+                            port_y = node.pos_y + (i + 1) * spacing - styles["port_height"] / 2
                             link.port_pos = (port_x, port_y)
+
                     elif direction == "upstream":
                         sorted_links = sorted(group, key=lambda link: (link.source.pos_y, link.target.pos_y))
                         num_links = len(sorted_links)
                         spacing = styles["node_height"] / (num_links + 1)
                         for i, link in enumerate(sorted_links):
-                            port_x = node.pos_x
-                            port_y = node.pos_y + (i + 1) * spacing
+                            port_x = node.pos_x - styles["port_width"] / 2
+                            port_y = node.pos_y + (i + 1) * spacing - styles["port_height"] / 2
                             link.port_pos = (port_x, port_y)
                     else: # lateral
                         sorted_links = sorted(group, key=lambda link: (link.source.pos_x, link.target.pos_x))
