@@ -64,10 +64,15 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
     ```bash
     python clab2drawio.py -i <path_to_your_yaml_file> -o <path_to_output_file>
     ```
-- `-g, --gf_dashboard`: Generates a Grafana dashboard in Grafana style. (WIP)
+- `-g, --gf_dashboard`: Generates a Grafana dashboard in Grafana style. 
 
     ```bash
-    python clab2drawio.py -i <path_to_your_yaml_file> -g --theme grafana_dark
+    python clab2drawio.py -i <path_to_your_yaml_file> -g --theme grafana
+    ```
+- `--grafana-config`: Path to a Grafana YAML config file. If omitted, defaults are used. 
+
+    ```bash
+    python clab2drawio.py -i <path_to_your_yaml_file> -g --theme grafana --grafana-config <path_to_your_cfg_file>
     ```
 
     For more detailed information about this feature, including compatibility, usage guidelines, and future enhancements, please see the [Grafana Dashboard Documentation](./grafana.md).
@@ -119,8 +124,8 @@ Below are some example images of the available custom styles:
   </tr>
   <tr>
     <td style="text-align: center;">
-      <a href="img/grafana_dark.png" target="_blank">
-        <img src="img/grafana_dark.png" alt="Grafana" style="width: 200px;">
+      <a href="img/grafana.png" target="_blank">
+        <img src="img/grafana.png" alt="Grafana" style="width: 200px;">
       </a>
       <p>grafana</p>
     </td>

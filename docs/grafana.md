@@ -24,6 +24,15 @@ When the `-g` flag is used, the script generates the following:
 1. Grafana dashboard JSON file
 2. Panel YAML configuration file
 3. draw.io diagram
+   
+### Additional Options
+`--grafana-config`
+Specify the path to a Grafana YAML configuration file using the --grafana-config option. This allows you to customize Grafana settings for your dashboard generation. If omitted, the script uses default configurations.
+
+```bash
+python clab2drawio.py -i <path_to_your_yaml_file> -g --theme grafana --grafana-config <path_to_your_cfg_file>
+```
+Replace <path_to_your_yaml_file> with the path to your YAML configuration file and <path_to_your_cfg_file> with the path to your Grafana configuration file. The default is `core/grafana/config/default_grafana_panel_config.yml`
 
 #### To export the diagram as an SVG:
 To get a full guide: [https://github.com/andymchugh/andrewbmchugh-flow-panel/blob/main/src/README.md#using-drawio-to-create-your-svg](https://github.com/andymchugh/andrewbmchugh-flow-panel/blob/main/src/README.md#using-drawio-to-create-your-svg)
@@ -37,7 +46,6 @@ The generated dashboard JSON will include the panel configuration but without th
 By following these steps, you can generate a complete Grafana dashboard with the diagram, panel configuration, and dashboard JSON file.
 
 #### Current Limitations
-- **Hardcoded Queries:** Currently, the dashboard queries are hardcoded and are specifically optimized for Nokia's SRLinux and SROS platforms. This means they may not be directly applicable to other environments without modifications.
 - **Data Sources:** The dashboard assumes specific data sources (Prometheus) are already configured in your Grafana instance that align with the hardcoded queries.
 
 <details>
@@ -236,8 +244,7 @@ processors:
 ```
 </details>
 
-#### Future Enhancements
-- **Configurable Queries:** Plans are in place to enhance this feature by allowing users to configure dashboard queries through a YAML config file. This will enable a more flexible and dynamic approach to adapting the dashboards for different environments and requirements.
+
 
 #### Contributing
 Feedback and contributions are welcome to help advance this feature towards a more robust and flexible implementation. If you are interested in contributing or have suggestions, please refer to the project's contribution guidelines or submit an issue on the project's GitHub repository.
