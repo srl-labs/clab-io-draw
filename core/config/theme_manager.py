@@ -35,7 +35,8 @@ class ThemeManager:
 
         This method:
         - Reads the YAML file.
-        - Validates the 'base_style' and 'custom_styles' strings.
+        - Validates the 'base_style' string.
+        - Merges 'base_style' with each 'custom_styles' entry (custom overrides base).
         - Applies CSS overrides to embedded SVG images in custom styles if defined.
         
         :return: A dictionary representing the fully processed theme configuration.
@@ -55,37 +56,109 @@ class ThemeManager:
             logger.error(error_message)
             raise SystemExit(error_message)
 
-        # Validate base_style
+        # 1. Read base_style and validate
         base_style = config.get("base_style", "")
         self._validate_style_string(base_style)
 
-        # Validate custom_styles
+        # 2. Read custom_styles, merge with base_style, then validate
         custom_styles = config.get("custom_styles", {})
-        for name, style_str in custom_styles.items():
-            self._validate_style_string(style_str)
+        merged_custom_styles = {}
+        for style_name, style_str in custom_styles.items():
+            # Merge base_style with custom_style (custom overrides base)
+            merged_style_str = self._merge_style_strings(base_style, style_str)
+            # Validate the merged style
+            self._validate_style_string(merged_style_str)
+            merged_custom_styles[style_name] = merged_style_str
 
-        # Load CSS overrides if any
+        # 3. Load CSS overrides if any
         css_overrides = config.get("css_overrides", {})
 
-        # Apply CSS overrides to embedded SVGs
-        for style_name, style_str in custom_styles.items():
-            updated_style_str = self._maybe_modify_svg_css(style_name, style_str, css_overrides)
-            custom_styles[style_name] = updated_style_str
+        # 4. Apply CSS overrides to embedded SVGs
+        for style_name, final_style_str in merged_custom_styles.items():
+            updated_style_str = self._maybe_modify_svg_css(style_name, final_style_str, css_overrides)
+            merged_custom_styles[style_name] = updated_style_str
 
-        config["custom_styles"] = custom_styles
+        config["custom_styles"] = merged_custom_styles
 
         logger.debug("Theme loaded and processed successfully.")
         return config
+
+    def _merge_style_strings(self, base_style: str, custom_style: str) -> str:
+        """
+        Merge the base_style and custom_style into a single style string.
+        Custom style properties override any conflicts in the base style.
+
+        :param base_style: The global base style string.
+        :param custom_style: The per-node custom style string.
+        :return: A merged style string with duplicates overridden by custom_style.
+        """
+        if not base_style:
+            # If no base style, just return the custom style
+            return custom_style
+        if not custom_style:
+            # If no custom style, just return the base style
+            return base_style
+
+        # Extract any special "points=[]" segments so we can re-append them if needed
+        # (some styles rely on "points=[]" but don't parse as "key=value" pairs)
+        points_segments = []
+        for seg in re.findall(r'(\bpoints=\[.*?\])', base_style + ";" + custom_style):
+            points_segments.append(seg)
+
+        # Convert base_style and custom_style to dictionaries
+        base_dict = self._style_str_to_dict(base_style)
+        custom_dict = self._style_str_to_dict(custom_style)
+
+        # Merge (custom overrides base)
+        for k, v in custom_dict.items():
+            base_dict[k] = v
+
+        # Convert merged dict back to style string
+        merged_str = self._dict_to_style_str(base_dict)
+
+        # Re-append any "points=[]" segments if they aren't already present
+        for seg in points_segments:
+            if seg not in merged_str:
+                merged_str += seg + ";"
+
+        return merged_str
+
+    def _style_str_to_dict(self, style_str: str) -> Dict[str, str]:
+        """
+        Parse a style string of the form "key1=value1;key2=value2;..." into a dict.
+        We skip 'points=[]' segments because they're not strictly "key=value" pairs.
+
+        :param style_str: The style string to parse.
+        :return: A dictionary of property->value.
+        """
+        style_dict = {}
+        segments = style_str.split(';')
+        for seg in segments:
+            seg = seg.strip()
+            if not seg or seg.startswith("points=["):
+                # Skip or ignore points=[]
+                continue
+            if '=' in seg:
+                k, v = seg.split('=', 1)
+                style_dict[k] = v
+        return style_dict
+
+    def _dict_to_style_str(self, style_dict: Dict[str, str]) -> str:
+        """
+        Convert a dictionary of style properties into a "key=value;" style string.
+
+        :param style_dict: Dict of style properties.
+        :return: Single string "key1=val1;key2=val2;..."
+        """
+        segs = []
+        for k, v in style_dict.items():
+            segs.append(f"{k}={v}")
+        return ";".join(segs) + ";" if segs else ""
 
     def _maybe_modify_svg_css(self, style_name: str, style_str: str, css_overrides: Dict[str, Dict[str, str]]) -> str:
         """
         Check if the given style string references an SVG image. If so, and if CSS overrides
         exist for this style, decode the SVG, modify its <style> block, and re-encode it.
-
-        :param style_name: Name of the style (e.g. 'default', 'leaf', 'spine').
-        :param style_str: The style string which may contain 'image=data:...' referencing an SVG.
-        :param css_overrides: A dictionary of CSS overrides for styles.
-        :return: The updated style string if modifications were applied; else the original.
         """
         image_match = re.search(r'image=data:([^;]+)', style_str)
         if not image_match:
@@ -125,13 +198,7 @@ class ThemeManager:
 
     def _modify_svg_style_block(self, svg_data: str, style_overrides: Dict[str, str]) -> str:
         """
-        Modify the <style> block of the SVG by applying given CSS overrides.
-        If no <style> block exists, one is created before the closing </svg> tag.
-        
-        :param svg_data: The full SVG as a string.
-        :param style_overrides: A dictionary mapping 'classname_property' to 'value'.
-                                For example: {'st0_fill': '#FF0000'}
-        :return: The updated SVG string.
+        Modify or create <style> block in the embedded SVG to apply the given CSS overrides.
         """
         style_start = svg_data.find("<style")
         style_end = -1
@@ -207,12 +274,6 @@ class ThemeManager:
     def _replace_style_block(self, svg_data: str, style_start: int, style_end: int, new_content: str) -> str:
         """
         Replace the content of the existing <style> block with new_content.
-        
-        :param svg_data: The full SVG string.
-        :param style_start: Index of the start of the <style> tag.
-        :param style_end: Index of the end of the </style> tag.
-        :param new_content: The new CSS content to insert.
-        :return: The updated SVG string with replaced style content.
         """
         start_tag_end = svg_data.find('>', style_start)
         if start_tag_end == -1 or style_end == -1:
@@ -225,9 +286,6 @@ class ThemeManager:
     def _parse_properties(self, props_str: str) -> Dict[str, str]:
         """
         Parse CSS properties from a string like "fill:#001135;stroke:#FFF".
-        
-        :param props_str: The CSS properties string inside a single class definition.
-        :return: A dict of {property_name: property_value}.
         """
         props = {}
         segments = props_str.split(';')
@@ -246,11 +304,6 @@ class ThemeManager:
     def _build_class_line(self, indent: str, cls_name: str, props: Dict[str,str]) -> str:
         """
         Rebuild a single CSS class line for the style block.
-        
-        :param indent: The indentation originally used for this line.
-        :param cls_name: The class name (e.g. "st0").
-        :param props: A dict of CSS properties to apply to this class.
-        :return: A string like "    .st0{fill:#FF0000;stroke:#FFFFFF;}"
         """
         prop_segs = [f"{p}:{v}" for p, v in props.items()]
         prop_str = ";".join(prop_segs) + ";" if prop_segs else ""
@@ -260,9 +313,6 @@ class ThemeManager:
         """
         Validate that the style string follows "key=value" pairs separated by semicolons.
         Known exception: 'points=[]' patterns are allowed.
-        
-        :param style_str: The style string to validate.
-        :raises ThemeManagerError: If invalid segments are found.
         """
         if style_str.strip() == "":
             return
@@ -272,6 +322,7 @@ class ThemeManager:
         for seg in segments:
             if '=' not in seg:
                 if 'points=[' in seg:
+                    # 'points=[]' is an allowed special case
                     continue
                 raise ThemeManagerError(f"Invalid style segment '{seg}' in style string.")
             parts = seg.split('=', 1)
