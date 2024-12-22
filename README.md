@@ -2,33 +2,51 @@
 
 The `clab-io-draw` project unifies two tools, `clab2drawio` and `drawio2clab`. These tools facilitate the conversion between [Containerlab](https://github.com/srl-labs/containerlab) YAML files and Draw.io diagrams, making it easier for network engineers and architects to visualize, document, and share their network topologies.
 
-![Drawio Example](docs/img/modern_dark.png)
+<div style="text-align: center;">
+  <img src="./docs/img/st.clab.drawio.svg" alt="Drawio Example">
+</div>
 
-## clab2drawio
 
-`clab2drawio` is a Python script that automatically generates Draw.io diagrams from Containerlab YAML configurations. It aims to simplify the visualization of network designs by providing a graphical representation of container-based network topologies.
 
-For detailed information on `clab2drawio`, including features (like [`Grafana`](docs/grafana.md) Dashboard creation), options, and usage instructions, please refer to the [clab2drawio.md](docs/clab2drawio.md) file located in the same directory as this README.
+## Overview
 
-## drawio2clab
+|  Tool         |  Description                                                                                       |
+| :-----------: | :------------------------------------------------------------------------------------------------: |
+| **clab2drawio** | Converts Containerlab YAML files into Draw.io diagrams (with optional [Grafana](docs/grafana.md) support).  |
+| **drawio2clab** | Converts Draw.io diagrams back into Containerlab-compatible YAML files, supporting quick lab setup.|
 
-`drawio2clab` is a Python script that converts Draw.io diagrams into Containerlab-compatible YAML files. This tool is designed to assist in the setup of container-based networking labs by parsing .drawio XML files and generating structured YAML representations of the network.
 
-For more details on `drawio2clab`, including features, constraints for drawing, and how to run the tool, please see the [drawio2clab.md](docs/drawio2clab.md) file in this directory.
+> [!NOTE]
+> For detailed information on `clab2drawio`, options, and usage instructions, please refer to the [clab2drawio.md](docs/clab2drawio.md)
+
+> [!NOTE]
+> For more details on `drawio2clab`, including features, constraints for drawing, and how to run the tool, please see the [drawio2clab.md](docs/drawio2clab.md) 
+
 
 ## Quick Usage
 
 ### Running with Containerlab
 ```bash
-containerlab graph --drawio -t topo.yml
-containerlab graph --drawio -t topo.drawio
+containerlab graph --drawio -t topo.clab.yml
+containerlab graph --drawio -t topo.clab.drawio
 ```
+
+> [!TIP]  
+> The `containerlab graph --drawio` command simplifies your workflow by automatically detecting the input file type (`.yml` or `.drawio`) and running the appropriate script internally (`clab2drawio` or `drawio2clab`).  
+> 
+> You can also enhance your output by passing additional arguments. For example:  
+> ~~~bash
+> sudo containerlab graph --drawio -t topo.clab.yml --drawio-args "--theme nokia_modern"
+> ~~~  
+> This example applies the "nokia_modern" theme to your generated diagram. 
+
 
 ### Running with Docker
 
-To simplify dependency management and execution, the tools can be run inside a Docker container. Follow these instructions to build and run the tool using Docker.
+You can also use a Docker container for a quick start without installing Python and other dependencies locally.
 
-#### Pulling from dockerhub
+
+#### Pulling from Container registry
 
 ```bash
 docker pull ghcr.io/srl-labs/clab-io-draw:latest
@@ -39,27 +57,31 @@ docker pull ghcr.io/srl-labs/clab-io-draw:latest
 Run drawio2clab or clab2drawio within a Docker container by mounting the directory containing your .drawio/.yaml files as a volume. Specify the input and output file paths relative to the mounted volume:
 
 ```bash
-docker run -it -v "$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i lab-examples/clos03/cfg-clos.clab.yml
+docker run -it -v "$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i lab-examples/br01.clab.yml
 ```
-*Note: The `-it` option is for interactive mode and is only needed if using `-I`.*
+> [!NOTE]
+> The `-it` option is used for interactive mode (`-I`). 
+> If you do not need interactive prompts, you can omit `-it`.
 
 ```bash
 docker run -v "$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i output.drawio
 ```
 
-Replace your_input_file.drawio and your_output_file.yaml with the names of your actual files. This command mounts your current directory to /data inside the container.
+Replace `your_input_file.drawio` or `your_output_file.yaml` with the 
+actual file names in your environment.
 
 ## Running locally
 
-### Requirements
-
-- Python 3.6+
+> [!IMPORTANT]  
+> Python 3.6+ is required if you prefer running these tools locally.
 
 ### Installation
 
 #### Virtual Environment Setup
 
-It's recommended to use a virtual environment for Python projects. This isolates your project dependencies from the global Python environment. To set up and activate a virtual environment:
+> [!TIP]
+> Using a virtual environment is recommended to avoid version conflicts 
+> with global Python packages.
 
 ```bash
 python3 -m venv venv
@@ -86,10 +108,13 @@ Detailed Usages: [drawio2clab.md](docs/drawio2clab.md#usage) and [clab2drawio.md
 python drawio2clab.py -i <input_file.drawio>
 ```
 
-`-i, --input`: Specifies the path to your input .drawio file.
-Make sure to replace `<input_file.drawio>` with the path to your .drawio file
+- `-i, --input`: path to your `.drawio` file.
+- `-o, --output`: path to your output `.yaml` file (optional).
 
-For more comprehensive guidance, including additional command-line options, please see the Usage section in [drawio2clab.md](docs/drawio2clab.md#usage)
+> [!NOTE]
+> For more details on node-label constraints, usage examples, and additional 
+> command-line options, refer to 
+> [drawio2clab.md](docs/drawio2clab.md#usage).
 
 ## clab2drawio
 
@@ -97,7 +122,9 @@ For more comprehensive guidance, including additional command-line options, plea
 python clab2drawio.py -i <input_file.yaml>
 ```
 
-`-i, --input`: Specifies the path to your input YAML file.
-Make sure to replace `<input_file.yaml>` with the path to your .drawio file 
+- `-i, --input`: path to your Containerlab YAML file.
+- `-o, --output`: path to your output `.drawio` file (optional).
 
-For more comprehensive guidance, including additional command-line options, please see the Usage section in [clab2drawio.md](docs/clab2drawio.md#usage)
+> [!NOTE]
+> For advanced functionality—like 
+> [Grafana Dashboard](docs/grafana.md) generation (`-g, --gf_dashboard`),interactive mode (`-I`), layout customizations, or theming (`--theme`) refer to [clab2drawio.md](docs/clab2drawio.md#usage).
