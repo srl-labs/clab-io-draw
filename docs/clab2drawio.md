@@ -1,21 +1,29 @@
 # clab2drawio
 
-`clab2drawio` is a tool designed to automatically generate network topology diagrams from [Containerlab](https://github.com/srl-labs/containerlab) YAML files, rendering them into visually appealing diagrams using Draw.io. This tool simplifies the process of visualizing network designs and configurations, making it easier for network engineers and architects to document and share their containerlab environments.
+**`clab2drawio`** automatically generates network topology diagrams from Containerlab
+YAML files, outputting them as visually appealing Draw.io diagrams. 
+It can optionally create [Grafana](./grafana.md) dashboards 
+for real-time network monitoring.
 
-![Drawio ](img/drawio1.png)
+<p align="center">
+  <img src="./img/st.clab.drawio.svg" alt="Drawio Example">
+</p>
+
 
 ## Features
 
-- **Automatic Diagram Generation**: Converts containerlab YAML configurations into detailed Draw.io diagrams in vertical and horizontal layouts.
-- **Automatic Node Placement**: Attempts to determine the best placement for nodes automatically. However, for complex topologies, this can be challenging.
-- **Graph-level-Based Layout**: Organizes nodes into graph-level based on their connectivity for clearer topology visualization. Users can influence node placement by specifying graph-level directly in the containerlab configuration. Also possible with `-I` to set it interactive
-- **Graph-icon Support**: Enhances node visualization by allowing users to specify graph-icon labels such as router, switch, or host to define custom icons for nodes in the generated diagrams.
-- **Customizable Styles**: Supports customization of node and link styles within the diagrams.
-- **Grafana Dahsboards**: Supports to autogenerate Grafana dashboards in Grafana style. (WIP)
- 
-  ![Grafana ](img/grafana.png)
-  
-  - For more detailed information about this feature, including compatibility, usage guidelines, and future enhancements, please see the [Grafana Dashboard Documentation](./grafana.md).
+- **Automatic Diagram Generation**: Produces detailed Draw.io diagrams in vertical 
+  or horizontal layouts.
+- **Graph-level-Based Layout**: Organizes nodes based on `graph-level` labels 
+  in the YAML, which can be edited interactively with `-I`.
+- **Node Icon Customization**: Utilizes `graph-icon` labels to specify icons 
+  (e.g., `router`, `switch`, `host`).
+- **Customizable Styles**: Users can apply or create custom Draw.io themes
+- **Grafana Dashboards**: Generates Grafana dashboards for monitoring node and link 
+  states. See [grafana.md](./grafana.md) for details.
+  <p align="center">
+  <img src="./img/grafana.png" alt="Grafana Example">
+</p>
 
 ## Usage
 To generate a network topology diagram from a containerlab YAML file, run the following command:
@@ -23,13 +31,19 @@ To generate a network topology diagram from a containerlab YAML file, run the fo
 ```bash
 python clab2drawio.py -i <path_to_your_yaml_file> 
 ```
-The output will be a Draw.io diagram file saved in the output path. In case without -o, the file will be saved in folder of the input file. You can open this file with Draw.io to view and further edit your network topology diagram.
+> [!NOTE]
+> By default, the `.drawio` file is saved in the same folder as the input YAML. 
+> Use `-o` to specify a different path.
+
+> [!TIP]
+> Use `-I` for an interactive mode that prompts for `graph-level` and `graph-icon` if you have them not set in clab.yml
+> labels.
 
 ## Advanced Usage
 
 ### Influencing Node Placement
 
-The tool attempts to automatically determine the best placement for nodes. However, achieving an optimal layout for complex topologies might be challenging. You can influence node placement behavior through the `graph-level` and `graph-icon` labels in the containerlab file, which supports both vertical and horizontal layouts. The `graph-level` label impacts the placement of nodes along the primary axis of the chosen layout A lower `graph-level` number (e.g., `graph-level: 1`) indicates a position towards the start of the canvas, while a higher number places the node further along the primary axis. This feature allows you to suggest a specific hierarchy for each node, aiding the tool in organizing the topology more effectively.
+You can guide node placement through `graph-level` labels:
 
 Example configuration to set node graph-level:
 
@@ -47,7 +61,9 @@ spine1:
     graph-level: 2  # This node will be placed below graph-level 1 nodes on the canvas
     graph-icon: switch # This node will use the switch icon
 ```
-Using graph-level helps manage the vertical alignment of nodes in the generated diagram, making it easier to visualize the hierarchical structure of your network.
+> [!TIP]
+> Lower `graph-level` values place nodes toward the top or left (depending on layout).
+> Higher values push them further down or to the right.
 
 ### Command-Line Arguments
 
@@ -100,39 +116,32 @@ Using graph-level helps manage the vertical alignment of nodes in the generated 
 - `--verbose`: Enable verbose output for debugging purposes.
 
 
-## Customization
-The tool allows for customization of node and link styles within the generated diagrams, making it possible to adjust the appearance to fit specific requirements or preferences.
+---
 
-Below are some example images of the available custom styles:
+### Customization
 
-<table>
-  <tr>
-    <td style="text-align: center;">
-      <a href="img/nokia_bright.png" target="_blank">
-        <img src="img/nokia_bright.png" alt="Nokia" style="width: 200px;">
-      </a>
-      <p>nokia</p>
-    </td>
-  </tr>
-  <tr>
-    <td style="text-align: center;">
-      <a href="img/modern_bright.png" target="_blank">
-        <img src="img/modern_bright.png" alt="Modern" style="width: 200px;">
-      </a>
-      <p>nokia_modern</p>
-    </td>
-  </tr>
-  <tr>
-    <td style="text-align: center;">
-      <a href="img/grafana.png" target="_blank">
-        <img src="img/grafana.png" alt="Grafana" style="width: 200px;">
-      </a>
-      <p>grafana</p>
-    </td>
-  </tr>
-</table>
+You can apply different style themes such as `nokia`, `nokia_modern` or `grafana`:
 
-**_NOTE:_**  drawio diagrams created with default_labels: true, cannot be used by drawio2clab
+```bash
+python clab2drawio.py --theme nokia_modern -i <path_to_yaml>
+```
+
+> [!TIP]
+> Create your own style file and specify it with `--theme /path/to/stylefile.yml`. Or place it in styles, than you can just use it like `nokia_modern`
+
+
+
+### Example Styles
+
+| Theme          | Preview                               |
+| :------------: | :------------------------------------: |
+| **nokia**      | ![Nokia](img/nokia_bright.png)         |
+| **nokia_modern** | ![Modern](img/modern_bright.png)     |
+| **grafana**    | ![Grafana](img/grafana.png)            |
+
+> [!NOTE] 
+> drawio diagrams created with default_labels: true, cannot be used by drawio2clab
+---
 
 ### Custom Styles
 To customize styles, you can edit or copy the `example.yaml` configuration file. This file defines the base style, link style, source and target label styles, and custom styles for different types of nodes based on their roles (e.g., routers, switches, servers).
@@ -168,17 +177,19 @@ icon_to_group_mapping:
   host: "server"
 ```
 
-### Applying Styles
-Custom styles are applied to nodes and links based on the configurations specified in the style configuration files located in the `styles` directory by default. To apply a new style to a node type, update its corresponding style definition in the appropriate YAML file. These styles determine the appearance of nodes and links in the generated diagram, including shapes, colors, and icons.
+> [!TIP]
+> For users looking to further customize their diagrams with more advanced styling options, such as custom icons, specific dimensions, or additional visual attributes, you can directly edit the styles within the Draw.io interface.
+> To get the style data from Draw.io for a specific element:
+> 1. Create or select the element in your Draw.io diagram.
+> 2. Right-click on the element and select "Edit Style" from the context menu.
+> 3. A style definition string will be displayed in a text box. 
+> 
+> You can copy this string and incorporate it into your custom style file or directly modify it within Draw.io for immediate effect.
 
-If you wish to create a completely new style, you can create a new YAML file with your custom configurations. This file can be placed in any directory, and you can specify its path when running the script using the `--theme` option.
+## Further Documentation & References
 
-### Advanced Styling
-For users looking to further customize their diagrams with more advanced styling options, such as custom icons, specific dimensions, or additional visual attributes, you can directly edit the styles within the Draw.io interface.
-
-To get the style data from Draw.io for a specific element:
-1. Create or select the element in your Draw.io diagram.
-2. Right-click on the element and select "Edit Style" from the context menu.
-3. A style definition string will be displayed in a text box. You can copy this string and incorporate it into your custom style file or directly modify it within Draw.io for immediate effect.
-
+- [Containerlab Documentation](https://containerlab.dev)
+- [clab2drawio.md](./clab2drawio.md)
+- [drawio2clab.md](./drawio2clab.md)
+- [grafana.md](./grafana.md)
 

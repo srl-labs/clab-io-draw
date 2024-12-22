@@ -2,9 +2,9 @@
 
 The `clab-io-draw` project unifies two tools, `clab2drawio` and `drawio2clab`. These tools facilitate the conversion between [Containerlab](https://github.com/srl-labs/containerlab) YAML files and Draw.io diagrams, making it easier for network engineers and architects to visualize, document, and share their network topologies.
 
-<div style="text-align: center;">
+<p align="center">
   <img src="./docs/img/st.clab.drawio.svg" alt="Drawio Example">
-</div>
+</p>
 
 
 
@@ -128,3 +128,9 @@ python clab2drawio.py -i <input_file.yaml>
 > [!NOTE]
 > For advanced functionality—like 
 > [Grafana Dashboard](docs/grafana.md) generation (`-g, --gf_dashboard`),interactive mode (`-I`), layout customizations, or theming (`--theme`) refer to [clab2drawio.md](docs/clab2drawio.md#usage).
+
+## Contributions & Feedback
+
+All feedback and contributions are welcome! If you have suggestions, please open an issue or pull request on the GitHub repository.
+
+---
