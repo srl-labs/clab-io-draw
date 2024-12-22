@@ -1,1 +1,0 @@
-Example of how to run `cvx` inside `ignite` runtime together with nodes running in `docker` runtime.

@@ -1,0 +1,203 @@
+name: dci
+mgmt:
+  network: dci
+  ipv4-subnet: 172.0.200.0/24
+topology:
+  kinds:
+    nokia_sros:
+      image: registry.srlinux.dev/pub/vr-sros:24.3.R1
+      type: sr-1s
+      license: /opt/srexperts/license-sros24.txt
+    nokia_srlinux:
+      image: registry.srlinux.dev/pub/srlinux:24.3.1
+      type: ixrd3
+  nodes:
+    p1:
+      kind: nokia_sros
+      startup-config: configs/p1.partial.cfg
+      labels:
+        graph-level: 1
+        graph-icon: router
+    dcgw1-dc1:
+      kind: nokia_sros
+      startup-config: configs/dcgw1-dc1.partial.cfg
+      labels:
+        graph-level: 2
+        graph-icon: router
+    dcgw2-dc1:
+      kind: nokia_sros
+      startup-config: configs/dcgw2-dc1.partial.cfg
+      labels:
+        graph-level: 2
+        graph-icon: router
+    spine1-dc1:
+      kind: nokia_srlinux
+      startup-config: configs/spine1-dc1.cfg
+      labels:
+        graph-level: 3
+        graph-icon: switch
+    spine2-dc1:
+      kind: nokia_srlinux
+      startup-config: configs/spine2-dc1.cfg
+      labels:
+        graph-level: 3
+        graph-icon: switch
+    leaf1-dc1:
+      kind: nokia_srlinux
+      startup-config: configs/leaf1-dc1.cfg
+      labels:
+        graph-level: 4
+        graph-icon: switch
+    leaf2-dc1:
+      kind: nokia_srlinux
+      startup-config: configs/leaf2-dc1.cfg
+      labels:
+        graph-level: 4
+        graph-icon: switch
+    leaf3-dc1:
+      kind: nokia_srlinux
+      startup-config: configs/leaf3-dc1.cfg
+      labels:
+        graph-level: 4
+        graph-icon: switch
+    leaf4-dc1:
+      kind: nokia_srlinux
+      startup-config: configs/leaf4-dc1.cfg
+      labels:
+        graph-level: 4
+        graph-icon: switch
+    client1-dc1:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      binds:
+      - configs/client.sh:/client.sh
+      exec:
+      - bash -c "/client.sh dc1 1"
+      labels:
+        graph-level: 5
+        graph-icon: host
+    client2-dc1:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      binds:
+      - configs/client.sh:/client.sh
+      exec:
+      - bash -c "/client.sh dc1 4"
+      labels:
+        graph-level: 5
+        graph-icon: host
+    dcgw1-dc2:
+      kind: nokia_sros
+      startup-config: configs/dcgw1-dc2.partial.cfg
+      stages:
+        create:
+          wait-for:
+          - node: dcgw1-dc1
+            stage: healthy
+          - node: dcgw2-dc1
+            stage: healthy
+      labels:
+        graph-level: 2
+        graph-icon: router
+    dcgw2-dc2:
+      kind: nokia_sros
+      startup-config: configs/dcgw2-dc2.partial.cfg
+      stages:
+        create:
+          wait-for:
+          - node: dcgw1-dc1
+            stage: healthy
+          - node: dcgw2-dc1
+            stage: healthy
+      labels:
+        graph-level: 2
+        graph-icon: router
+    spine1-dc2:
+      kind: nokia_srlinux
+      startup-config: configs/spine1-dc2.cfg
+      labels:
+        graph-level: 3
+        graph-icon: switch
+    spine2-dc2:
+      kind: nokia_srlinux
+      startup-config: configs/spine2-dc2.cfg
+      labels:
+        graph-level: 3
+        graph-icon: switch
+    leaf1-dc2:
+      kind: nokia_srlinux
+      startup-config: configs/leaf1-dc2.cfg
+      labels:
+        graph-level: 4
+        graph-icon: switch
+    leaf2-dc2:
+      kind: nokia_srlinux
+      startup-config: configs/leaf2-dc2.cfg
+      labels:
+        graph-level: 4
+        graph-icon: switch
+    leaf3-dc2:
+      kind: nokia_srlinux
+      startup-config: configs/leaf3-dc2.cfg
+      labels:
+        graph-level: 4
+        graph-icon: switch
+    leaf4-dc2:
+      kind: nokia_srlinux
+      startup-config: configs/leaf4-dc2.cfg
+      labels:
+        graph-level: 4
+        graph-icon: switch
+    client3-dc2:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      binds:
+      - configs/client.sh:/client.sh
+      exec:
+      - bash -c "/client.sh dc2 1"
+      labels:
+        graph-level: 5
+        graph-icon: host
+    client4-dc2:
+      kind: linux
+      image: ghcr.io/hellt/network-multitool
+      binds:
+      - configs/client.sh:/client.sh
+      exec:
+      - bash -c "/client.sh dc2 4"
+      labels:
+        graph-level: 5
+        graph-icon: host
+  links:
+  - endpoints: ['dcgw1-dc1:eth1', 'p1:eth5']
+  - endpoints: ['dcgw2-dc1:eth1', 'p1:eth6']
+  - endpoints: ['spine1-dc1:e1-31', 'dcgw1-dc1:eth3']
+  - endpoints: ['spine1-dc1:e1-32', 'dcgw2-dc1:eth3']
+  - endpoints: ['spine2-dc1:e1-31', 'dcgw1-dc1:eth2']
+  - endpoints: ['spine2-dc1:e1-32', 'dcgw2-dc1:eth2']
+  - endpoints: ['spine1-dc1:e1-3', 'leaf1-dc1:e1-31']
+  - endpoints: ['spine1-dc1:e1-4', 'leaf2-dc1:e1-31']
+  - endpoints: ['spine1-dc1:e1-5', 'leaf3-dc1:e1-31']
+  - endpoints: ['spine1-dc1:e1-6', 'leaf4-dc1:e1-31']
+  - endpoints: ['spine2-dc1:e1-3', 'leaf1-dc1:e1-32']
+  - endpoints: ['spine2-dc1:e1-4', 'leaf2-dc1:e1-32']
+  - endpoints: ['spine2-dc1:e1-5', 'leaf3-dc1:e1-32']
+  - endpoints: ['spine2-dc1:e1-6', 'leaf4-dc1:e1-32']
+  - endpoints: ['client1-dc1:eth1', 'leaf1-dc1:e1-1']
+  - endpoints: ['client2-dc1:eth1', 'leaf4-dc1:e1-1']
+  - endpoints: ['dcgw1-dc2:eth1', 'p1:eth1']
+  - endpoints: ['dcgw2-dc2:eth1', 'p1:eth2']
+  - endpoints: ['spine1-dc2:e1-31', 'dcgw1-dc2:eth3']
+  - endpoints: ['spine1-dc2:e1-32', 'dcgw2-dc2:eth3']
+  - endpoints: ['spine2-dc2:e1-31', 'dcgw1-dc2:eth2']
+  - endpoints: ['spine2-dc2:e1-32', 'dcgw2-dc2:eth2']
+  - endpoints: ['spine1-dc2:e1-3', 'leaf1-dc2:e1-31']
+  - endpoints: ['spine1-dc2:e1-4', 'leaf2-dc2:e1-31']
+  - endpoints: ['spine1-dc2:e1-5', 'leaf3-dc2:e1-31']
+  - endpoints: ['spine1-dc2:e1-6', 'leaf4-dc2:e1-31']
+  - endpoints: ['spine2-dc2:e1-3', 'leaf1-dc2:e1-32']
+  - endpoints: ['spine2-dc2:e1-4', 'leaf2-dc2:e1-32']
+  - endpoints: ['spine2-dc2:e1-5', 'leaf3-dc2:e1-32']
+  - endpoints: ['spine2-dc2:e1-6', 'leaf4-dc2:e1-32']
+  - endpoints: ['client3-dc2:eth1', 'leaf1-dc2:e1-1']
+  - endpoints: ['client4-dc2:eth1', 'leaf4-dc2:e1-1']

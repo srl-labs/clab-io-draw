@@ -1,0 +1,158 @@
+name: anysec-macsec
+prefix: ''
+mgmt:
+  network: anysec
+  ipv4-subnet: 172.50.50.0/24
+topology:
+  kinds:
+    nokia_sros:
+      type: sr-1x-48d
+      image: registry.srlinux.dev/pub/vr-sros:24.3.R2-1
+      license: ${SROS_LIC_PATH:-/opt/nokia/sros/r24_license.key}
+    linux:
+      image: ghcr.io/srl-labs/network-multitool
+      env:
+        http_proxy: ${http_proxy}
+        https_proxy: ${https_proxy}
+        no_proxy: pe1,pe2,p3,p4,ce5,ce6,client7,client8,gnmic,prometheus,grafana,localhost,172.50.50.0/24
+  nodes:
+    pe1:
+      kind: nokia_sros
+      mgmt-ipv4: 172.50.50.11
+      startup-config: configs/core/pe1.partial.cfg
+      labels:
+        graph-level: 3
+        graph-icon: router
+    pe2:
+      kind: nokia_sros
+      mgmt-ipv4: 172.50.50.12
+      startup-config: configs/core/pe2.partial.cfg
+      labels:
+        graph-level: 5
+        graph-icon: router
+    p3:
+      kind: nokia_sros
+      mgmt-ipv4: 172.50.50.13
+      type: SR-1
+      startup-config: configs/core/p3.partial.cfg
+      labels:
+        graph-level: 4
+        graph-icon: router
+    p4:
+      kind: nokia_sros
+      mgmt-ipv4: 172.50.50.14
+      type: SR-1
+      startup-config: configs/core/p4.partial.cfg
+      labels:
+        graph-level: 4
+        graph-icon: router
+    ce5:
+      kind: nokia_sros
+      mgmt-ipv4: 172.50.50.51
+      startup-config: configs/core/ce5.partial.cfg
+      labels:
+        graph-level: 2
+        graph-icon: router
+    ce6:
+      kind: nokia_sros
+      mgmt-ipv4: 172.50.50.52
+      startup-config: configs/core/ce6.partial.cfg
+      labels:
+        graph-level: 6
+        graph-icon: router
+    client7:
+      kind: linux
+      mgmt-ipv4: 172.50.50.31
+      binds:
+      - configs/clients/client7/setup-client7.sh:/config/setup-client7.sh
+      exec:
+      - bash /config/setup-client7.sh
+      group: server
+      labels:
+        graph-level: 1
+        graph-icon: host
+    client8:
+      kind: linux
+      mgmt-ipv4: 172.50.50.32
+      binds:
+      - configs/clients/client8/setup-client8.sh:/config/setup-client8.sh
+      exec:
+      - bash /config/setup-client8.sh
+      group: server
+      labels:
+        graph-level: 7
+        graph-icon: host
+    gnmic:
+      kind: linux
+      mgmt-ipv4: 172.50.50.21
+      image: ghcr.io/openconfig/gnmic:0.38.1
+      binds:
+      - configs/gnmic/gnmic-config.yml:/gnmic-config.yml:ro
+      cmd: --config /gnmic-config.yml --log subscribe
+      group: '10'
+    prometheus:
+      kind: linux
+      mgmt-ipv4: 172.50.50.22
+      image: prom/prometheus:v2.51.2
+      binds:
+      - configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      cmd: --config.file=/etc/prometheus/prometheus.yml
+      ports:
+      - 9090:9090
+      group: '10'
+    grafana:
+      kind: linux
+      mgmt-ipv4: 172.50.50.23
+      image: grafana/grafana:10.3.5
+      binds:
+      - configs/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+      - configs/grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - configs/grafana/dashboards:/var/lib/grafana/dashboards
+      ports:
+      - 3000:3000
+      env:
+        HTTPS_PROXY: ${http_proxy}
+        GF_INSTALL_PLUGINS: https://algenty.github.io/flowcharting-repository/archives/agenty-flowcharting-panel-1.0.0d.220606199-SNAPSHOT.zip;agenty-flowcharting-panel,https://github.com/cloudspout/cloudspout-button-panel/releases/download/7.0.23/cloudspout-button-panel.zip;cloudspout-button-panel
+        GF_ORG_ROLE: Editor
+        GF_ORG_NAME: Main Org.
+        GF_AUTH_ANONYMOUS_ENABLED: 'true'
+        GF_AUTH_ANONYMOUS: 'true'
+        GF_SECURITY_ALLOW_EMBEDDING: 'true'
+        GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 2s
+      group: '10'
+    panel:
+      kind: linux
+      mgmt-ipv4: 172.50.50.33
+      image: ghcr.io/srl-labs/sros-anysec-macsec-lab/panel
+      image-pull-policy: always
+      ports: ['54173:4173', '55173:5173']
+      binds:
+      - /etc/hosts:/etc/hosts:ro
+      stages:
+        create:
+          wait-for:
+          - node: pe1
+            stage: healthy
+          - node: pe2
+            stage: healthy
+          - node: p3
+            stage: healthy
+          - node: p4
+            stage: healthy
+  links:
+  - endpoints: ['ce5:eth7', 'pe1:eth3']
+  - endpoints: ['ce6:eth7', 'pe2:eth3']
+  - endpoints: ['pe1:eth1', 'p3:eth2']
+  - endpoints: ['pe1:eth2', 'p4:eth2']
+  - endpoints: ['pe2:eth1', 'p3:eth3']
+  - endpoints: ['pe2:eth2', 'p4:eth3']
+  - endpoints: ['p3:eth1', 'p4:eth1']
+  - endpoints: ['client7:eth1', 'ce5:eth1']
+  - endpoints: ['client7:eth2', 'ce5:eth2']
+  - endpoints: ['client7:eth3', 'ce5:eth3']
+  - endpoints: ['client8:eth1', 'ce6:eth1']
+  - endpoints: ['client8:eth2', 'ce6:eth2']
+  - endpoints: ['client8:eth3', 'ce6:eth3']
+  - endpoints: ['pe1:eth6', 'ce6:eth6']
+  - endpoints: ['pe2:eth5', 'ce6:eth5']
+  - endpoints: ['ce6:eth10', 'ce6:eth11']
