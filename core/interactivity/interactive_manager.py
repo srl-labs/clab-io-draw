@@ -1,135 +1,340 @@
 import logging
-from prompt_toolkit.shortcuts import checkboxlist_dialog, yes_no_dialog
+from typing import Dict, Any
+
+from textual.app import App, ComposeResult
+from textual.screen import Screen
+from textual.widgets import Static, Button, ListView, ListItem
+from textual.reactive import reactive
+from textual import events
+from textual.widgets._list_view import ListView as LV
 
 logger = logging.getLogger(__name__)
 
+
 class InteractiveManager:
-    """
-    Manages interactive mode for assigning graph-levels and graph-icons via a CLI interface.
-    """
+    def __init__(self):
+        pass
 
     def run_interactive_mode(
         self,
-        nodes: dict,
-        icon_to_group_mapping: dict,
-        containerlab_data: dict,
+        nodes: dict,                  # node_name -> Node object
+        icon_to_group_mapping: dict,  # e.g. styles["icon_to_group_mapping"]
+        containerlab_data: dict,      # entire .clab YAML
         output_file: str,
-        processor,
+        processor,                    # e.g. YAMLProcessor
         prefix: str,
         lab_name: str,
     ) -> dict:
-        """
-        Run dialogs to set graph-levels and icons interactively.
 
-        :return: Summary dictionary of the chosen configuration.
-        """
-        logger.debug("Starting interactive mode for node configuration...")
-        previous_summary = {"Levels": {}, "Icons": {}}
-        for node_name, node in nodes.items():
-                level = node.graph_level
-                previous_summary["Levels"].setdefault(level, []).append(node_name)
-                icon = node.graph_icon
-                previous_summary["Icons"].setdefault(icon, []).append(node_name)
+        self.nodes = nodes
+        self.icon_to_group_mapping = icon_to_group_mapping
+        self.containerlab_data = containerlab_data
+        self.output_file = output_file
+        self.processor = processor
+        self.prefix = prefix
+        self.lab_name = lab_name
 
-        while True:
-            summary = {"Levels": {}, "Icons": {}}
-            tmp_nodes = list(nodes.keys())
-            level = 0
+        # We'll store final user selections here
+        self.final_summary = {
+            "Levels": {},  # e.g. {1: [nodeA, nodeB], 2: [nodeC], ...}
+            "Icons": {},   # e.g. {"router": [nodeA], "leaf": [nodeB]}
+        }
 
-            # Assign levels
-            while tmp_nodes:
-                level += 1
-                valid_nodes = [(node, node) for node in tmp_nodes]
-                if valid_nodes:
-                    level_nodes = checkboxlist_dialog(
-                        title=f"Level {level} nodes",
-                        text=f"Choose the nodes for level {level}:",
-                        values=valid_nodes,
-                        default_values=previous_summary["Levels"].get(level, []),
-                    ).run()
-                else:
-                    break
+        # Launch the wizard
+        app = _WizardApp(self)
+        app.run()
 
-                if level_nodes is None:
-                    logger.debug("User canceled interactive mode.")
-                    return
+        return self.final_summary
 
-                if len(level_nodes) == 0:
-                    continue
 
-                for node_name in level_nodes:
-                    nodes[node_name].graph_level = level
-                    summary["Levels"].setdefault(level, []).append(node_name)
-                    tmp_nodes.remove(node_name)
+class _WizardApp(App[None]):
+    """
+    The main wizard application, containing screens for levels, icons, summary, etc.
+    """
 
-                    unformatted_node_name = node_name.replace(f"{prefix}-{lab_name}-", "")
-                    if "labels" not in containerlab_data["topology"]["nodes"][unformatted_node_name]:
-                        containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"] = {}
-                    containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"]["graph-level"] = level
+    # Let’s attach our CSS.
+    #CSS_PATH = "wizard.tcss"   # <-- Ensure wizard.tcss is in the same directory or adjust path.
 
-            # Assign icons
-            tmp_nodes = list(nodes.keys())
-            icons = list(icon_to_group_mapping.keys())
-            for icon in icons:
-                valid_nodes = [(node, node) for node in tmp_nodes]
-                if valid_nodes:
-                    icon_nodes = checkboxlist_dialog(
-                        title=f"Choose {icon} nodes",
-                        text=f"Select the nodes for the {icon} icon:",
-                        values=valid_nodes,
-                        default_values=previous_summary["Icons"].get(icon, []),
-                    ).run()
-                else:
-                    icon_nodes = []
+    def __init__(self, manager: InteractiveManager):
+        super().__init__()
+        self.manager = manager
+        self.levels_screen = AssignLevelsScreen(manager)
+        self.icons_screen = AssignIconsScreen(manager)
+        self.summary_screen = SummaryScreen(manager)
 
-                if icon_nodes is None:
-                    logger.debug("User canceled interactive icon assignment.")
-                    return
+    def on_mount(self) -> None:
+        # Show the levels screen first
+        self.push_screen(self.levels_screen)
 
-                if not icon_nodes:
-                    continue
+    def action_goto_icons(self) -> None:
+        self.push_screen(self.icons_screen)
 
-                for node_name in icon_nodes:
-                    nodes[node_name].graph_icon = icon
-                    summary["Icons"].setdefault(icon, []).append(node_name)
-                    tmp_nodes.remove(node_name)
+    def action_goto_summary(self) -> None:
+        self.push_screen(self.summary_screen)
 
-                    unformatted_node_name = node_name.replace(f"{prefix}-{lab_name}-", "")
-                    if "labels" not in containerlab_data["topology"]["nodes"][unformatted_node_name]:
-                        containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"] = {}
-                    containerlab_data["topology"]["nodes"][unformatted_node_name]["labels"]["graph-icon"] = icon
+    def action_quit_wizard(self) -> None:
+        # Once done, exit app
+        self.exit()
 
-            summary_tree = ""
-            for lvl, node_list in summary["Levels"].items():
-                summary_tree += f"Level {lvl}: "
-                node_items = []
-                indent = " " * (len(f"Level {lvl}: "))
-                for i, node in enumerate(node_list, start=1):
-                    icon = nodes[node].graph_icon
-                    node_items.append(f"{node} ({icon})")
-                    if i % 3 == 0 and i < len(node_list):
-                        node_items.append("\n" + indent)
-                summary_tree += ", ".join(node_items).replace(indent + ", ", indent) + "\n"
-            summary_tree += "\nDo you want to keep it like this? Select < No > to edit your configuration."
 
-            result = yes_no_dialog(title="SUMMARY", text=summary_tree).run()
+#
+# 1) Assign Levels
+#
+class AssignLevelsScreen(Screen):
+    current_level: reactive[int] = reactive(0)
+    unassigned_nodes: list[str] = []
 
-            if result is None:
-                logger.debug("User canceled at summary.")
-                return
-            elif result:
-                break
+    def __init__(self, manager: InteractiveManager):
+        super().__init__()
+        self.manager = manager
+        self.title_label = Static("")
+        self.instr_label = Static("(Click or press Space to toggle; Enter to confirm selection.)")
+        self.list_view = ListView(id="level_list")
+        self.confirm_btn = Button("Confirm for this Level", id="confirm-level")
+        self.done_btn = Button("Done (Skip leftover)", id="done-level")
+        # New exit button
+        self.exit_btn = Button("Exit Wizard", id="exit-button")
 
-        update_file = yes_no_dialog(
-            title="Update ContainerLab File",
-            text="Do you want to save a new ContainerLab file with the new configuration?",
-        ).run()
+        self.unassigned_nodes = list(self.manager.nodes.keys())
 
-        if update_file:
-            modified_output_file = output_file.rsplit('.', 1)[0] + ".mod.yml"
-            processor.save_yaml(containerlab_data, modified_output_file)
-            print(f"ContainerLab file has been updated: {modified_output_file}")
-        else:
-            print("ContainerLab file has not been updated.")
+    def compose(self) -> ComposeResult:
+        yield self.title_label
+        yield self.instr_label
+        yield self.list_view
+        yield self.confirm_btn
+        yield self.done_btn
+        yield self.exit_btn  # <-- The new button
 
-        return summary
+    def on_show(self) -> None:
+        self.current_level = 0
+        self._next_level()
+
+    def on_list_view_highlighted(self, event: LV.Highlighted) -> None:
+        if event.item is not None:
+            event.item.focus()
+
+    def _next_level(self):
+        if not self.unassigned_nodes:
+            self.app.action_goto_icons()
+            return
+        self.current_level += 1
+        self.title_label.update(f"Select nodes for Level {self.current_level}:")
+        self.list_view.clear()
+        for node_name in sorted(self.unassigned_nodes):
+            item = _MultiCheckItem(node_name)
+            self.list_view.append(item)
+
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "confirm-level":
+            checked = []
+            for item in self.list_view.children:
+                if isinstance(item, _MultiCheckItem) and item.checked:
+                    checked.append(item.text)
+            if checked:
+                for node_name in checked:
+                    self.manager.final_summary["Levels"].setdefault(self.current_level, []).append(node_name)
+                    self.manager.nodes[node_name].graph_level = self.current_level
+                    self._update_clab(node_name, level=self.current_level)
+                    if node_name in self.unassigned_nodes:
+                        self.unassigned_nodes.remove(node_name)
+            self._next_level()
+
+        elif event.button.id == "done-level":
+            # skip leftover. unassigned remain level=0
+            self.app.action_goto_icons()
+
+        elif event.button.id == "exit-button":
+            # Abort the wizard entirely
+            self.app.action_quit_wizard()
+
+    def _update_clab(self, node_name: str, level: int):
+        unformatted = node_name
+        marker = f"{self.manager.prefix}-{self.manager.lab_name}-"
+        if unformatted.startswith(marker):
+            unformatted = unformatted.replace(marker, "", 1)
+        node_data = self.manager.containerlab_data["topology"]["nodes"].get(unformatted, {})
+        if "labels" not in node_data:
+            node_data["labels"] = {}
+            self.manager.containerlab_data["topology"]["nodes"][unformatted] = node_data
+        node_data["labels"]["graph-level"] = level
+
+
+#
+# 2) Assign Icons
+#
+class AssignIconsScreen(Screen):
+    current_icon_index: reactive[int] = reactive(-1)
+    icons_list: list[str] = []
+
+    def __init__(self, manager: InteractiveManager):
+        super().__init__()
+        self.manager = manager
+        self.title_label = Static("")
+        self.instr_label = Static("(Click or press Space to toggle; Enter to confirm selection.)")
+        self.list_view = ListView(id="icon_list")
+        self.confirm_btn = Button("Confirm these nodes", id="confirm-icon")
+        self.done_btn = Button("Done / Next Step", id="done-icon")
+        # Could add an exit here too if you want
+        self.exit_btn = Button("Exit Wizard", id="exit-button")
+
+        self.icons_list = list(self.manager.icon_to_group_mapping.keys())
+        self.icons_list.sort()
+
+    def compose(self) -> ComposeResult:
+        yield self.title_label
+        yield self.instr_label
+        yield self.list_view
+        yield self.confirm_btn
+        yield self.done_btn
+        yield self.exit_btn
+
+    def on_show(self) -> None:
+        self.current_icon_index = -1
+        self._next_icon()
+
+    def on_list_view_highlighted(self, event: LV.Highlighted) -> None:
+        if event.item is not None:
+            event.item.focus()
+
+    def _next_icon(self):
+        self.current_icon_index += 1
+        if self.current_icon_index >= len(self.icons_list):
+            self.app.action_goto_summary()
+            return
+        icon = self.icons_list[self.current_icon_index]
+        self.title_label.update(f"Choose nodes for icon '{icon}':")
+        self.list_view.clear()
+        node_names = list(self.manager.nodes.keys())
+        for n in sorted(node_names):
+            self.list_view.append(_MultiCheckItem(n))
+
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "confirm-icon":
+            icon = self.icons_list[self.current_icon_index]
+            checked = []
+            for item in self.list_view.children:
+                if isinstance(item, _MultiCheckItem) and item.checked:
+                    checked.append(item.text)
+            if checked:
+                for node_name in checked:
+                    self.manager.final_summary["Icons"].setdefault(icon, []).append(node_name)
+                    self.manager.nodes[node_name].graph_icon = icon
+                    self._update_clab(node_name, icon)
+            self._next_icon()
+
+        elif event.button.id == "done-icon":
+            self.app.action_goto_summary()
+
+        elif event.button.id == "exit-button":
+            self.app.action_quit_wizard()
+
+    def _update_clab(self, node_name: str, icon: str):
+        unformatted = node_name
+        marker = f"{self.manager.prefix}-{self.manager.lab_name}-"
+        if unformatted.startswith(marker):
+            unformatted = unformatted.replace(marker, "", 1)
+        node_data = self.manager.containerlab_data["topology"]["nodes"].get(unformatted, {})
+        if "labels" not in node_data:
+            node_data["labels"] = {}
+            self.manager.containerlab_data["topology"]["nodes"][unformatted] = node_data
+        node_data["labels"]["graph-icon"] = icon
+
+
+#
+# 3) Show Summary
+#
+class SummaryScreen(Screen):
+    def __init__(self, manager: InteractiveManager):
+        super().__init__()
+        self.manager = manager
+        self.summary_label = Static("", id="summary-label")
+        self.yes_btn = Button("Yes", id="yes-button")
+        self.no_btn = Button("No", id="no-button")
+        self.exit_btn = Button("Exit Wizard", id="exit-button")
+
+    def compose(self) -> ComposeResult:
+        yield self.summary_label
+        yield self.yes_btn
+        yield self.no_btn
+        yield self.exit_btn
+
+    def on_show(self) -> None:
+        final = self.manager.final_summary
+        text = "==== LEVELS ====\n"
+        for lvl in sorted(final["Levels"].keys()):
+            node_list = final["Levels"][lvl]
+            text += f"  Level {lvl}: {', '.join(node_list)}\n"
+        text += "\n==== ICONS ====\n"
+        for icon in sorted(final["Icons"].keys()):
+            node_list = final["Icons"][icon]
+            text += f"  Icon '{icon}': {', '.join(node_list)}\n"
+        text += "\nDo you want to keep this configuration?"
+        self.summary_label.update(text)
+
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "yes-button":
+            self.app.push_screen(UpdateFileScreen(self.manager))
+        elif event.button.id == "no-button":
+            # Go back to the first screen so user can reassign if needed
+            self.app.pop_screen(to=self.app.levels_screen)
+        elif event.button.id == "exit-button":
+            self.app.action_quit_wizard()
+
+
+#
+# 4) Optional update .clab file
+#
+class UpdateFileScreen(Screen):
+    def __init__(self, manager: InteractiveManager):
+        super().__init__()
+        self.manager = manager
+        self.question = Static("Update ContainerLab file with your new config?")
+        self.yes_button = Button("Yes", id="yes-button")
+        self.no_button = Button("No", id="no-button")
+
+    def compose(self) -> ComposeResult:
+        yield self.question
+        yield self.yes_button
+        yield self.no_button
+
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "yes-button":
+            mod_file = self.manager.output_file.rsplit('.', 1)[0] + ".mod.yml"
+            self.manager.processor.save_yaml(self.manager.containerlab_data, mod_file)
+            print(f"ContainerLab file updated: {mod_file}")
+            self.app.action_quit_wizard()
+        elif event.button.id == "no-button":
+            print("File not updated.")
+            self.app.action_quit_wizard()
+
+
+#
+# A “multi-check” item that toggles on click or space
+#
+class _MultiCheckItem(ListItem):
+    checked: bool = reactive(False)
+
+    def __init__(self, text: str):
+        super().__init__()
+        self.text = text
+        self.can_focus = True
+        self._label = None
+
+    def compose(self) -> ComposeResult:
+        mark = "[x]" if self.checked else "[ ]"
+        self._label = Static(f"{mark} {self.text}")
+        yield self._label
+
+    def watch_checked(self, old_val: bool, new_val: bool) -> None:
+        mark = "[x]" if new_val else "[ ]"
+        if self._label is not None:
+            self._label.update(f"{mark} {self.text}")
+
+    def on_click(self) -> None:
+        self.checked = not self.checked
+
+    def on_key(self, event: events.Key) -> None:
+        if event.key == "space":
+            self.checked = not self.checked
+            event.stop()
+
