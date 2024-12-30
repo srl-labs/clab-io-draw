@@ -1,45 +1,57 @@
 Screen {
     layout: vertical;
-    background: #282c34; /* Dark gray-blue */
+    background: #1c1f24; /* A darker gray-blue */
     color: #abb2bf;      /* Neutral light-gray text */
 }
 
+/* Main container */
 #main-container {
     width: 100%;
     height: 1fr;
-    padding: 1 2;        /* Give some breathing room around the entire main container */
+    padding: 1 2;        /* Some breathing room around the main container */
 }
 
+/* Left pane (70% width) with orange border */
 #left-pane {
     width: 70%;
-    background: #2f3540; /* Slightly lighter than the screen background */
-    border: round #61afef;  /* "round" style with a bluish accent color */
+    background: #242830;           /* Slightly lighter than the main background */
+    border: round #e39400;         /* round border with an orange color */
     padding: 1 2;
 }
 
+/* Right pane (30% width) with dark-blue border */
 #right-pane {
     width: 30%;
-    background: #2f3540;
-    border: round #c678dd;  /* "round" style with a purplish color */
+    background: #242830;
+    border: round #0066cc;         /* round border with a dark blue color */
     padding: 1 2;
 }
 
+/* The horizontal row of buttons */
 #button-row {
     margin-top: 1;
     height: auto;
-    layout: horizontal;   /* Already set in your python code, but let's be explicit */
-    padding: 1 1;         /* Some extra space around the buttons row */
+    layout: horizontal;
+    padding: 1 1;      /* Extra space around the button row */
 }
 
+/* Button styling */
 Button {
-    margin-right: 1;      /* small gap to the right of each button */
-    background: #3a3f4b;  /* darker gray for button background */
-    color: #ffffff;       /* white text on the button */
-    border: none;         /* no border, for a clean modern look 
-                             or try: `border: wide #4b5361` if you want a visible border */
-    padding: 1 2;         /* a little extra padding to make buttons more comfortable */
+    margin-right: 1;   /* small gap to the right of each button */
+    background: #303540;
+    color: #ffffff;
+    border: none;      /* clean, borderless look */
+    padding: 1 2;      /* slightly more spacious feel */
 }
 
+/* Hover effect on buttons */
+Button:hover {
+    background: #3c4450; /* Slightly lighter or highlight color */
+    color: #ffffff;
+}
 
-
-
+/* Scrollable containers (e.g. where you display previews) */
+ScrollableContainer {
+    scrollbar-color: #3F4654;       /* color of the scrollbar thumb */
+    scrollbar-background: #303540;  /* background behind the scrollbar track */
+}
