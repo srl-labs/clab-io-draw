@@ -1,7 +1,7 @@
 from __future__ import annotations
 import logging
+import sys, os
 from typing import Any, Dict, List
-
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, ScrollableContainer
 from textual.screen import Screen
@@ -89,7 +89,6 @@ def build_preview_lines(
         return "-"
 
     # Sort by assigned level (or ephemeral level).
-    # We can do a custom sort key if we want to keep the same order as before:
     def sort_key(n: str):
         lvl = get_assigned_level(n)
         # If it's a string like "(will be 2)", we can parse out the int, but let's just rank them last
@@ -229,6 +228,25 @@ class InteractiveManager:
         self.layout = "vertical"
         self.ephemeral_icons: Dict[int, set[str]] = {}
 
+    def detect_pty_legacy_mode(self) -> bool:
+        """
+        Detect if we're running in legacy PTY mode (pre-0.60.2) vs newer Docker API mode.
+        Returns True if likely running in legacy mode.
+        """
+        if sys.stdin.isatty():
+            term = os.environ.get('TERM', '')
+            colorterm = os.environ.get('COLORTERM', '')
+            
+            # Check if we have a modern terminal with color support
+            has_color_term = any(term.endswith(suffix) for suffix in 
+                ['-256color', '-color', 'color'])
+            has_true_color = colorterm in ['truecolor', '24bit']
+            
+            # If we don't have both color support indicators, likely legacy mode
+            if not (has_color_term and has_true_color):
+                return True
+        return False
+
     def run_interactive_mode(
         self,
         diagram: Any,
@@ -260,6 +278,10 @@ class InteractiveManager:
             "Theme": "nokia",
         }
 
+        if self.detect_pty_legacy_mode():
+            logger.warning("It looks like you're on an older Containerlab (<0.60.2) PTY approach. "
+                        "Consider upgrading for improved TUI and auto-cleanup.")
+
         app = _WizardApp(self)
         app.run()
         return self.final_summary
@@ -272,7 +294,7 @@ class _WizardApp(App[None]):
     """
     The multi-step wizard with 4 screens (Levels -> Icons -> Summary -> UpdateFile).
     """
-    CSS_PATH = "style.tcss"  # <-- We use a separate file now, instead of CSS = """..."""
+    CSS_PATH = "style.tcss" 
 
     def __init__(self, manager: InteractiveManager):
         super().__init__()
@@ -310,7 +332,6 @@ class AssignLevelsScreen(Screen):
         self.manager = manager
 
         self.title_label = Static("")
-        #self.instr_label = Static("('Confirm Level' => finalize).")
         self.list_view = ToggleListView()
 
         self.prev_btn = Button("Previous Step", id="previous-level")
@@ -329,7 +350,6 @@ class AssignLevelsScreen(Screen):
         with Horizontal(id="main-container"):
             with Vertical(id="left-pane"):
                 yield self.title_label
-                #yield self.instr_label
                 yield self.list_view
 
                 with Vertical(id="button-row"):
@@ -434,8 +454,6 @@ class AssignLevelsScreen(Screen):
             current_level=current_lvl,
         )
 
-
-
     def _update_clab(self, node_name: str, lvl: int) -> None:
         marker = f"{self.manager.prefix}-{self.manager.lab_name}-"
         if node_name.startswith(marker):
@@ -466,7 +484,6 @@ class AssignLevelsScreen(Screen):
             self.ephemeral_nodes.discard(node_name)
         self._update_preview()
         event.stop()
-
 
 # ----------------------------------------------------------------
 # 2) Icons Screen
