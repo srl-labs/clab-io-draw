@@ -71,6 +71,7 @@ def main(
     # Use ThemeManager to load styles
     logger.debug("Loading theme...")
     theme_manager = ThemeManager(theme_path)
+
     try:
         styles = theme_manager.load_theme()
     except ThemeManagerError as e:
@@ -101,19 +102,37 @@ def main(
     else:
         diagram.nodes = nodes
 
+    available_themes = theme_manager.list_available_themes()
+    available_themes.sort()
+
+
     if interactive:
         logger.debug("Entering interactive mode...")
         processor = YAMLProcessor()
         interactor = InteractiveManager()
         interactor.run_interactive_mode(
-            diagram.nodes,
-            styles["icon_to_group_mapping"],
-            containerlab_data,
-            input_file,
-            processor,
-            prefix,
-            lab_name,
+            diagram=diagram,
+            available_themes=available_themes, 
+            icon_to_group_mapping=styles["icon_to_group_mapping"],
+            containerlab_data=containerlab_data,
+            output_file=input_file,
+            processor=processor,
+            prefix=prefix,
+            lab_name=lab_name,
         )
+        # After wizard finishes:
+        layout = interactor.final_summary.get("Layout", layout)
+        chosen_theme = interactor.final_summary.get("Theme")  
+
+        if chosen_theme:
+            # Load that theme or switch to it
+            new_theme_path = os.path.join(os.path.dirname(theme_path), f"{chosen_theme}.yaml")
+            if os.path.exists(new_theme_path):
+                logger.debug(f"Loading user-chosen theme: {chosen_theme}")
+                theme_manager.config_path = new_theme_path
+                styles = theme_manager.load_theme()
+            else:
+                logger.warning(f"User chose theme '{chosen_theme}' but no file found. Keeping old theme.")
 
     logger.debug("Assigning graph levels...")
     graph_manager = GraphLevelManager()
