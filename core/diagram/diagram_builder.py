@@ -53,10 +53,10 @@ class DiagramBuilder:
                         spacing = styles["node_height"] / (num_links + 1)
                         for i, link in enumerate(sorted_links):
                             if link.target.pos_x > link.source.pos_x:
-                                port_x = node.pos_x + styles["node_width"]
+                                port_x = node.pos_x + styles["node_width"] - styles["port_width"] / 2
                             else:
-                                port_x = node.pos_x
-                            port_y = node.pos_y + (i + 1) * spacing
+                                port_x = node.pos_x - styles["port_width"] / 2
+                            port_y = node.pos_y + (i + 1) * spacing - styles["port_height"] / 2
                             link.port_pos = (port_x, port_y)
                 else:
                     # horizontal layout
@@ -83,10 +83,10 @@ class DiagramBuilder:
                         spacing = styles["node_width"] / (num_links + 1)
                         for i, link in enumerate(sorted_links):
                             if link.target.pos_y > link.source.pos_y:
-                                port_y = node.pos_y + styles["node_height"]
+                                port_y = node.pos_y + styles["node_height"] - styles["port_height"] / 2
                             else:
-                                port_y = node.pos_y
-                            port_x = node.pos_x + (i + 1) * spacing
+                                port_y = node.pos_y - styles["port_height"] / 2
+                            port_x = node.pos_x + (i + 1) * spacing - styles["port_width"] / 2
                             link.port_pos = (port_x, port_y)
 
         # Create connectors and midpoint connectors
