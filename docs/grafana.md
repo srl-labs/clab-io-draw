@@ -25,7 +25,7 @@ To generate a dashboard, execute the following command:
 python clab2drawio.py -i <path_to_your_yaml_file> -g --theme grafana
 ```
 > [!TIP]
-> Use a Grafana-compatible theme like `grafana_dark` for a more cohesive look.
+> Use a Grafana-compatible theme like `grafana` for a more cohesive look.
 
 ### Output
 
