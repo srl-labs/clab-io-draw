@@ -6,85 +6,137 @@ from core.layout.layout_manager import LayoutManager
 logger = logging.getLogger(__name__)
 
 class VerticalLayout(LayoutManager):
-    """
-    Applies an iterative "barycenter" layout strategy to arrange nodes vertically.
-    Each node's x-position is determined purely from how it connects to other nodes,
-    including same-level and cross-level edges.
-    """
-
     def apply(self, diagram, verbose=False) -> None:
-        """
-        Main entry point: Called by clab2drawio code to apply a vertical layout.
-        :param diagram: CustomDrawioDiagram instance with .nodes
-        :param verbose: Whether to log extra info
-        """
         logger.debug("Applying iterative barycenter layout (vertical)...")
         self.diagram = diagram
         self.verbose = verbose
 
-        # Put nodes into bins by their graph_level
         nodes_by_level = defaultdict(list)
         for n in self.diagram.nodes.values():
             nodes_by_level[n.graph_level].append(n)
 
-        # Initialize: give each level a naive left->right order
         sorted_levels = sorted(nodes_by_level.keys())
-        for level in sorted_levels:
-            # sort by name
-            nodes_by_level[level].sort(key=lambda nd: nd.name)
-            # assign an initial x from left->right
-            for i, nd in enumerate(nodes_by_level[level]):
-                nd.pos_x = float(100 + i * self.diagram.styles["padding_x"])  # or 0.0 + i*...
         
-        def compute_barycenters_at_level(level_nodes):
-            """
-            For each node in level_nodes, compute the average x of all its neighbors,
-            ignoring their levels (so it includes same-level edges and multi-level edges).
-            Store the result in node._bary (temp).
-            """
-            for nd in level_nodes:
-                # gather x positions of neighbors
-                neighbor_x_positions = []
-                for nbr in nd.get_neighbors():
-                    # skip if neighbor has no numeric pos_x
-                    try:
-                        nx = float(nbr.pos_x)
-                    except (TypeError, ValueError):
-                        nx = 0.0
-                    neighbor_x_positions.append(nx)
+        # Initial positioning
+        for level in sorted_levels:
+            nodes_by_level[level].sort(key=lambda nd: nd.name)
+            for i, nd in enumerate(nodes_by_level[level]):
+                nd.pos_x = float(100 + i * self.diagram.styles["padding_x"])
 
-                if neighbor_x_positions:
-                    nd._bary = sum(neighbor_x_positions) / len(neighbor_x_positions)
+        def get_connected_pairs(level_nodes):
+            """Get pairs of nodes in the same level that are directly connected."""
+            pairs = []
+            for i, node1 in enumerate(level_nodes):
+                for node2 in level_nodes[i+1:]:
+                    if node2 in node1.get_neighbors():
+                        pairs.append((node1, node2))
+            return pairs
+
+        def is_position_between_connected_nodes(pos, node, level_nodes):
+            """Check if a position would place the node between connected nodes."""
+            connected_pairs = get_connected_pairs(level_nodes)
+            for n1, n2 in connected_pairs:
+                if n1 != node and n2 != node:  # Don't consider pairs involving the current node
+                    min_x, max_x = min(n1.pos_x, n2.pos_x), max(n1.pos_x, n2.pos_x)
+                    if min_x < pos < max_x:
+                        return True
+            return False
+
+        def find_valid_positions(node, level_nodes, barycenter):
+            """Find all valid positions, prioritizing those that don't create crossings."""
+            positions = []
+            
+            # Get all nodes that are directly connected to this node
+            connected_nodes = set(node.get_neighbors())
+            same_level_connected = [n for n in level_nodes if n in connected_nodes]
+            
+            # Get all existing x positions in this level
+            existing_positions = sorted([n.pos_x for n in level_nodes if n != node])
+            if not existing_positions:
+                return [barycenter]
+
+            # Consider positions before first node
+            positions.append(existing_positions[0] - self.diagram.styles["padding_x"])
+            
+            # Consider positions after each node
+            for pos in existing_positions:
+                positions.append(pos + self.diagram.styles["padding_x"])
+
+            # If node has same-level connections, prioritize positions next to them
+            if same_level_connected:
+                for connected_node in same_level_connected:
+                    positions.append(connected_node.pos_x + self.diagram.styles["padding_x"])
+                    positions.append(connected_node.pos_x - self.diagram.styles["padding_x"])
+
+            # Remove invalid positions (too close to existing nodes)
+            min_spacing = self.diagram.styles["padding_x"] * 0.9  # Allow slight overlap for adjustment
+            valid_positions = []
+            for pos in sorted(set(positions)):
+                if all(abs(pos - other_pos) >= min_spacing for other_pos in existing_positions):
+                    valid_positions.append(pos)
+
+            # Sort positions by:
+            # 1. Whether they create "between" situations (avoid these)
+            # 2. Distance from barycenter
+            return sorted(valid_positions, 
+                        key=lambda p: (
+                            is_position_between_connected_nodes(p, node, level_nodes),
+                            abs(p - barycenter)
+                        ))
+
+        def compute_barycenter(node):
+            """Compute weighted barycenter of all connected nodes."""
+            positions = []
+            weights = []
+            
+            for nbr in node.get_neighbors():
+                try:
+                    pos = float(nbr.pos_x)
+                    # Give higher weight to same-type connections (ixr-ixr, sxr-sxr)
+                    weight = 2.0 if node.name.split('-')[0] == nbr.name.split('-')[0] else 1.0
+                    positions.append(pos)
+                    weights.append(weight)
+                except (TypeError, ValueError):
+                    continue
+
+            if positions:
+                return sum(p * w for p, w in zip(positions, weights)) / sum(weights)
+            return node.pos_x
+
+        def reposition_level(level_nodes):
+            """Position nodes in a level while avoiding problematic placements."""
+            # Sort nodes by number of connections (more connected nodes first)
+            nodes_to_position = sorted(level_nodes, 
+                                    key=lambda n: len(list(n.get_neighbors())), 
+                                    reverse=True)
+            
+            positioned = []
+            for node in nodes_to_position:
+                barycenter = compute_barycenter(node)
+                valid_positions = find_valid_positions(node, positioned, barycenter)
+                
+                if valid_positions:
+                    # Take the first (best) valid position
+                    node.pos_x = valid_positions[0]
                 else:
-                    nd._bary = 0.0
+                    # Fallback: place after last positioned node
+                    if positioned:
+                        node.pos_x = max(n.pos_x for n in positioned) + self.diagram.styles["padding_x"]
+                    else:
+                        node.pos_x = barycenter
+                
+                positioned.append(node)
 
-        def reorder_by_barycenter(level_nodes):
-            """
-            Sort the list of nodes by the barycenter we just computed.
-            """
-            level_nodes.sort(key=lambda nd: nd._bary)
-
-        num_passes = 4  # or more, typically 4~6 is enough
+        # Main layout iterations
+        num_passes = 4
         for _iter in range(num_passes):
-            # top->down sweep
             for level in sorted_levels:
-                level_nodes = nodes_by_level[level]
-                compute_barycenters_at_level(level_nodes)
-                reorder_by_barycenter(level_nodes)
-                # reassign x after sorting
-                for i, nd in enumerate(level_nodes):
-                    nd.pos_x = float(100 + i * self.diagram.styles["padding_x"])
-
-            # bottom->up sweep
+                reposition_level(nodes_by_level[level])
+            
             for level in reversed(sorted_levels):
-                level_nodes = nodes_by_level[level]
-                compute_barycenters_at_level(level_nodes)
-                reorder_by_barycenter(level_nodes)
-                # reassign x
-                for i, nd in enumerate(level_nodes):
-                    nd.pos_x = float(100 + i * self.diagram.styles["padding_x"])
+                reposition_level(nodes_by_level[level])
 
-        # Assign final pos_y from graph_level, keep the pos_x from the last iteration
+        # Assign Y positions
         for level in sorted_levels:
             for node in nodes_by_level[level]:
                 node.pos_y = float(100 + level * self.diagram.styles["padding_y"])
@@ -94,13 +146,9 @@ class VerticalLayout(LayoutManager):
 
         logger.debug("Iterative barycenter layout complete.")
 
+
     def _center_align_nodes(self, nodes_by_level):
-        """
-        Shift each level horizontally so they are centered
-        around a consistent "global_center" or around the row above.
-        """
         sorted_levels = sorted(nodes_by_level.keys())
-        # pick a global center, or compute from the top row
         global_center = 400.0
 
         prev_center = None
@@ -108,41 +156,29 @@ class VerticalLayout(LayoutManager):
             level_nodes = nodes_by_level[level]
             if not level_nodes:
                 continue
-            # find min & max x
             min_x = min(nd.pos_x for nd in level_nodes)
             max_x = max(nd.pos_x for nd in level_nodes)
             row_center = (min_x + max_x) / 2.0
 
             if prev_center is None:
-                # for the top row, align it to global_center
                 offset = global_center - row_center
                 for nd in level_nodes:
                     nd.pos_x += offset
-                # update row_center after shift
                 min_x = min(nd.pos_x for nd in level_nodes)
                 max_x = max(nd.pos_x for nd in level_nodes)
                 row_center = (min_x + max_x) / 2.0
                 prev_center = row_center
             else:
-                # for subsequent rows, line them up with the previous row's center
                 offset = prev_center - row_center
                 for nd in level_nodes:
                     nd.pos_x += offset
-                # update row_center
                 min_x = min(nd.pos_x for nd in level_nodes)
                 max_x = max(nd.pos_x for nd in level_nodes)
                 row_center = (min_x + max_x) / 2.0
                 prev_center = row_center
 
     def _adjust_intermediary_nodes(self, diagram, offset=100.0):
-        """
-        After the main layout, push nodes out of the way if they lie directly on
-        a vertical or horizontal line that connects other nodes.
-
-        :param diagram: The CustomDrawioDiagram with .nodes and .get_links_from_nodes()
-        :param offset: How many pixels to shift a node if it is detected "on" a link.
-        """
-        all_links = diagram.get_links_from_nodes()  # or however you get your link list
+        all_links = diagram.get_links_from_nodes()
         nodes = list(diagram.nodes.values())
 
         for nd in nodes:
@@ -153,34 +189,20 @@ class VerticalLayout(LayoutManager):
             A = link.source
             B = link.target
 
-            # If the link is vertical (A.x ~ B.x):
             if abs(A.pos_x - B.pos_x) < 1e-5:
-                # figure out top/bot
                 top_y = min(A.pos_y, B.pos_y)
                 bot_y = max(A.pos_y, B.pos_y)
 
-                # see if any other node is "in line"
                 for N in nodes:
                     if N not in (A, B):
-                        # Check if N.x is basically same as A.x
-                        # and N.y is between top_y and bot_y
-                        # We'll do a bounding-box approach:
-                        Nx_left  = N.pos_x - N.half_w
+                        Nx_left = N.pos_x - N.half_w
                         Nx_right = N.pos_x + N.half_w
-                        # "In line" if A.x is within that horizontal range
-                        # and N's center is between top_y and bot_y
                         if Nx_left <= A.pos_x <= Nx_right:
                             Ny_top = N.pos_y - N.half_h
                             Ny_bot = N.pos_y + N.half_h
-                            # Overlaps vertically?
                             if (Ny_top < bot_y and Ny_bot > top_y):
-                                # It's in the vertical corridor
-                                # SHIFT N horizontally by offset
-                                # (optionally pick left or right based on some logic)
-                                # For example, nudge to the left:
                                 N.pos_x -= offset
 
-            # If the link is horizontal (A.y ~ B.y):
             elif abs(A.pos_y - B.pos_y) < 1e-5:
                 left_x = min(A.pos_x, B.pos_x)
                 right_x = max(A.pos_x, B.pos_x)
@@ -188,12 +210,8 @@ class VerticalLayout(LayoutManager):
                     if N not in (A, B):
                         Ny_top = N.pos_y - N.half_h
                         Ny_bot = N.pos_y + N.half_h
-                        # "In line" if A.y is within that vertical range
                         if Ny_top <= A.pos_y <= Ny_bot:
-                            Nx_left  = N.pos_x - N.half_w
+                            Nx_left = N.pos_x - N.half_w
                             Nx_right = N.pos_x + N.half_w
-                            # Overlaps horizontally?
                             if (Nx_left < right_x and Nx_right > left_x):
-                                # SHIFT N vertically by offset
-                                # e.g., nudge upward:
                                 N.pos_y -= offset
