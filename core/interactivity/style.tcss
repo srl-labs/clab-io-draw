@@ -1,0 +1,57 @@
+Screen {
+    layout: vertical;
+    background: #1c1f24; /* A darker gray-blue */
+    color: #abb2bf;      /* Neutral light-gray text */
+}
+
+/* Main container */
+#main-container {
+    width: 100%;
+    height: 1fr;
+    padding: 1 2;        /* Some breathing room around the main container */
+}
+
+/* Left pane (70% width) with orange border */
+#left-pane {
+    width: 70%;
+    background: #242830;           /* Slightly lighter than the main background */
+    border: round #e39400;         /* round border with an orange color */
+    padding: 1 2;
+}
+
+/* Right pane (30% width) with dark-blue border */
+#right-pane {
+    width: 30%;
+    background: #242830;
+    border: round #0066cc;         /* round border with a dark blue color */
+    padding: 1 2;
+}
+
+/* The horizontal row of buttons */
+#button-row {
+    margin-top: 1;
+    height: auto;
+    layout: horizontal;
+    padding: 1 1;      /* Extra space around the button row */
+}
+
+/* Button styling */
+Button {
+    margin-right: 1;   /* small gap to the right of each button */
+    background: #303540;
+    color: #ffffff;
+    border: none;      /* clean, borderless look */
+    padding: 1 2;      /* slightly more spacious feel */
+}
+
+/* Hover effect on buttons */
+Button:hover {
+    background: #3c4450; /* Slightly lighter or highlight color */
+    color: #ffffff;
+}
+
+/* Scrollable containers (e.g. where you display previews) */
+ScrollableContainer {
+    scrollbar-color: #3F4654;       /* color of the scrollbar thumb */
+    scrollbar-background: #303540;  /* background behind the scrollbar track */
+}

@@ -1,0 +1,44 @@
+/* wizard.tcss */
+
+/* The entire Screen background */
+Screen {
+    background: #222;
+    color: #EEE; /* Default text color */
+}
+
+/* The label up top (title_label, instr_label, summary_label, etc.) */
+Static {
+    margin: 1 2;
+    padding: 0 1;
+}
+
+/* The ListView that displays nodes */
+ListView {
+    border: wide #444;
+    padding: 1;
+    background: #333;
+}
+
+/* Each "ListItem" in the ListView */
+ListItem {
+    padding: 0 2;
+    margin: 0;
+}
+
+/* Buttons throughout (Confirm, Done, etc.) */
+Button {
+    border: round #666;
+    background: #444;
+    color: white;
+    padding: 1 3;
+    margin: 1 2;
+    text-style: bold;
+}
+
+/* If you need specific styling for the 'Exit Wizard' button, give it an ID or classes:
+Button#exit-button {
+    background: maroon;
+    color: white;
+}
+*/
+

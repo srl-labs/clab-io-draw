@@ -2,7 +2,9 @@ import yaml
 import base64
 import re
 import logging
-from typing import Dict, Any
+import os
+import glob
+from typing import Dict, Any, List
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,32 @@ class ThemeManager:
         :param config_path: Path to the YAML theme configuration file.
         """
         self.config_path = config_path
+
+    def list_available_themes(self) -> List[str]:
+        """
+        Return a list of all available theme names in the same directory as the current config_path.
+        Themes are identified by files ending with .yaml or .yml.
+
+        :return: List of theme names (file names without the .yaml/.yml extension).
+        """
+        # Identify the directory containing the theme files
+        base_dir = os.path.dirname(self.config_path)
+        if not base_dir:
+            base_dir = "."
+
+        # Gather all .yaml / .yml files
+        yaml_files = glob.glob(os.path.join(base_dir, "*.yaml")) + glob.glob(os.path.join(base_dir, "*.yml"))
+
+        # Extract base filenames without extensions
+        available_themes = []
+        for yf in yaml_files:
+            filename = os.path.basename(yf)
+            # Remove extension and store just the "name"
+            theme_name, _ = os.path.splitext(filename)
+            available_themes.append(theme_name)
+
+        return available_themes
+
 
     def load_theme(self) -> dict:
         """
