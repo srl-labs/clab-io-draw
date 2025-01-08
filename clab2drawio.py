@@ -18,17 +18,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def main(
     input_file: str,
     output_file: str,
     grafana: bool,
     theme: str,
-    include_unlinked_nodes: bool=False,
-    no_links: bool=False,
-    layout: str="vertical",
-    verbose: bool=False,
-    interactive: bool=False,
-    grafana_config_path: str=None,
+    include_unlinked_nodes: bool = False,
+    no_links: bool = False,
+    layout: str = "vertical",
+    verbose: bool = False,
+    interactive: bool = False,
+    grafana_config_path: str = None,
 ) -> None:
     """
     Main function to generate a topology diagram from a containerlab YAML or draw.io XML file.
@@ -42,7 +43,7 @@ def main(
     :param layout: Layout direction ("vertical" or "horizontal").
     :param verbose: Enable verbose output.
     :param interactive: Run in interactive mode to define graph-levels and icons.
-    """    
+    """
     logger.debug("Starting clab2drawio main function.")
     loader = TopologyLoader()
     try:
@@ -90,7 +91,7 @@ def main(
     # Use NodeLinkBuilder to build nodes and links
     logger.debug("Building nodes and links...")
     builder = NodeLinkBuilder(containerlab_data, styles, prefix, lab_name)
-    nodes, links = builder.build_nodes_and_links()    
+    nodes, links = builder.build_nodes_and_links()
 
     diagram.nodes = nodes
 
@@ -175,11 +176,15 @@ def main(
         output_folder = os.path.dirname(grafana_output_file) or "."
         diagram.grafana_dashboard_file = grafana_output_file
         os.makedirs(output_folder, exist_ok=True)
-        
-        grafana_dashboard = GrafanaDashboard(diagram, grafana_config_path=grafana_config_path)
+
+        grafana_dashboard = GrafanaDashboard(
+            diagram, grafana_config_path=grafana_config_path
+        )
         panel_config = grafana_dashboard.create_panel_yaml()
 
-        flow_panel_output_file = os.path.splitext(grafana_output_file)[0] + ".flow_panel.yaml"
+        flow_panel_output_file = (
+            os.path.splitext(grafana_output_file)[0] + ".flow_panel.yaml"
+        )
         with open(flow_panel_output_file, "w") as f:
             f.write(panel_config)
         print("Saved flow panel YAML to:", flow_panel_output_file)
@@ -203,6 +208,7 @@ def main(
     diagram.dump_file(filename=output_filename, folder=output_folder)
 
     print("Saved file to:", output_file)
+
 
 if __name__ == "__main__":
     args = parse_arguments()

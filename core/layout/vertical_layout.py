@@ -5,6 +5,7 @@ from core.layout.layout_manager import LayoutManager
 
 logger = logging.getLogger(__name__)
 
+
 class VerticalLayout(LayoutManager):
     def apply(self, diagram, verbose=False) -> None:
         logger.debug("Applying iterative barycenter layout (vertical)...")
@@ -16,7 +17,7 @@ class VerticalLayout(LayoutManager):
             nodes_by_level[n.graph_level].append(n)
 
         sorted_levels = sorted(nodes_by_level.keys())
-        
+
         # Initial positioning
         for level in sorted_levels:
             nodes_by_level[level].sort(key=lambda nd: nd.name)
@@ -27,7 +28,7 @@ class VerticalLayout(LayoutManager):
             """Get pairs of nodes in the same level that are directly connected."""
             pairs = []
             for i, node1 in enumerate(level_nodes):
-                for node2 in level_nodes[i+1:]:
+                for node2 in level_nodes[i + 1 :]:
                     if node2 in node1.get_neighbors():
                         pairs.append((node1, node2))
             return pairs
@@ -36,7 +37,9 @@ class VerticalLayout(LayoutManager):
             """Check if a position would place the node between connected nodes."""
             connected_pairs = get_connected_pairs(level_nodes)
             for n1, n2 in connected_pairs:
-                if n1 != node and n2 != node:  # Don't consider pairs involving the current node
+                if (
+                    n1 != node and n2 != node
+                ):  # Don't consider pairs involving the current node
                     min_x, max_x = min(n1.pos_x, n2.pos_x), max(n1.pos_x, n2.pos_x)
                     if min_x < pos < max_x:
                         return True
@@ -45,11 +48,11 @@ class VerticalLayout(LayoutManager):
         def find_valid_positions(node, level_nodes, barycenter):
             """Find all valid positions, prioritizing those that don't create crossings."""
             positions = []
-            
+
             # Get all nodes that are directly connected to this node
             connected_nodes = set(node.get_neighbors())
             same_level_connected = [n for n in level_nodes if n in connected_nodes]
-            
+
             # Get all existing x positions in this level
             existing_positions = sorted([n.pos_x for n in level_nodes if n != node])
             if not existing_positions:
@@ -57,7 +60,7 @@ class VerticalLayout(LayoutManager):
 
             # Consider positions before first node
             positions.append(existing_positions[0] - self.diagram.styles["padding_x"])
-            
+
             # Consider positions after each node
             for pos in existing_positions:
                 positions.append(pos + self.diagram.styles["padding_x"])
@@ -65,35 +68,50 @@ class VerticalLayout(LayoutManager):
             # If node has same-level connections, prioritize positions next to them
             if same_level_connected:
                 for connected_node in same_level_connected:
-                    positions.append(connected_node.pos_x + self.diagram.styles["padding_x"])
-                    positions.append(connected_node.pos_x - self.diagram.styles["padding_x"])
+                    positions.append(
+                        connected_node.pos_x + self.diagram.styles["padding_x"]
+                    )
+                    positions.append(
+                        connected_node.pos_x - self.diagram.styles["padding_x"]
+                    )
 
             # Remove invalid positions (too close to existing nodes)
-            min_spacing = self.diagram.styles["padding_x"] * 0.9  # Allow slight overlap for adjustment
+            min_spacing = (
+                self.diagram.styles["padding_x"] * 0.9
+            )  # Allow slight overlap for adjustment
             valid_positions = []
             for pos in sorted(set(positions)):
-                if all(abs(pos - other_pos) >= min_spacing for other_pos in existing_positions):
+                if all(
+                    abs(pos - other_pos) >= min_spacing
+                    for other_pos in existing_positions
+                ):
                     valid_positions.append(pos)
 
             # Sort positions by:
             # 1. Whether they create "between" situations (avoid these)
             # 2. Distance from barycenter
-            return sorted(valid_positions, 
-                        key=lambda p: (
-                            is_position_between_connected_nodes(p, node, level_nodes),
-                            abs(p - barycenter)
-                        ))
+            return sorted(
+                valid_positions,
+                key=lambda p: (
+                    is_position_between_connected_nodes(p, node, level_nodes),
+                    abs(p - barycenter),
+                ),
+            )
 
         def compute_barycenter(node):
             """Compute weighted barycenter of all connected nodes."""
             positions = []
             weights = []
-            
+
             for nbr in node.get_neighbors():
                 try:
                     pos = float(nbr.pos_x)
                     # Give higher weight to same-type connections (ixr-ixr, sxr-sxr)
-                    weight = 2.0 if node.name.split('-')[0] == nbr.name.split('-')[0] else 1.0
+                    weight = (
+                        2.0
+                        if node.name.split("-")[0] == nbr.name.split("-")[0]
+                        else 1.0
+                    )
                     positions.append(pos)
                     weights.append(weight)
                 except (TypeError, ValueError):
@@ -106,25 +124,28 @@ class VerticalLayout(LayoutManager):
         def reposition_level(level_nodes):
             """Position nodes in a level while avoiding problematic placements."""
             # Sort nodes by number of connections (more connected nodes first)
-            nodes_to_position = sorted(level_nodes, 
-                                    key=lambda n: len(list(n.get_neighbors())), 
-                                    reverse=True)
-            
+            nodes_to_position = sorted(
+                level_nodes, key=lambda n: len(list(n.get_neighbors())), reverse=True
+            )
+
             positioned = []
             for node in nodes_to_position:
                 barycenter = compute_barycenter(node)
                 valid_positions = find_valid_positions(node, positioned, barycenter)
-                
+
                 if valid_positions:
                     # Take the first (best) valid position
                     node.pos_x = valid_positions[0]
                 else:
                     # Fallback: place after last positioned node
                     if positioned:
-                        node.pos_x = max(n.pos_x for n in positioned) + self.diagram.styles["padding_x"]
+                        node.pos_x = (
+                            max(n.pos_x for n in positioned)
+                            + self.diagram.styles["padding_x"]
+                        )
                     else:
                         node.pos_x = barycenter
-                
+
                 positioned.append(node)
 
         # Main layout iterations
@@ -132,7 +153,7 @@ class VerticalLayout(LayoutManager):
         for _iter in range(num_passes):
             for level in sorted_levels:
                 reposition_level(nodes_by_level[level])
-            
+
             for level in reversed(sorted_levels):
                 reposition_level(nodes_by_level[level])
 
@@ -145,7 +166,6 @@ class VerticalLayout(LayoutManager):
         self._adjust_intermediary_nodes(diagram)
 
         logger.debug("Iterative barycenter layout complete.")
-
 
     def _center_align_nodes(self, nodes_by_level):
         sorted_levels = sorted(nodes_by_level.keys())
@@ -200,7 +220,7 @@ class VerticalLayout(LayoutManager):
                         if Nx_left <= A.pos_x <= Nx_right:
                             Ny_top = N.pos_y - N.half_h
                             Ny_bot = N.pos_y + N.half_h
-                            if (Ny_top < bot_y and Ny_bot > top_y):
+                            if Ny_top < bot_y and Ny_bot > top_y:
                                 N.pos_x -= offset
 
             elif abs(A.pos_y - B.pos_y) < 1e-5:
@@ -213,5 +233,5 @@ class VerticalLayout(LayoutManager):
                         if Ny_top <= A.pos_y <= Ny_bot:
                             Nx_left = N.pos_x - N.half_w
                             Nx_right = N.pos_x + N.half_w
-                            if (Nx_left < right_x and Nx_right > left_x):
+                            if Nx_left < right_x and Nx_right > left_x:
                                 N.pos_y -= offset

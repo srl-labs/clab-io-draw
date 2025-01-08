@@ -4,6 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class DrawioParser:
     """
     Parses draw.io XML files to extract node and link information.
@@ -37,7 +38,9 @@ class DrawioParser:
                     if mxGraphModel_root is not None:
                         return mxGraphModel_root
                     else:
-                        logger.error(f"mxGraphModel/root not found in diagram '{self.diagram_name}'.")
+                        logger.error(
+                            f"mxGraphModel/root not found in diagram '{self.diagram_name}'."
+                        )
                         sys.exit(1)
             logger.error(f"Diagram named '{self.diagram_name}' not found.")
             sys.exit(1)
@@ -92,7 +95,7 @@ class DrawioParser:
                 if "image=data" in style and node_label:
                     node_details[node_id] = {
                         "label": node_label,
-                        "kind": "nokia_srlinux"
+                        "kind": "nokia_srlinux",
                     }
 
         return node_details
@@ -116,7 +119,9 @@ class DrawioParser:
         for object_elem in mxGraphModel.findall(".//object"):
             mxCells = object_elem.findall(".//mxCell[@source][@target][@edge]")
             for mxC in mxCells:
-                link_info = self._extract_link_info(mxC, node_details, fallback_id=object_elem.get("id"))
+                link_info = self._extract_link_info(
+                    mxC, node_details, fallback_id=object_elem.get("id")
+                )
                 if link_info:
                     links_info[link_info["id"]] = link_info
 
@@ -134,7 +139,11 @@ class DrawioParser:
         source_id, target_id = mxCell.get("source"), mxCell.get("target")
         link_id = mxCell.get("id") or fallback_id
         geometry = mxCell.find("mxGeometry")
-        x, y = (float(geometry.get("x", 0)), float(geometry.get("y", 0))) if geometry is not None else (None, None)
+        x, y = (
+            (float(geometry.get("x", 0)), float(geometry.get("y", 0)))
+            if geometry is not None
+            else (None, None)
+        )
 
         source_label = node_details.get(source_id, {}).get("label", "Unknown")
         target_label = node_details.get(target_id, {}).get("label", "Unknown")

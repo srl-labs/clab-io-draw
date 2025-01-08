@@ -6,9 +6,12 @@ from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
 
+
 class ThemeManagerError(Exception):
     """Raised when loading the theme fails due to invalid style strings or configuration."""
+
     pass
+
 
 class ThemeManager:
     """
@@ -16,7 +19,7 @@ class ThemeManager:
     - Loading a theme configuration from a YAML file.
     - Validating style strings for nodes and links.
     - Optionally modifying embedded SVG images by injecting custom CSS overrides.
-    
+
     CSS overrides can be specified in the theme YAML and allow changing properties
     of classes defined in the embedded SVG <style> block.
     """
@@ -38,7 +41,7 @@ class ThemeManager:
         - Validates the 'base_style' string.
         - Merges 'base_style' with each 'custom_styles' entry (custom overrides base).
         - Applies CSS overrides to embedded SVG images in custom styles if defined.
-        
+
         :return: A dictionary representing the fully processed theme configuration.
         :raises SystemExit: If the file does not exist or another IO error occurs.
         :raises ThemeManagerError: If invalid style strings are encountered.
@@ -48,7 +51,9 @@ class ThemeManager:
             with open(self.config_path, "r") as file:
                 config = yaml.safe_load(file)
         except FileNotFoundError:
-            error_message = f"Error: The specified config file '{self.config_path}' does not exist."
+            error_message = (
+                f"Error: The specified config file '{self.config_path}' does not exist."
+            )
             logger.error(error_message)
             raise SystemExit(error_message)
         except Exception as e:
@@ -75,7 +80,9 @@ class ThemeManager:
 
         # 4. Apply CSS overrides to embedded SVGs
         for style_name, final_style_str in merged_custom_styles.items():
-            updated_style_str = self._maybe_modify_svg_css(style_name, final_style_str, css_overrides)
+            updated_style_str = self._maybe_modify_svg_css(
+                style_name, final_style_str, css_overrides
+            )
             merged_custom_styles[style_name] = updated_style_str
 
         config["custom_styles"] = merged_custom_styles
@@ -102,7 +109,7 @@ class ThemeManager:
         # Extract any special "points=[]" segments so we can re-append them if needed
         # (some styles rely on "points=[]" but don't parse as "key=value" pairs)
         points_segments = []
-        for seg in re.findall(r'(\bpoints=\[.*?\])', base_style + ";" + custom_style):
+        for seg in re.findall(r"(\bpoints=\[.*?\])", base_style + ";" + custom_style):
             points_segments.append(seg)
 
         # Convert base_style and custom_style to dictionaries
@@ -132,14 +139,14 @@ class ThemeManager:
         :return: A dictionary of property->value.
         """
         style_dict = {}
-        segments = style_str.split(';')
+        segments = style_str.split(";")
         for seg in segments:
             seg = seg.strip()
             if not seg or seg.startswith("points=["):
                 # Skip or ignore points=[]
                 continue
-            if '=' in seg:
-                k, v = seg.split('=', 1)
+            if "=" in seg:
+                k, v = seg.split("=", 1)
                 style_dict[k] = v
         return style_dict
 
@@ -155,12 +162,14 @@ class ThemeManager:
             segs.append(f"{k}={v}")
         return ";".join(segs) + ";" if segs else ""
 
-    def _maybe_modify_svg_css(self, style_name: str, style_str: str, css_overrides: Dict[str, Dict[str, str]]) -> str:
+    def _maybe_modify_svg_css(
+        self, style_name: str, style_str: str, css_overrides: Dict[str, Dict[str, str]]
+    ) -> str:
         """
         Check if the given style string references an SVG image. If so, and if CSS overrides
         exist for this style, decode the SVG, modify its <style> block, and re-encode it.
         """
-        image_match = re.search(r'image=data:([^;]+)', style_str)
+        image_match = re.search(r"image=data:([^;]+)", style_str)
         if not image_match:
             return style_str
 
@@ -168,14 +177,14 @@ class ThemeManager:
         if not image_data.startswith("image/svg+xml,"):
             return style_str
 
-        base64_part = image_data[len("image/svg+xml,"):]
+        base64_part = image_data[len("image/svg+xml,") :]
         try:
             svg_binary = base64.b64decode(base64_part)
         except Exception as e:
             logger.warning(f"Failed to decode base64 SVG for style '{style_name}': {e}")
             return style_str
 
-        svg_str = svg_binary.decode('utf-8', errors='replace')
+        svg_str = svg_binary.decode("utf-8", errors="replace")
         style_overrides_for_style = css_overrides.get(style_name, {})
 
         if not style_overrides_for_style:
@@ -189,14 +198,16 @@ class ThemeManager:
             return style_str
 
         # Re-encode SVG
-        new_base64 = base64.b64encode(new_svg_str.encode('utf-8')).decode('utf-8')
+        new_base64 = base64.b64encode(new_svg_str.encode("utf-8")).decode("utf-8")
         new_image_data = "image/svg+xml," + new_base64
         new_style_str = style_str.replace(image_data, new_image_data, 1)
 
         logger.debug(f"CSS overrides applied successfully to style '{style_name}'.")
         return new_style_str
 
-    def _modify_svg_style_block(self, svg_data: str, style_overrides: Dict[str, str]) -> str:
+    def _modify_svg_style_block(
+        self, svg_data: str, style_overrides: Dict[str, str]
+    ) -> str:
         """
         Modify or create <style> block in the embedded SVG to apply the given CSS overrides.
         """
@@ -207,10 +218,10 @@ class ThemeManager:
         if style_start != -1:
             style_close = svg_data.find("</style>", style_start)
             if style_close != -1:
-                start_tag_end = svg_data.find('>', style_start)
+                start_tag_end = svg_data.find(">", style_start)
                 if start_tag_end != -1 and start_tag_end < style_close:
                     style_end = style_close + len("</style>")
-                    style_content = svg_data[start_tag_end+1:style_close]
+                    style_content = svg_data[start_tag_end + 1 : style_close]
 
         # Split by '&#xa;' to preserve formatting of original style lines
         style_lines = style_content.split("&#xa;") if style_content else []
@@ -219,11 +230,11 @@ class ThemeManager:
         class_rules = {}
         class_line_map = {}
         for i, line in enumerate(style_lines):
-            m = re.match(r'(\s*)(\.[A-Za-z0-9_-]+)\{([^}]*)\}', line.strip())
+            m = re.match(r"(\s*)(\.[A-Za-z0-9_-]+)\{([^}]*)\}", line.strip())
             if m:
                 indentation = m.group(1) or ""
                 full_cls = m.group(2)
-                cls_name = full_cls.lstrip('.')
+                cls_name = full_cls.lstrip(".")
                 props_str = m.group(3)
                 props = self._parse_properties(props_str)
                 class_rules[cls_name] = props
@@ -232,9 +243,11 @@ class ThemeManager:
         # Apply overrides
         changed_classes = set()
         for key, val in style_overrides.items():
-            parts = key.split('_', 1)
+            parts = key.split("_", 1)
             if len(parts) != 2:
-                logger.debug(f"Skipping invalid override key '{key}'. Expected '<class>_<property>'.")
+                logger.debug(
+                    f"Skipping invalid override key '{key}'. Expected '<class>_<property>'."
+                )
                 continue
             class_name, prop_name = parts
             if class_name not in class_rules:
@@ -266,42 +279,62 @@ class ThemeManager:
                 # No closing svg? Just append the style at the end.
                 return svg_data + "<style>" + new_style_content + "</style>"
             else:
-                return svg_data[:insert_pos] + "<style>" + new_style_content + "</style>" + svg_data[insert_pos:]
+                return (
+                    svg_data[:insert_pos]
+                    + "<style>"
+                    + new_style_content
+                    + "</style>"
+                    + svg_data[insert_pos:]
+                )
         else:
             # Replace existing style content
-            return self._replace_style_block(svg_data, style_start, style_end, new_style_content)
+            return self._replace_style_block(
+                svg_data, style_start, style_end, new_style_content
+            )
 
-    def _replace_style_block(self, svg_data: str, style_start: int, style_end: int, new_content: str) -> str:
+    def _replace_style_block(
+        self, svg_data: str, style_start: int, style_end: int, new_content: str
+    ) -> str:
         """
         Replace the content of the existing <style> block with new_content.
         """
-        start_tag_end = svg_data.find('>', style_start)
+        start_tag_end = svg_data.find(">", style_start)
         if start_tag_end == -1 or style_end == -1:
-            logger.debug("Could not properly find the style block boundaries; returning unchanged SVG.")
+            logger.debug(
+                "Could not properly find the style block boundaries; returning unchanged SVG."
+            )
             return svg_data
 
-        style_open_tag = svg_data[style_start:start_tag_end+1]
-        return svg_data[:style_start] + style_open_tag + new_content + "</style>" + svg_data[style_end:]
+        style_open_tag = svg_data[style_start : start_tag_end + 1]
+        return (
+            svg_data[:style_start]
+            + style_open_tag
+            + new_content
+            + "</style>"
+            + svg_data[style_end:]
+        )
 
     def _parse_properties(self, props_str: str) -> Dict[str, str]:
         """
         Parse CSS properties from a string like "fill:#001135;stroke:#FFF".
         """
         props = {}
-        segments = props_str.split(';')
+        segments = props_str.split(";")
         for seg in segments:
             seg = seg.strip()
-            if '=' in seg:  # skip invalid or unexpected segments
+            if "=" in seg:  # skip invalid or unexpected segments
                 continue
             if seg:
-                kv = seg.split(':',1)
+                kv = seg.split(":", 1)
                 if len(kv) == 2:
                     prop = kv[0].strip()
                     val = kv[1].strip()
                     props[prop] = val
         return props
 
-    def _build_class_line(self, indent: str, cls_name: str, props: Dict[str,str]) -> str:
+    def _build_class_line(
+        self, indent: str, cls_name: str, props: Dict[str, str]
+    ) -> str:
         """
         Rebuild a single CSS class line for the style block.
         """
@@ -316,15 +349,19 @@ class ThemeManager:
         """
         if style_str.strip() == "":
             return
-        segments = style_str.split(';')
+        segments = style_str.split(";")
         segments = [seg for seg in segments if seg.strip() != ""]
 
         for seg in segments:
-            if '=' not in seg:
-                if 'points=[' in seg:
+            if "=" not in seg:
+                if "points=[" in seg:
                     # 'points=[]' is an allowed special case
                     continue
-                raise ThemeManagerError(f"Invalid style segment '{seg}' in style string.")
-            parts = seg.split('=', 1)
+                raise ThemeManagerError(
+                    f"Invalid style segment '{seg}' in style string."
+                )
+            parts = seg.split("=", 1)
             if len(parts) != 2:
-                raise ThemeManagerError(f"Invalid style segment '{seg}' in style string.")
+                raise ThemeManagerError(
+                    f"Invalid style segment '{seg}' in style string."
+                )

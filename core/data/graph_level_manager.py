@@ -2,6 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class GraphLevelManager:
     """
     Manages graph-level assignments and adjustments for nodes in the diagram.

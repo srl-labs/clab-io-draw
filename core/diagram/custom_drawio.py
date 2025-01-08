@@ -4,6 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class CustomDrawioDiagram(drawio_diagram):
     """
     Custom Drawio Diagram class extending N2G's drawio_diagram.
@@ -186,9 +187,16 @@ class CustomDrawioDiagram(drawio_diagram):
                     if node1.is_connected_to(node2):
                         for node_between in nodes:
                             if node_between not in (node1, node2):
-                                if (node1.pos_y < node_between.pos_y < node2.pos_y) or (node2.pos_y < node_between.pos_y < node1.pos_y):
-                                    if node_between not in nodes_between_interconnected_x:
-                                        nodes_between_interconnected_x.append(node_between)
+                                if (node1.pos_y < node_between.pos_y < node2.pos_y) or (
+                                    node2.pos_y < node_between.pos_y < node1.pos_y
+                                ):
+                                    if (
+                                        node_between
+                                        not in nodes_between_interconnected_x
+                                    ):
+                                        nodes_between_interconnected_x.append(
+                                            node_between
+                                        )
 
         # Check horizontal alignment
         for coord, nodes in nodes_with_same_y.items():
@@ -199,11 +207,20 @@ class CustomDrawioDiagram(drawio_diagram):
                     if node1.is_connected_to(node2):
                         for node_between in nodes:
                             if node_between not in (node1, node2):
-                                if (node1.pos_x < node_between.pos_x < node2.pos_x) or (node2.pos_x < node_between.pos_x < node1.pos_x):
-                                    if node_between not in nodes_between_interconnected_y:
-                                        nodes_between_interconnected_y.append(node_between)
+                                if (node1.pos_x < node_between.pos_x < node2.pos_x) or (
+                                    node2.pos_x < node_between.pos_x < node1.pos_x
+                                ):
+                                    if (
+                                        node_between
+                                        not in nodes_between_interconnected_y
+                                    ):
+                                        nodes_between_interconnected_y.append(
+                                            node_between
+                                        )
 
         return nodes_between_interconnected_x, nodes_between_interconnected_y
 
     def get_nodes_by_level(self, level):
-        return {node.name: node for node in self.nodes.values() if node.graph_level == level}
+        return {
+            node.name: node for node in self.nodes.values() if node.graph_level == level
+        }
