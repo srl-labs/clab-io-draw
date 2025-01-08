@@ -64,14 +64,14 @@ class Link:
         label_height = styles["label_height"]
 
         if styles["label_alignment"] == "left":
-            source_label_x -= (label_width + 2)
-            target_label_x -= (label_width + 2)
+            source_label_x -= label_width + 2
+            target_label_x -= label_width + 2
         elif styles["label_alignment"] == "right":
-            source_label_x += (label_width / 2)
-            target_label_x += (label_width / 2)
+            source_label_x += label_width / 2
+            target_label_x += label_width / 2
         elif styles["label_alignment"] == "center":
-            source_label_x -= (label_width / 2)
-            target_label_x -= (label_width / 2)
+            source_label_x -= label_width / 2
+            target_label_x -= label_width / 2
 
         source_label_y -= label_height / 2
         target_label_y -= label_height / 2

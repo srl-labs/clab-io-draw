@@ -2,6 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class Drawio2ClabConverter:
     """
     Converts parsed draw.io node/link info into Containerlab YAML structure.
@@ -20,7 +21,9 @@ class Drawio2ClabConverter:
         logger.debug("Compiling link information from parsed data...")
         compiled_links = []
         for link_id, info in links_info.items():
-            sorted_labels = sorted(info["labels"], key=lambda label: label["x_position"])
+            sorted_labels = sorted(
+                info["labels"], key=lambda label: label["x_position"]
+            )
 
             if len(sorted_labels) < 2:
                 logger.warning(f"Not enough labels for link {link_id}, skipping.")
@@ -29,7 +32,10 @@ class Drawio2ClabConverter:
             source_label = sorted_labels[0]["value"]
             target_label = sorted_labels[-1]["value"]
 
-            endpoints = [f"{info['source']}:{source_label}", f"{info['target']}:{target_label}"]
+            endpoints = [
+                f"{info['source']}:{source_label}",
+                f"{info['target']}:{target_label}",
+            ]
             compiled_links.append({"endpoints": endpoints})
 
         compiled_links.sort(key=lambda x: (x["endpoints"][0].split(":")[0]))
@@ -45,7 +51,7 @@ class Drawio2ClabConverter:
         :return: Dictionary representing the Containerlab YAML structure
         """
         logger.debug("Generating Containerlab YAML structure...")
-        base_name = input_file.split('.')[0]
+        base_name = input_file.split(".")[0]
 
         nodes = {}
         kinds = {}
@@ -57,11 +63,16 @@ class Drawio2ClabConverter:
             if node_kind not in kinds:
                 # simple heuristic
                 if node_kind == "nokia_srlinux":
-                    kinds[node_kind] = {"image": "ghcr.io/nokia/srlinux", "type": "ixrd3"}
+                    kinds[node_kind] = {
+                        "image": "ghcr.io/nokia/srlinux",
+                        "type": "ixrd3",
+                    }
                 elif node_kind == "linux":
                     kinds[node_kind] = {"image": "ghcr.io/hellt/network-multitool"}
                 elif node_kind == "vr-sros":
-                    kinds[node_kind] = {"image": "registry.srlinux.dev/pub/vr-sros:23.10"}
+                    kinds[node_kind] = {
+                        "image": "registry.srlinux.dev/pub/vr-sros:23.10"
+                    }
                 else:
                     kinds[node_kind] = {"image": None}
 

@@ -8,12 +8,13 @@ from core.logging_config import configure_logging
 
 logger = logging.getLogger(__name__)
 
+
 def main(
     input_file: str,
     output_file: str,
-    style: str="flow",
-    diagram_name: str=None,
-    default_kind: str="nokia_srlinux"
+    style: str = "flow",
+    diagram_name: str = None,
+    default_kind: str = "nokia_srlinux",
 ) -> None:
     """
     Convert a .drawio file to a Containerlab YAML file.
@@ -34,15 +35,26 @@ def main(
 
     converter = Drawio2ClabConverter(default_kind=default_kind)
     compiled_links = converter.compile_link_information(links_info)
-    yaml_data = converter.generate_yaml_structure(node_details, compiled_links, input_file)
+    yaml_data = converter.generate_yaml_structure(
+        node_details, compiled_links, input_file
+    )
 
     processor = YAMLProcessor()
-    processor.save_yaml(yaml_data, output_file, flow_style="block" if style == "block" else None)
+    processor.save_yaml(
+        yaml_data, output_file, flow_style="block" if style == "block" else None
+    )
     logger.info(f"Conversion completed. Output saved to {output_file}")
+
 
 if __name__ == "__main__":
     args = parse_arguments()
     if not args.output:
         args.output = os.path.splitext(args.input)[0] + ".yaml"
     configure_logging(level=logging.DEBUG if args.style == "block" else logging.INFO)
-    main(args.input, args.output, style=args.style, diagram_name=args.diagram_name, default_kind=args.default_kind)
+    main(
+        args.input,
+        args.output,
+        style=args.style,
+        diagram_name=args.diagram_name,
+        default_kind=args.default_kind,
+    )
