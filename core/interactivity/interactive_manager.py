@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # Helper functions
 # ----------------------------------------------------------------
 
+
 def create_layout_select(select_id: str = "layout-select") -> Select:
     """
     Create a Select widget for layout, offering "vertical" or "horizontal".
@@ -23,7 +24,10 @@ def create_layout_select(select_id: str = "layout-select") -> Select:
     options = [("vertical", "vertical"), ("horizontal", "horizontal")]
     return Select(options=options, id=select_id)
 
-def create_theme_select(manager: InteractiveManager, select_id: str = "theme-select") -> Select:
+
+def create_theme_select(
+    manager: InteractiveManager, select_id: str = "theme-select"
+) -> Select:
     """
     Create a Select widget containing the manager's available themes.
     """
@@ -34,6 +38,7 @@ def create_theme_select(manager: InteractiveManager, select_id: str = "theme-sel
         theme_options.append((label, name))
     return Select(options=theme_options, id=select_id)
 
+
 def handle_layout_selection(manager: InteractiveManager, changed_value: str) -> None:
     """
     Update the manager's final_summary to record the newly selected layout.
@@ -43,6 +48,7 @@ def handle_layout_selection(manager: InteractiveManager, changed_value: str) -> 
     if hasattr(manager.diagram, "layout"):
         manager.diagram.layout = changed_value
 
+
 def handle_theme_selection(manager: InteractiveManager, changed_value: str) -> None:
     """
     Update the manager's final_summary to record the newly selected theme.
@@ -50,15 +56,16 @@ def handle_theme_selection(manager: InteractiveManager, changed_value: str) -> N
     manager.final_summary["Theme"] = changed_value
     logger.debug(f"User selected theme: {changed_value}")
 
+
 def build_preview_lines(
     final_summary: dict,
     diagram_nodes: dict,
     ephemeral_nodes: set[str] = None,
-    current_level: int = None
+    current_level: int = None,
 ) -> list[str]:
     """
     Build lines describing each node's assigned level/icon, plus ephemeral status if needed.
-    
+
     :param final_summary: The dictionary with "Levels" and "Icons" keys (and more).
     :param diagram_nodes: The dictionary of nodes from manager.diagram.nodes (so we know which nodes exist).
     :param ephemeral_nodes: A set of node names that are ephemeral for the current screen (may be None).
@@ -67,7 +74,7 @@ def build_preview_lines(
     """
     if ephemeral_nodes is None:
         ephemeral_nodes = set()
-    
+
     all_node_names = sorted(diagram_nodes.keys())
     lines = []
 
@@ -96,6 +103,7 @@ def build_preview_lines(
             return lvl
         else:
             return 9999
+
     sorted_nodes = sorted(all_node_names, key=sort_key)
 
     for n in sorted_nodes:
@@ -103,17 +111,20 @@ def build_preview_lines(
         assigned_ic = get_assigned_icon(n)
 
         if assigned_lvl == 9999:
-            assigned_lvl = "-"  
+            assigned_lvl = "-"
 
-        lines.append(f"{n:<20s} Lvl={assigned_lvl} Icon={assigned_ic if assigned_ic != '-' else '-'}")
+        lines.append(
+            f"{n:<20s} Lvl={assigned_lvl} Icon={assigned_ic if assigned_ic != '-' else '-'}"
+        )
     return lines
+
 
 def build_group_grid(groups_dict: dict[Any, list[str]], layout: str) -> str:
     """
-    Build a simple textual 'grid' of the group -> node-list, 
+    Build a simple textual 'grid' of the group -> node-list,
     respecting layout = 'vertical' vs. 'horizontal'.
 
-    groups_dict: e.g. {1: ["spine1", "spine2"], 2: [...]} 
+    groups_dict: e.g. {1: ["spine1", "spine2"], 2: [...]}
                  or {"router": [...], "switch": [...], "host": [...]}
     layout: 'vertical' or 'horizontal'
 
@@ -124,11 +135,11 @@ def build_group_grid(groups_dict: dict[Any, list[str]], layout: str) -> str:
     sorted_keys = sorted(groups_dict.keys(), key=lambda x: str(x))
 
     # If 'vertical' => each group is a single row, joined by spaces.
-    # e.g. 
+    # e.g.
     # Level 1 => spine1 spine2
     # Level 2 => leaf1 leaf2 leaf3
     # ...
-    # If 'horizontal' => we want columns for each group. 
+    # If 'horizontal' => we want columns for each group.
     # That requires pivoting the data so we line up nodes in each group.
     # For example, if we have 3 groups of varying lengths, we transpose them.
 
@@ -162,7 +173,7 @@ def update_preview_common(
     screen: Screen,
     manager: InteractiveManager,
     ephemeral_nodes: set[str],
-    current_level: int | None
+    current_level: int | None,
 ) -> None:
     """
     Updates the screen.preview_label with both 'detailed lines' and 'grid-style' blocks.
@@ -190,12 +201,7 @@ def update_preview_common(
     grid_str = build_group_grid(groups_dict, layout)
 
     # 5) Combine them
-    combined = "\n".join([
-        *lines,
-        "",
-        "==== Preview ====",
-        grid_str
-    ])
+    combined = "\n".join([*lines, "", "==== Preview ====", grid_str])
 
     # 6) Show it on screen
     screen.preview_label.update(combined)
@@ -206,6 +212,7 @@ def update_preview_common(
 # ----------------------------------------------------------------
 class ItemToggled(Message):
     """Fired when a _MultiCheckItem changes its .checked state."""
+
     def __init__(self, sender: _MultiCheckItem, checked: bool):
         super().__init__()
         self.sender = sender
@@ -234,14 +241,15 @@ class InteractiveManager:
         Returns True if likely running in legacy mode.
         """
         if sys.stdin.isatty():
-            term = os.environ.get('TERM', '')
-            colorterm = os.environ.get('COLORTERM', '')
-            
+            term = os.environ.get("TERM", "")
+            colorterm = os.environ.get("COLORTERM", "")
+
             # Check if we have a modern terminal with color support
-            has_color_term = any(term.endswith(suffix) for suffix in 
-                ['-256color', '-color', 'color'])
-            has_true_color = colorterm in ['truecolor', '24bit']
-            
+            has_color_term = any(
+                term.endswith(suffix) for suffix in ["-256color", "-color", "color"]
+            )
+            has_true_color = colorterm in ["truecolor", "24bit"]
+
             # If we don't have both color support indicators, likely legacy mode
             if not (has_color_term and has_true_color):
                 return True
@@ -279,8 +287,10 @@ class InteractiveManager:
         }
 
         if self.detect_pty_legacy_mode():
-            logger.warning("It looks like you're on an older Containerlab (<0.60.2) PTY approach. "
-                        "Consider upgrading for improved TUI and auto-cleanup.")
+            logger.warning(
+                "It looks like you're on an older Containerlab (<0.60.2) PTY approach. "
+                "Consider upgrading for improved TUI and auto-cleanup."
+            )
 
         app = _WizardApp(self)
         app.run()
@@ -294,7 +304,8 @@ class _WizardApp(App[None]):
     """
     The multi-step wizard with 4 screens (Levels -> Icons -> Summary -> UpdateFile).
     """
-    CSS_PATH = "style.tcss" 
+
+    CSS_PATH = "style.tcss"
 
     def __init__(self, manager: InteractiveManager):
         super().__init__()
@@ -332,6 +343,11 @@ class AssignLevelsScreen(Screen):
         self.manager = manager
 
         self.title_label = Static("")
+
+        self.help_label = Static(
+            "Use Up/Down to move selection, Space to toggle, Tab to switch focus, or click with your mouse."
+        )
+
         self.list_view = ToggleListView()
 
         self.prev_btn = Button("Previous Step", id="previous-level")
@@ -350,6 +366,7 @@ class AssignLevelsScreen(Screen):
         with Horizontal(id="main-container"):
             with Vertical(id="left-pane"):
                 yield self.title_label
+                yield self.help_label
                 yield self.list_view
 
                 with Vertical(id="button-row"):
@@ -376,7 +393,7 @@ class AssignLevelsScreen(Screen):
         current_theme = self.manager.final_summary.get("Theme", "nokia")
         self.theme_select.value = current_theme
 
-        self.prev_btn.display = (self.current_level > 1)
+        self.prev_btn.display = self.current_level > 1
 
         self._fill_list()
         self._update_preview()
@@ -388,7 +405,9 @@ class AssignLevelsScreen(Screen):
         self.list_view.clear()
 
         for node in self.all_node_names:
-            is_in_current_level = node in self.manager.final_summary["Levels"].get(self.current_level, [])
+            is_in_current_level = node in self.manager.final_summary["Levels"].get(
+                self.current_level, []
+            )
             assigned_level = None
             for lvl, nds in self.manager.final_summary["Levels"].items():
                 if node in nds:
@@ -403,7 +422,7 @@ class AssignLevelsScreen(Screen):
 
             if should_show:
                 item = _MultiCheckItem(node)
-                item.checked = (node in self.ephemeral_nodes or is_in_current_level)
+                item.checked = node in self.ephemeral_nodes or is_in_current_level
                 self.list_view.append(item)
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -418,13 +437,17 @@ class AssignLevelsScreen(Screen):
                 for lvl, nds in self.manager.final_summary["Levels"].items():
                     if n in nds:
                         nds.remove(n)
-                self.manager.final_summary["Levels"].setdefault(self.current_level, []).append(n)
+                self.manager.final_summary["Levels"].setdefault(
+                    self.current_level, []
+                ).append(n)
                 self.manager.diagram.nodes[n].graph_level = self.current_level
                 self._update_clab(n, self.current_level)
 
             self.ephemeral_nodes.clear()
 
-            assigned_count = sum(len(v) for v in self.manager.final_summary["Levels"].values())
+            assigned_count = sum(
+                len(v) for v in self.manager.final_summary["Levels"].values()
+            )
             total_nodes = len(self.all_node_names)
             if assigned_count >= total_nodes:
                 self.app.action_goto_icons()
@@ -461,7 +484,9 @@ class AssignLevelsScreen(Screen):
         else:
             unformatted = node_name
 
-        node_data = self.manager.containerlab_data["topology"]["nodes"].get(unformatted, {})
+        node_data = self.manager.containerlab_data["topology"]["nodes"].get(
+            unformatted, {}
+        )
         node_data.setdefault("labels", {})
         node_data["labels"]["graph-level"] = lvl
         self.manager.containerlab_data["topology"]["nodes"][unformatted] = node_data
@@ -485,6 +510,7 @@ class AssignLevelsScreen(Screen):
         self._update_preview()
         event.stop()
 
+
 # ----------------------------------------------------------------
 # 2) Icons Screen
 # ----------------------------------------------------------------
@@ -502,7 +528,10 @@ class AssignIconsScreen(Screen):
         self.manager = manager
 
         self.title_label = Static("Assign Icons")
-        #self.instr_label = Static("(Toggle nodes -> ephemeral; 'Confirm Icons' -> finalize).")
+        self.help_label = Static(
+            "Use Up/Down to move selection, Space to toggle, Tab to switch focus, or click with your mouse."
+        )
+
         self.list_view = ToggleListView()
 
         self.prev_btn = Button("Previous Step", id="previous-icon")
@@ -523,7 +552,7 @@ class AssignIconsScreen(Screen):
         with Horizontal(id="main-container"):
             with Vertical(id="left-pane"):
                 yield self.title_label
-                #yield self.instr_label
+                yield self.help_label
                 yield self.list_view
                 with Vertical(id="button-row"):
                     yield self.layout_select_icons
@@ -565,7 +594,9 @@ class AssignIconsScreen(Screen):
         self.list_view.clear()
 
         if not self.icons_list:
-            self.title_label.update("No icons configured - press 'Done/Next' to continue")
+            self.title_label.update(
+                "No icons configured - press 'Done/Next' to continue"
+            )
             # Show all nodes unassigned
             for n in self.all_node_names:
                 item = _MultiCheckItem(n)
@@ -580,7 +611,9 @@ class AssignIconsScreen(Screen):
             f"({self.current_icon_index + 1}/{len(self.icons_list)})"
         )
 
-        ephem_set = self.manager.ephemeral_icons.setdefault(self.current_icon_index, set())
+        ephem_set = self.manager.ephemeral_icons.setdefault(
+            self.current_icon_index, set()
+        )
 
         # Collect nodes assigned to other icons so we don't show them unless ephemeral overrides
         assigned_other_icons = set()
@@ -621,7 +654,6 @@ class AssignIconsScreen(Screen):
             current_level=current_lvl,
         )
 
-
     def _update_clab(self, node_name: str, icon: str) -> None:
         """
         Update containerlab data with the new 'graph-icon' label, so the
@@ -633,7 +665,9 @@ class AssignIconsScreen(Screen):
         else:
             unformatted = node_name
 
-        node_data = self.manager.containerlab_data["topology"]["nodes"].get(unformatted, {})
+        node_data = self.manager.containerlab_data["topology"]["nodes"].get(
+            unformatted, {}
+        )
         if "labels" not in node_data:
             node_data["labels"] = {}
         node_data["labels"]["graph-icon"] = icon
@@ -652,7 +686,9 @@ class AssignIconsScreen(Screen):
         if not self.icons_list:
             return  # no icons => skip
 
-        ephem_set = self.manager.ephemeral_icons.setdefault(self.current_icon_index, set())
+        ephem_set = self.manager.ephemeral_icons.setdefault(
+            self.current_icon_index, set()
+        )
         node_name = event.sender.text
 
         if event.checked:
@@ -690,7 +726,9 @@ class AssignIconsScreen(Screen):
 
             # 1) Identify current icon
             icon = self.icons_list[self.current_icon_index]
-            ephem_set = self.manager.ephemeral_icons.setdefault(self.current_icon_index, set())
+            ephem_set = self.manager.ephemeral_icons.setdefault(
+                self.current_icon_index, set()
+            )
 
             # 2) Remove ephemeral nodes from other icons (ensuring one icon per node)
             for other_icon, nds in self.manager.final_summary["Icons"].items():
@@ -724,7 +762,10 @@ class AssignIconsScreen(Screen):
             ephem_set.clear()
 
             # 8) If this was the last icon or all assigned => summary
-            if self.current_icon_index >= len(self.icons_list) - 1 or self._are_all_nodes_assigned():
+            if (
+                self.current_icon_index >= len(self.icons_list) - 1
+                or self._are_all_nodes_assigned()
+            ):
                 self.app.action_goto_summary()
             else:
                 # Move to the next icon
@@ -780,7 +821,6 @@ class SummaryScreen(Screen):
                 yield self.exit_btn
 
     def on_show(self) -> None:
-
         ephemeral = set()
         current_lvl = None  # or None means icons are done
 
@@ -800,12 +840,9 @@ class SummaryScreen(Screen):
 
         grid_str = build_group_grid(self.manager.final_summary["Levels"], layout)
 
-        combined_preview = "\n".join([
-            *preview_lines,
-            "",
-            "==== Final Grid Preview ====",
-            grid_str
-        ])
+        combined_preview = "\n".join(
+            [*preview_lines, "", "==== Final Grid Preview ====", grid_str]
+        )
 
         self.preview_label.update(combined_preview)
 
@@ -830,7 +867,6 @@ class SummaryScreen(Screen):
 
         self.summary_label.update("\n".join(lines))
 
-
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "previous-summary":
             self.app.pop_screen()
@@ -854,7 +890,10 @@ class UpdateFileScreen(Screen):
         super().__init__()
         self.manager = manager
 
-        self.question = Static("Update ContainerLab file with your new config?")
+        mod_file = self.manager.output_file.rsplit(".", 1)[0] + ".mod.yml"
+        self.question = Static(
+            f"Save new ContainerLab file with your config?\n(It will be named: {mod_file})"
+        )
         self.yes_button = Button("Yes", id="yes-button")
         self.no_button = Button("No", id="no-button")
 
@@ -867,7 +906,7 @@ class UpdateFileScreen(Screen):
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "yes-button":
-            mod_file = self.manager.output_file.rsplit('.', 1)[0] + ".mod.yml"
+            mod_file = self.manager.output_file.rsplit(".", 1)[0] + ".mod.yml"
             self.manager.processor.save_yaml(self.manager.containerlab_data, mod_file)
             print(f"ContainerLab file updated: {mod_file}")
             self.app.action_quit_wizard()
@@ -905,6 +944,7 @@ class ToggleListView(ListView):
             if confirm_btn:
                 confirm_btn.focus()
 
+
 class _MultiCheckItem(ListItem):
     checked: bool = reactive(False)
 
@@ -930,4 +970,3 @@ class _MultiCheckItem(ListItem):
     def on_click(self) -> None:
         # If the user clicks with the mouse, also toggle
         self.checked = not self.checked
-
