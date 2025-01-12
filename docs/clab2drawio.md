@@ -31,6 +31,10 @@ To generate a network topology diagram from a containerlab YAML file, run the fo
 ```bash
 python clab2drawio.py -i <path_to_your_yaml_file> 
 ```
+or
+```bash
+containerlab graph --drawio -t <path_to_your_yaml_file> 
+```
 > [!NOTE]
 > By default, the `.drawio` file is saved in the same folder as the input YAML. 
 > Use `-o` to specify a different path.
@@ -39,11 +43,25 @@ python clab2drawio.py -i <path_to_your_yaml_file>
 > Use `-I` for an interactive mode that prompts for `graph-level` and `graph-icon` if you have them not set in clab.yml
 > labels.
 
+## Interactive Mode
+
+A user-friendly way to organize your topology is using the interactive TUI mode:
+
+```bash
+python clab2drawio.py -i <path_to_your_yaml_file> -I
+``` 
+
+<p align="center">
+
+<img src="./img/tui.png" alt="TUI Screenshot">
+
+</p>
+
 ## Advanced Usage
 
 ### Influencing Node Placement
 
-You can guide node placement through `graph-level` labels:
+While you can use the interactive mode (`-I`) to set node placement, you can also configure it directly in your YAML files through `graph-level` labels:
 
 Example configuration to set node graph-level:
 
