@@ -6,6 +6,7 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+
 class GrafanaDashboard:
     """
     Manages the creation of a Grafana dashboard and associated panel config from the diagram data.
@@ -19,13 +20,17 @@ class GrafanaDashboard:
         self.diagram = diagram
         self.links = diagram.get_links_from_nodes() if diagram else []
         # The file where the final JSON will be saved
-        self.dashboard_filename = diagram.grafana_dashboard_file if diagram else "network_telemetry.json"
+        self.dashboard_filename = (
+            diagram.grafana_dashboard_file if diagram else "network_telemetry.json"
+        )
 
         # Determine config path (default or user-provided)
         base_dir = os.getenv("APP_BASE_DIR", "")
         if grafana_config_path is None:
             # default location in core/grafana/config
-            grafana_config_path = os.path.join(base_dir, "core/grafana/config/default_grafana_panel_config.yml")
+            grafana_config_path = os.path.join(
+                base_dir, "core/grafana/config/default_grafana_panel_config.yml"
+            )
 
         self.grafana_config = self._load_grafana_config(grafana_config_path)
 
@@ -41,13 +46,15 @@ class GrafanaDashboard:
             logger.error(f"Grafana config file not found: {path}")
             raise FileNotFoundError(f"Grafana config file not found: {path}")
 
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             config = yaml.safe_load(f)
 
         required_keys = ["targets", "thresholds", "label_config"]
         for key in required_keys:
             if key not in config:
-                logger.warning(f"Missing key '{key}' in Grafana config '{path}'. Please verify the YAML structure.")
+                logger.warning(
+                    f"Missing key '{key}' in Grafana config '{path}'. Please verify the YAML structure."
+                )
                 if key == "targets":
                     config["targets"] = []
                 elif key == "thresholds":
@@ -68,43 +75,47 @@ class GrafanaDashboard:
         logger.debug("Creating Grafana dashboard JSON from template...")
 
         base_dir = os.getenv("APP_BASE_DIR", "")
-        template_path = os.path.join(base_dir, "core/grafana/templates/flow_panel_template.json")
+        template_path = os.path.join(
+            base_dir, "core/grafana/templates/flow_panel_template.json"
+        )
         if not os.path.exists(template_path):
             logger.error(f"Template not found at {template_path}")
-            raise FileNotFoundError(f"Grafana template file not found at {template_path}")
+            raise FileNotFoundError(
+                f"Grafana template file not found at {template_path}"
+            )
 
-        with open(template_path, 'r') as file:
+        with open(template_path, "r") as file:
             dashboard_json = json.load(file)
 
         # Update the first panel’s 'targets' from the config
-        if 'panels' in dashboard_json and len(dashboard_json['panels']) > 0:
-            panel = dashboard_json['panels'][0]
+        if "panels" in dashboard_json and len(dashboard_json["panels"]) > 0:
+            panel = dashboard_json["panels"][0]
 
             new_targets = []
-            for i, tgt in enumerate(self.grafana_config['targets']):
+            for i, tgt in enumerate(self.grafana_config["targets"]):
                 # build target object as per template structure
-                datasource_type = tgt.get('datasource', 'prometheus')
-                expr = tgt.get('expr', '')
-                legend_format = tgt.get('legend_format', '')
-                new_targets.append({
-                    "datasource": {
-                        "type": datasource_type
-                    },
-                    "editorMode": "code",
-                    "expr": expr,
-                    "hide": tgt.get("hide", False),
-                    "instant": tgt.get("instant", False),
-                    "legendFormat": legend_format,
-                    "range": tgt.get("range", True),
-                    # assign refId A, B, C,... automatically
-                    "refId": chr(ord('A') + i)
-                })
+                datasource_type = tgt.get("datasource", "prometheus")
+                expr = tgt.get("expr", "")
+                legend_format = tgt.get("legend_format", "")
+                new_targets.append(
+                    {
+                        "datasource": {"type": datasource_type},
+                        "editorMode": "code",
+                        "expr": expr,
+                        "hide": tgt.get("hide", False),
+                        "instant": tgt.get("instant", False),
+                        "legendFormat": legend_format,
+                        "range": tgt.get("range", True),
+                        # assign refId A, B, C,... automatically
+                        "refId": chr(ord("A") + i),
+                    }
+                )
 
-            panel['targets'] = new_targets
+            panel["targets"] = new_targets
 
             # Also inject the newly built panel_yaml into `panelConfig`
-            if 'options' in panel:
-                panel['options']['panelConfig'] = panel_config
+            if "options" in panel:
+                panel["options"]["panelConfig"] = panel_config
 
         dashboard_str = json.dumps(dashboard_json, indent=2)
         logger.debug("Grafana dashboard JSON created successfully.")
@@ -120,6 +131,7 @@ class GrafanaDashboard:
         logger.debug("Creating panel YAML from links and grafana config...")
 
         from ruamel.yaml import YAML, CommentedMap, CommentedSeq
+
         yaml = YAML()
         yaml.explicit_start = True
         yaml.width = 4096
@@ -127,14 +139,18 @@ class GrafanaDashboard:
         root = CommentedMap()
 
         # Thresholds from config
-        thresholds_operstate_config = self.grafana_config["thresholds"].get("operstate", [])
+        thresholds_operstate_config = self.grafana_config["thresholds"].get(
+            "operstate", []
+        )
         thresholds_traffic_config = self.grafana_config["thresholds"].get("traffic", [])
         label_cfg = self.grafana_config["label_config"]
 
         # Build the oper-state thresholds
         thresholds_operstate = CommentedSeq()
         for item in thresholds_operstate_config:
-            thresholds_operstate.append({"color": item["color"], "level": item["level"]})
+            thresholds_operstate.append(
+                {"color": item["color"], "level": item["level"]}
+            )
         thresholds_operstate.yaml_set_anchor("thresholds-operstate", always_dump=True)
 
         # Build the traffic thresholds
@@ -144,20 +160,20 @@ class GrafanaDashboard:
         thresholds_traffic.yaml_set_anchor("thresholds-traffic", always_dump=True)
 
         label_config_map = CommentedMap()
-        label_config_map['separator'] = label_cfg.get('separator', 'replace')
-        label_config_map['units'] = label_cfg.get('units', 'bps')
-        label_config_map['decimalPoints'] = label_cfg.get('decimalPoints', 1)
-        label_config_map['valueMappings'] = label_cfg.get('valueMappings', [])
-        label_config_map.yaml_set_anchor('label-config', always_dump=True)
+        label_config_map["separator"] = label_cfg.get("separator", "replace")
+        label_config_map["units"] = label_cfg.get("units", "bps")
+        label_config_map["decimalPoints"] = label_cfg.get("decimalPoints", 1)
+        label_config_map["valueMappings"] = label_cfg.get("valueMappings", [])
+        label_config_map.yaml_set_anchor("label-config", always_dump=True)
 
-        root['anchors'] = anchors = CommentedMap()
-        anchors['thresholds-operstate'] = thresholds_operstate
-        anchors['thresholds-traffic'] = thresholds_traffic
-        anchors['label-config'] = label_config_map
+        root["anchors"] = anchors = CommentedMap()
+        anchors["thresholds-operstate"] = thresholds_operstate
+        anchors["thresholds-traffic"] = thresholds_traffic
+        anchors["label-config"] = label_config_map
 
-        root['cellIdPreamble'] = 'cell-'
+        root["cellIdPreamble"] = "cell-"
         cells = CommentedMap()
-        root['cells'] = cells
+        root["cells"] = cells
 
         # Add link data
         for link in self.links:
@@ -167,7 +183,9 @@ class GrafanaDashboard:
             target_intf = link.target_intf
 
             # oper-state cell
-            cell_id_operstate = f"{source_name}:{source_intf}:{target_name}:{target_intf}"
+            cell_id_operstate = (
+                f"{source_name}:{source_intf}:{target_name}:{target_intf}"
+            )
             dataRef_operstate = f"oper-state:{source_name}:{source_intf}"
             fillColor_operstate = CommentedMap()
             fillColor_operstate["thresholds"] = thresholds_operstate
@@ -178,7 +196,9 @@ class GrafanaDashboard:
             cells[cell_id_operstate] = cell_operstate
 
             # traffic cell
-            cell_id_traffic = f"link_id:{source_name}:{source_intf}:{target_name}:{target_intf}"
+            cell_id_traffic = (
+                f"link_id:{source_name}:{source_intf}:{target_name}:{target_intf}"
+            )
             dataRef_traffic = f"{source_name}:{source_intf}:out"
 
             strokeColor_traffic = CommentedMap()
@@ -191,6 +211,7 @@ class GrafanaDashboard:
             cells[cell_id_traffic] = cell_traffic
 
         import io
+
         stream = io.StringIO()
         yaml.dump(root, stream)
         panel_yaml = stream.getvalue()

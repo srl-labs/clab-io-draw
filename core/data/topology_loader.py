@@ -3,8 +3,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class TopologyLoaderError(Exception):
     """Raised when loading the topology fails."""
+
 
 class TopologyLoader:
     """
@@ -26,7 +28,9 @@ class TopologyLoader:
             logger.debug("Topology successfully loaded.")
             return containerlab_data
         except FileNotFoundError:
-            error_message = f"Error: The specified clab file '{input_file}' does not exist."
+            error_message = (
+                f"Error: The specified clab file '{input_file}' does not exist."
+            )
             logger.error(error_message)
             raise TopologyLoaderError(error_message)
         except Exception as e:

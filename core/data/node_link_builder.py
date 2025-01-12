@@ -4,12 +4,15 @@ from core.models.link import Link
 
 logger = logging.getLogger(__name__)
 
+
 class NodeLinkBuilder:
     """
     Builds Node and Link objects from containerlab topology data and styling information.
     """
 
-    def __init__(self, containerlab_data: dict, styles: dict, prefix: str, lab_name: str):
+    def __init__(
+        self, containerlab_data: dict, styles: dict, prefix: str, lab_name: str
+    ):
         """
         :param containerlab_data: Parsed containerlab topology data.
         :param styles: Dictionary of style parameters.

@@ -4,6 +4,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class YAMLProcessor:
     """
     Handles loading and saving YAML data with custom formatting.
@@ -15,9 +16,13 @@ class YAMLProcessor:
     def custom_list_representer(self, dumper, data):
         # Check if we are at the specific list under 'links' with 'endpoints'
         if len(data) == 2 and isinstance(data[0], str) and ":" in data[0]:
-            return dumper.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=True)
+            return dumper.represent_sequence(
+                "tag:yaml.org,2002:seq", data, flow_style=True
+            )
         else:
-            return dumper.represent_sequence("tag:yaml.org,2002:seq", data, flow_style=False)
+            return dumper.represent_sequence(
+                "tag:yaml.org,2002:seq", data, flow_style=False
+            )
 
     def custom_dict_representer(self, dumper, data):
         return dumper.represent_dict(data.items())

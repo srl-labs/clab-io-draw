@@ -2,3 +2,7 @@ venv/*
 __pycache__
 test/*
 launch.json
+lab-examples/*
+!lab-examples/*.yml
+!lab-examples/*.yaml
+lab-examples/*flow_panel.yaml

@@ -1,5 +1,6 @@
 import argparse
 
+
 def parse_arguments():
     """
     Parse command-line arguments for clab2drawio tool.
@@ -32,7 +33,7 @@ def parse_arguments():
         "--grafana-config",
         type=str,
         default=None,
-        help="Path to a Grafana YAML config file. If omitted, defaults are used."
+        help="Path to a Grafana YAML config file. If omitted, defaults are used.",
     )
     parser.add_argument(
         "--include-unlinked-nodes",
