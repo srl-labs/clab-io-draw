@@ -4,8 +4,20 @@ FROM python:3.11-slim
 # Install build tools and curl
 RUN apt-get update && apt-get install -y build-essential python3-dev curl
 
-# Install uv 
-RUN pip install uv
+# Install uv based on architecture
+RUN mkdir -p /root/.local/bin && \
+    case "$(uname -m)" in \
+        armv6*) \
+            # For ARM v6, install Rust and build uv from source
+            apt-get install -y pkg-config rustc cargo && \
+            cargo install uv \
+            ;; \
+        *) \
+            # For all other architectures, use the pre-built binary
+            curl -LsSf https://astral.sh/uv/install.sh | sh \
+            ;; \
+    esac
+ENV PATH="/root/.local/bin:/root/.cargo/bin:${PATH}"
 
 # Set up working directory
 WORKDIR /app
