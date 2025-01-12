@@ -25,7 +25,7 @@ COPY cli/ ./cli/
 # Install dependencies using uv
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
-    uv pip sync --system pyproject.toml
+    uv pip install --system -r pyproject.toml
 
 # Make the entrypoint script executable
 RUN chmod +x /app/entrypoint.sh
