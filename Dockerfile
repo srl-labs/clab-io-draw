@@ -1,20 +1,11 @@
-# Use an official Python runtime as a parent image
 FROM python:3.11-slim
 
 # Install build tools and required libraries
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3-dev \
     curl \
-    libc6-armhf-cross \
-    libc6-dev-armhf-cross \
-    libgcc-s1 \
-    gcc-arm-linux-gnueabihf
-
-# Create necessary symlinks
-RUN mkdir -p /lib && \
-    ln -s /usr/arm-linux-gnueabihf/lib/ld-linux-armhf.so.3 /lib/ld-linux-armhf.so.3 || true && \
-    ln -s /usr/lib/gcc-cross/arm-linux-gnueabihf/*/libgcc_s.so.1 /lib/libgcc_s.so.1 || true
+  && rm -rf /var/lib/apt/lists/*
 
 # Install uv
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -23,7 +14,6 @@ ENV PATH="/root/.local/bin:${PATH}"
 # Set up working directory
 WORKDIR /app
 
-# Copy the Python scripts and the configuration files into the container
 COPY pyproject.toml ./
 COPY drawio2clab.py ./
 COPY clab2drawio.py ./
