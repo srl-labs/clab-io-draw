@@ -51,7 +51,7 @@ The above image demonstrates how to correctly label nodes and links and add addi
 Convert a .drawio file to YAML:
 
 ```bash
-python drawio2clab.py -i input_file.drawio
+uv run python drawio2clab.py -i input_file.drawio
 ```
 
 > [!TIP]

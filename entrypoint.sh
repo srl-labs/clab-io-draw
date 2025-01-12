@@ -68,4 +68,4 @@ else
 fi
 
 # Execute the determined script with all passed arguments
-python -u "/app/${script_name}" "$@"
+python "/app/${script_name}" "$@"

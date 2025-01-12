@@ -73,28 +73,45 @@ actual file names in your environment.
 ## Running locally
 
 > [!IMPORTANT]  
-> Python 3.6+ is required if you prefer running these tools locally.
+> Python 3.11+ is required if you prefer running these tools locally.
 
 ### Installation
 
-#### Virtual Environment Setup
-
 > [!TIP]
-> Using a virtual environment is recommended to avoid version conflicts 
-> with global Python packages.
+> **Why uv?**
+> [uv](https://docs.astral.sh/uv) is a single, ultra-fast tool that can replace `pip`, `pipx`, `virtualenv`, `pip-tools`, `poetry`, and more. It automatically manages Python versions, handles ephemeral or persistent virtual environments (`uv venv`), lockfiles, and often runs **10–100× faster** than pip installs.
 
-```bash
-python3 -m venv venv
-source venv/bin/activate  
-```
+1. **Install uv** (no Python or Rust needed):
+    ```
+    # On macOS and Linux
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
 
-#### Installing Dependencies
+2. **Run the tool** (uv automatically installs dependencies in a venv from `pyproject.toml`):
+    ```
+    uv run python clab2drawio.py --help
+    ```
 
-After activating the virtual environment, install the required packages from the requirements.txt file:
+## Alternative: Using pip
 
-```bash
-pip install -r requirements.txt
-```
+If you’d rather use pip or can’t install uv:
+
+1. **(Optional) Create & Activate a Virtual Environment**:
+    ```
+    python -m venv venv
+    source venv/bin/activate
+    ```
+
+2. **Installing Dependencies**
+
+    After activating the virtual environment, install the required packages from the requirements.txt file:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+> [!NOTE]
+> If you installed dependencies using pip instead of uv, simply run the commands using `python` directly instead of `uv run python`
+
 
 # Usage
 
@@ -105,7 +122,7 @@ Detailed Usages: [drawio2clab.md](docs/drawio2clab.md#usage) and [clab2drawio.md
 ## drawio2clab
 
 ```bash
-python drawio2clab.py -i <input_file.drawio>
+uv run python drawio2clab.py -i <input_file.drawio>
 ```
 
 - `-i, --input`: path to your `.drawio` file.
@@ -119,7 +136,7 @@ python drawio2clab.py -i <input_file.drawio>
 ## clab2drawio
 
 ```bash
-python clab2drawio.py -i <input_file.yaml>
+uv run python clab2drawio.py -i <input_file.yaml>
 ```
 
 - `-i, --input`: path to your Containerlab YAML file.
