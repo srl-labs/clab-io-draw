@@ -1,23 +1,21 @@
 # Use an official Python runtime as a parent image
-FROM python:3.11-slim
+FROM --platform=$TARGETPLATFORM python:3.11-slim
 
-# Install build tools and curl
-RUN apt-get update && apt-get install -y build-essential python3-dev curl
+# Install build tools and required libraries
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3-dev \
+    curl \
+    libc6-armhf-cross \
+    libc6-dev-armhf-cross
 
-# Install uv based on architecture
-RUN mkdir -p /root/.local/bin && \
-    case "$(uname -m)" in \
-        armv6*) \
-            # For ARM v6, install Rust and build uv from source
-            apt-get install -y pkg-config rustc cargo && \
-            cargo install uv \
-            ;; \
-        *) \
-            # For all other architectures, use the pre-built binary
-            curl -LsSf https://astral.sh/uv/install.sh | sh \
-            ;; \
-    esac
-ENV PATH="/root/.local/bin:/root/.cargo/bin:${PATH}"
+# Create necessary symlink for ARM builds
+RUN mkdir -p /lib && \
+    ln -s /usr/arm-linux-gnueabihf/lib/ld-linux-armhf.so.3 /lib/ld-linux-armhf.so.3 || true
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:${PATH}"
 
 # Set up working directory
 WORKDIR /app
@@ -32,7 +30,9 @@ COPY core/ ./core/
 COPY cli/ ./cli/
 
 # Install dependencies using uv
-RUN uv pip sync --system pyproject.toml
+RUN --mount=type=cache,target=/root/.cache/pip \
+    --mount=type=cache,target=/root/.cache/uv \
+    uv pip sync --system pyproject.toml
 
 # Make the entrypoint script executable
 RUN chmod +x /app/entrypoint.sh
