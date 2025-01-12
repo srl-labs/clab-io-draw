@@ -2,5 +2,3 @@ venv/*
 __pycache__
 test/*
 launch.json
-
-uv.lock
