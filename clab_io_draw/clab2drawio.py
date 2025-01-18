@@ -234,7 +234,6 @@ def main(
 
     print("Saved file to:", output_file)
 
-
 def cli():
     """Entry point for the command line interface."""
     args = parse_arguments()

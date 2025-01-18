@@ -3,7 +3,6 @@ FROM python:3.11-slim
 # Install build tools and required libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    python3-dev \
     curl \
   && rm -rf /var/lib/apt/lists/*
 
@@ -18,18 +17,16 @@ ENV COLORTERM=truecolor
 # Set up working directory
 WORKDIR /app
 
-COPY pyproject.toml ./
-COPY drawio2clab.py ./
-COPY clab2drawio.py ./
+COPY pyproject.toml README.md ./
+COPY uv.lock ./
 COPY entrypoint.sh ./
-COPY styles/ ./styles/
-COPY core/ ./core/
-COPY cli/ ./cli/
+COPY clab_io_draw/ ./clab_io_draw/
 
 # Install dependencies using uv
 RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system -r pyproject.toml
+    --mount=type=cache,target=/root/.cache/uv 
+    
+RUN uv pip install --system .
 
 # Make the entrypoint script executable
 RUN chmod +x /app/entrypoint.sh

@@ -15,8 +15,13 @@ dependencies = [
     "textual==1.0.0",
 ]
 
-[tool.setuptools.packages.find]
-include = ["clab_io_draw*"]
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.setuptools.package-data]
+clab_io_draw = ["styles/*.yaml"]
 
 [project.scripts]
 clab2drawio = "clab_io_draw.clab2drawio:cli"
