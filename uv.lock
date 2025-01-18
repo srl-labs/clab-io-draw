@@ -108,7 +108,7 @@ wheels = [
 
 [[package]]
 name = "clab-io-draw"
-version = "0.4.0"
+version = "0.4.1"
 source = { virtual = "." }
 dependencies = [
     { name = "n2g" },

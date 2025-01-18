@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 
-from core.layout.layout_manager import LayoutManager
+from clab_io_draw.core.layout.layout_manager import LayoutManager
 
 logger = logging.getLogger(__name__)
 

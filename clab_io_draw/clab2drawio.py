@@ -1,22 +1,25 @@
-from cli.parser_clab2drawio import parse_arguments
-from core.diagram.custom_drawio import CustomDrawioDiagram
-from core.grafana.grafana_manager import GrafanaDashboard
-from core.utils.yaml_processor import YAMLProcessor
-from core.data.topology_loader import TopologyLoader, TopologyLoaderError
-from core.data.node_link_builder import NodeLinkBuilder
-from core.data.graph_level_manager import GraphLevelManager
-from core.layout.vertical_layout import VerticalLayout
-from core.layout.horizontal_layout import HorizontalLayout
-from core.config.theme_manager import ThemeManager, ThemeManagerError
-from core.interactivity.interactive_manager import InteractiveManager
-from core.diagram.diagram_builder import DiagramBuilder
-from core.logging_config import configure_logging
+from clab_io_draw.cli.parser_clab2drawio import parse_arguments
+from clab_io_draw.core.diagram.custom_drawio import CustomDrawioDiagram
+from clab_io_draw.core.grafana.grafana_manager import GrafanaDashboard
+from clab_io_draw.core.utils.yaml_processor import YAMLProcessor
+from clab_io_draw.core.data.topology_loader import TopologyLoader, TopologyLoaderError
+from clab_io_draw.core.data.node_link_builder import NodeLinkBuilder
+from clab_io_draw.core.data.graph_level_manager import GraphLevelManager
+from clab_io_draw.core.layout.vertical_layout import VerticalLayout
+from clab_io_draw.core.layout.horizontal_layout import HorizontalLayout
+from clab_io_draw.core.config.theme_manager import ThemeManager, ThemeManagerError
+from clab_io_draw.core.interactivity.interactive_manager import InteractiveManager
+from clab_io_draw.core.diagram.diagram_builder import DiagramBuilder
+from clab_io_draw.core.logging_config import configure_logging
 from prompt_toolkit.shortcuts import checkboxlist_dialog, yes_no_dialog
 import os
 import sys
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Define script_dir at module level
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def main(
@@ -56,7 +59,7 @@ def main(
         if os.path.isabs(theme):
             theme_path = theme
         else:
-            theme_path = os.path.join(script_dir, "styles", f"{theme}.yaml")
+            theme_path = os.path.join(SCRIPT_DIR, "styles", f"{theme}.yaml")
 
         if not os.path.exists(theme_path):
             raise FileNotFoundError(
@@ -106,14 +109,13 @@ def main(
     available_themes = theme_manager.list_available_themes()
     available_themes.sort()
 
-
     if interactive:
         logger.debug("Entering interactive mode...")
         processor = YAMLProcessor()
         interactor = InteractiveManager()
         interactor.run_interactive_mode(
             diagram=diagram,
-            available_themes=available_themes, 
+            available_themes=available_themes,
             icon_to_group_mapping=styles["icon_to_group_mapping"],
             containerlab_data=containerlab_data,
             output_file=input_file,
@@ -123,17 +125,21 @@ def main(
         )
         # After wizard finishes:
         layout = interactor.final_summary.get("Layout", layout)
-        chosen_theme = interactor.final_summary.get("Theme")  
+        chosen_theme = interactor.final_summary.get("Theme")
 
         if chosen_theme:
             # Load that theme or switch to it
-            new_theme_path = os.path.join(os.path.dirname(theme_path), f"{chosen_theme}.yaml")
+            new_theme_path = os.path.join(
+                os.path.dirname(theme_path), f"{chosen_theme}.yaml"
+            )
             if os.path.exists(new_theme_path):
                 logger.debug(f"Loading user-chosen theme: {chosen_theme}")
                 theme_manager.config_path = new_theme_path
                 styles = theme_manager.load_theme()
             else:
-                logger.warning(f"User chose theme '{chosen_theme}' but no file found. Keeping old theme.")
+                logger.warning(
+                    f"User chose theme '{chosen_theme}' but no file found. Keeping old theme."
+                )
 
     logger.debug("Assigning graph levels...")
     graph_manager = GraphLevelManager()
@@ -229,16 +235,15 @@ def main(
     print("Saved file to:", output_file)
 
 
-if __name__ == "__main__":
+def cli():
+    """Entry point for the command line interface."""
     args = parse_arguments()
-
-    script_dir = os.path.dirname(__file__)
 
     # Configure logging at startup
     log_level = logging.DEBUG if args.verbose else logging.INFO
     configure_logging(level=log_level)
 
-    main(
+    return main(
         input_file=args.input,
         output_file=args.output,
         grafana=args.gf_dashboard,
@@ -250,3 +255,7 @@ if __name__ == "__main__":
         interactive=args.interactive,
         grafana_config_path=args.grafana_config,
     )
+
+
+if __name__ == "__main__":
+    cli()
