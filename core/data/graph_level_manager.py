@@ -1,151 +1,168 @@
 import logging
+import networkx as nx
+from collections import deque
 
 logger = logging.getLogger(__name__)
 
 
 class GraphLevelManager:
     """
-    Manages graph-level assignments and adjustments for nodes in the diagram.
+    Manages the graph level assignment for nodes in the diagram.
     """
 
-    def update_links(self, links: list) -> None:
+    def assign_graphlevels(
+        self, diagram, verbose=False, skip_warnings=False, respect_fixed_positions=False
+    ):
         """
-        Update the direction and level difference of links after changes in node graph levels.
+        Assign graph levels to nodes in the diagram.
+
+        :param diagram: Diagram object containing nodes and links.
+        :param verbose: Enable verbose logging.
+        :param skip_warnings: Skip warning messages about missing graph levels.
+        :param respect_fixed_positions: Don't override positions of nodes with fixed positions.
         """
-        logger.debug("Updating link directions and level differences...")
-        for link in links:
-            source_level = link.source.graph_level
-            target_level = link.target.graph_level
-            link.level_diff = target_level - source_level
-            if link.level_diff > 0:
-                link.direction = "downstream"
-            elif link.level_diff < 0:
-                link.direction = "upstream"
-            else:
-                link.direction = "lateral"
+        nodes = diagram.nodes
+        all_levels_set = all(
+            (node.graph_level is not None and node.graph_level != -1)
+            for node in nodes.values()
+        )
 
-    def adjust_node_levels(self, diagram) -> None:
-        """
-        Adjust node levels to reduce inconsistencies and improve layout clarity.
-        """
-        logger.debug("Adjusting node levels for better layout...")
-        used_levels = diagram.get_used_levels()
-        max_level = diagram.get_max_level()
-        min_level = diagram.get_min_level()
+        # More robust fixed position detection
+        has_fixed_positions = any(
+            node.pos_x is not None
+            and node.pos_y is not None
+            and str(node.pos_x).strip() != ""
+            and str(node.pos_y).strip() != ""
+            for node in nodes.values()
+        )
 
-        if len(used_levels) <= 1:
-            return
-
-        current_level = min_level
-        while current_level < max_level + 1:
-            if current_level == min_level:
-                current_level += 1
-                continue
-
-            nodes_at_current_level = diagram.get_nodes_by_level(current_level)
-            before_level = current_level - 1
-            nodes_to_move = []
-
-            if len(nodes_at_current_level.items()) == 1:
-                current_level += 1
-                continue
-            for node_name, node in nodes_at_current_level.items():
-                has_upstream_connection = any(
-                    node.get_upstream_links_towards_level(before_level)
-                )
-
-                if not has_upstream_connection:
-                    nodes_to_move.append(node)
-
-            if len(nodes_to_move) == len(nodes_at_current_level):
-                current_level += 1
-                continue
-
-            if nodes_to_move:
-                for level in range(max_level, current_level, -1):
-                    nodes_at_level = diagram.get_nodes_by_level(level)
-                    for node in nodes_at_level.values():
-                        node.graph_level += 1
-
-                for node in nodes_to_move:
-                    node.graph_level += 1
-
-                self.update_links(diagram.get_links_from_nodes())
-                max_level = diagram.get_max_level()
-
-            max_level = diagram.get_max_level()
-            current_level += 1
-
-        for level in range(max_level, min_level - 1, -1):
-            nodes_at_level = diagram.get_nodes_by_level(level)
-            for node in nodes_at_level.values():
-                upstream_links = node.get_upstream_links()
-                can_move = True
-                for link in upstream_links:
-                    level_diff = node.graph_level - link.target.graph_level
-                    if level_diff == 1:
-                        can_move = False
-                        break
-
-                if can_move:
-                    for link in upstream_links:
-                        level_diff = node.graph_level - link.target.graph_level
-                        if level_diff > 1:
-                            node.graph_level -= 1
-                            self.update_links(diagram.get_links_from_nodes())
-                            max_level = diagram.get_max_level()
-                            break
-
-    def assign_graphlevels(self, diagram, verbose=False) -> list:
-        """
-        Assign initial graph levels to nodes and adjust them as necessary.
-
-        :param diagram: CustomDrawioDiagram instance.
-        :param verbose: Whether to print debugging info.
-        :return: Sorted list of nodes by level and name.
-        """
-        logger.debug("Assigning graph levels to nodes...")
-        nodes = diagram.get_nodes()
-
-        if all(node.graph_level != -1 for node in nodes.values()):
-            already_set = True
-        else:
-            already_set = False
-            print(
-                "Not all graph levels set in the .clab file. Assigning graph levels based on downstream links. Expect experimental output. Please consider assigning graph levels to your .clab file, or use it with -I for interactive mode. Find more information here: https://github.com/srl-labs/clab-io-draw/blob/grafana_style/docs/clab2drawio.md#influencing-node-placement"
+        # Show warning only if levels aren't set AND we're not skipping warnings
+        # AND we're not using fixed positions
+        if not all_levels_set and not skip_warnings and not has_fixed_positions:
+            logger.warning(
+                "Not all graph levels set in the .clab file. Assigning graph levels based on downstream links. "
+                "Expect experimental output. Please consider assigning graph levels to your .clab file, "
+                "or use it with -I for interactive mode. Find more information here: "
+                "https://github.com/srl-labs/clab-io-draw/blob/grafana_style/docs/clab2drawio.md#influencing-node-placement"
             )
 
-        def set_graphlevel(node, current_graphlevel, visited=None):
-            if visited is None:
-                visited = set()
-            if node.name in visited:
-                return
-            visited.add(node.name)
+        # Extract graph structure for level assignment
+        G = nx.DiGraph()
+        for node_name in nodes:
+            G.add_node(node_name)
 
-            if node.graph_level < current_graphlevel:
-                node.graph_level = current_graphlevel
+        for node in nodes.values():
             for link in node.get_downstream_links():
-                target_node = nodes[link.target.name]
-                set_graphlevel(target_node, current_graphlevel + 1, visited)
+                G.add_edge(link.source.name, link.target.name)
 
-        for node in nodes.values():
-            if node.graph_level != -1:
-                continue
-            elif not node.get_upstream_links():
-                set_graphlevel(node, 0)
+        # Find roots (nodes with no incoming edges)
+        roots = [n for n in G.nodes() if G.in_degree(n) == 0]
+
+        # If no roots identified, use all nodes as potential roots and prune after
+        if not roots:
+            paths_and_cycles = list(nx.simple_cycles(G))
+            if paths_and_cycles:
+                # If cycles are detected, use the first node in each cycle as a potential root
+                potential_roots = []
+                for cycle in paths_and_cycles:
+                    potential_roots.append(cycle[0])
+                    # Break the cycle by removing the last edge
+                    G.remove_edge(cycle[-1], cycle[0])
+                roots = potential_roots
             else:
-                set_graphlevel(node, node.graph_level)
+                # If no clear cycles but also no roots, use all nodes as roots
+                roots = list(G.nodes())
 
+        # Assign levels using BFS from each root
+        levels = {}
+        for root in roots:
+            bfs_levels = self._bfs_levels(G, root)
+            # Update levels dict, keeping the minimum level for each node
+            for node, level in bfs_levels.items():
+                if node not in levels or level < levels[node]:
+                    levels[node] = level
+
+        # Update node levels in the diagram
+        for node_name, level in levels.items():
+            node = nodes[node_name]
+            # Determine if this node has fixed position
+            has_fixed_pos = (
+                node.pos_x is not None
+                and node.pos_y is not None
+                and str(node.pos_x).strip() != ""
+                and str(node.pos_y).strip() != ""
+            )
+
+            # Only update levels if:
+            # 1. Level was not specified in YAML (node.graph_level is None)
+            # 2. We're not respecting fixed positions OR this specific node doesn't have fixed position
+            if node.graph_level is None and (
+                not respect_fixed_positions or not has_fixed_pos
+            ):
+                node.graph_level = level
+                if verbose:
+                    logger.debug(f"Assigned level {level} to node {node_name}")
+
+        # Calculate link levels
         for node in nodes.values():
-            node.update_links()
+            for link in node.get_all_links():
+                source_level = link.source.graph_level
+                target_level = link.target.graph_level
 
-        if not already_set:
-            self.adjust_node_levels(diagram)
+                # Ensure both levels are integers before subtraction
+                if source_level is not None and target_level is not None:
+                    try:
+                        # Convert to integers if they aren't already
+                        if not isinstance(source_level, int):
+                            source_level = int(source_level)
+                        if not isinstance(target_level, int):
+                            target_level = int(target_level)
+
+                        link.level_diff = target_level - source_level
+                    except (ValueError, TypeError):
+                        # If conversion fails, default to 0
+                        link.level_diff = 0
+                else:
+                    link.level_diff = 0
+
+        # Don't normalize levels if we're respecting fixed positions and have some fixed positions
+        if not (respect_fixed_positions and has_fixed_positions):
+            self._normalize_levels(nodes)
+
+    def _bfs_levels(self, graph, start_node):
+        """
+        Perform BFS to assign levels to nodes.
+
+        :param graph: NetworkX DiGraph.
+        :param start_node: Root node to start BFS from.
+        :return: Dictionary mapping node names to their level.
+        """
+        visited = {start_node: 0}
+        queue = deque([(start_node, 0)])
+
+        while queue:
+            node, level = queue.popleft()
+            for neighbor in graph.neighbors(node):
+                if neighbor not in visited:
+                    visited[neighbor] = level + 1
+                    queue.append((neighbor, level + 1))
+
+        return visited
+
+    def _normalize_levels(self, nodes):
+        """
+        Normalize graph levels to start from 0.
+
+        :param nodes: Dictionary of node_name -> Node instances.
+        """
+        # Find the minimum level
+        min_level = float("inf")
+        for node in nodes.values():
+            if node.graph_level is not None and node.graph_level < min_level:
+                min_level = node.graph_level
+
+        # If minimum level is not 0, adjust all levels
+        if min_level != 0:
             for node in nodes.values():
-                node.update_links()
-
-        sorted_nodes = sorted(
-            nodes.values(), key=lambda node: (node.graph_level, node.name)
-        )
-        logger.debug("Graph levels assigned.")
-        return sorted_nodes
+                if node.graph_level is not None:
+                    node.graph_level -= min_level

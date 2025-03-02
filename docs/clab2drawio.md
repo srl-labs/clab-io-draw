@@ -16,6 +16,8 @@ for real-time network monitoring.
   or horizontal layouts.
 - **Graph-level-Based Layout**: Organizes nodes based on `graph-level` labels 
   in the YAML, which can be edited interactively with `-I`.
+- **Fixed Position Support**: Respects exact node positions defined in YAML files
+  for pixel-perfect control over diagram layouts.
 - **Node Icon Customization**: Utilizes `graph-icon` labels to specify icons 
   (e.g., `router`, `switch`, `host`).
 - **Customizable Styles**: Users can apply or create custom Draw.io themes
@@ -61,9 +63,11 @@ python clab2drawio.py -i <path_to_your_yaml_file> -I
 
 ### Influencing Node Placement
 
-While you can use the interactive mode (`-I`) to set node placement, you can also configure it directly in your YAML files through `graph-level` labels:
+You have multiple ways to control node placement in your diagrams:
 
-Example configuration to set node graph-level:
+#### 1. Using Graph Levels
+
+Configure graph levels in your YAML files through `graph-level` labels:
 
 ```bash
 client1:
@@ -82,6 +86,34 @@ spine1:
 > [!TIP]
 > Lower `graph-level` values place nodes toward the top or left (depending on layout).
 > Higher values push them further down or to the right.
+
+#### 2. Using Fixed Positions
+
+For precise control of node positions, you can specify exact coordinates:
+
+```bash	
+client1:
+  kind: "linux"
+  labels:
+    graph-posX: 100  # X coordinate on the canvas (in pixels)
+    graph-posY: 200  # Y coordinate on the canvas (in pixels)
+    graph-icon: host
+```
+
+When fixed positions are specified, they take precedence over graph levels.
+
+#### 3. Using VS Code TopoViewer
+
+The easiest way to create perfect layouts is using the VS Code Containerlab extension's TopoViewer:
+
+1. Install the [VS Code Containerlab extension](https://marketplace.visualstudio.com/items?itemName=srl-labs.vscode-containerlab)
+2. Right-click on your lab file and select "Open in TopoViewer"
+3. Arrange your nodes by dragging them to desired positions
+4. Click "Save Layout" - this automatically updates your YAML file with precise positions
+5. Run clab2drawio to create a Draw.io diagram that uses exactly the same layout
+
+> [!TIP]
+> The TopoViewer approach is highly recommended for complex topologies as it provides a visual, intuitive way to create perfect node arrangements that clab2drawio will faithfully reproduce.
 
 ### Command-Line Arguments
 

@@ -17,17 +17,24 @@ class Node:
         self.label = label
         self.kind = kind
         self.mgmt_ipv4 = mgmt_ipv4
-        self.graph_level = graph_level if graph_level is not None else -1
+
+        # Fix for level detection - a default of None is better than -1
+        if graph_level is not None:
+            try:
+                self.graph_level = int(graph_level)
+            except (ValueError, TypeError):
+                self.graph_level = None
+        else:
+            self.graph_level = None
+
         self.graph_icon = graph_icon
-        self.links = []
-        self.categories = []
-        self.properties = kwargs
         self.base_style = kwargs.get("base_style", "")
         self.custom_style = kwargs.get("custom_style", "")
-        self.pos_x = kwargs.get("pos_x", "")
-        self.pos_y = kwargs.get("pos_y", "")
         self.width = kwargs.get("width", "")
         self.height = kwargs.get("height", "")
+        self.pos_x = kwargs.get("pos_x", "")
+        self.pos_y = kwargs.get("pos_y", "")
+        self.links = []
         self.group = kwargs.get("group", "")
 
     def add_link(self, link):

@@ -11,7 +11,6 @@ from core.config.theme_manager import ThemeManager, ThemeManagerError
 from core.interactivity.interactive_manager import InteractiveManager
 from core.diagram.diagram_builder import DiagramBuilder
 from core.logging_config import configure_logging
-from prompt_toolkit.shortcuts import checkboxlist_dialog, yes_no_dialog
 import os
 import sys
 import logging
@@ -48,7 +47,7 @@ def main(
     loader = TopologyLoader()
     try:
         containerlab_data = loader.load(input_file)
-    except TopologyLoaderError as e:
+    except TopologyLoaderError:
         logger.error("Failed to load topology. Exiting.")
         sys.exit(1)
 
@@ -75,7 +74,7 @@ def main(
 
     try:
         styles = theme_manager.load_theme()
-    except ThemeManagerError as e:
+    except ThemeManagerError:
         logger.error("Failed to load theme. Exiting.")
         sys.exit(1)
     logger.debug("Theme loaded successfully, building diagram...")
@@ -84,7 +83,6 @@ def main(
     diagram.layout = layout
     diagram.styles = styles
 
-    nodes_from_clab = containerlab_data["topology"]["nodes"]
     # Determine the prefix
     prefix = containerlab_data.get("prefix", "clab")
     lab_name = containerlab_data.get("name", "")
@@ -106,14 +104,13 @@ def main(
     available_themes = theme_manager.list_available_themes()
     available_themes.sort()
 
-
     if interactive:
         logger.debug("Entering interactive mode...")
         processor = YAMLProcessor()
         interactor = InteractiveManager()
         interactor.run_interactive_mode(
             diagram=diagram,
-            available_themes=available_themes, 
+            available_themes=available_themes,
             icon_to_group_mapping=styles["icon_to_group_mapping"],
             containerlab_data=containerlab_data,
             output_file=input_file,
@@ -123,30 +120,81 @@ def main(
         )
         # After wizard finishes:
         layout = interactor.final_summary.get("Layout", layout)
-        chosen_theme = interactor.final_summary.get("Theme")  
+        chosen_theme = interactor.final_summary.get("Theme")
 
         if chosen_theme:
             # Load that theme or switch to it
-            new_theme_path = os.path.join(os.path.dirname(theme_path), f"{chosen_theme}.yaml")
+            new_theme_path = os.path.join(
+                os.path.dirname(theme_path), f"{chosen_theme}.yaml"
+            )
             if os.path.exists(new_theme_path):
                 logger.debug(f"Loading user-chosen theme: {chosen_theme}")
                 theme_manager.config_path = new_theme_path
                 styles = theme_manager.load_theme()
             else:
-                logger.warning(f"User chose theme '{chosen_theme}' but no file found. Keeping old theme.")
+                logger.warning(
+                    f"User chose theme '{chosen_theme}' but no file found. Keeping old theme."
+                )
 
-    logger.debug("Assigning graph levels...")
-    graph_manager = GraphLevelManager()
-    graph_manager.assign_graphlevels(diagram, verbose=False)
+    # Check if any nodes have predefined positions from the YAML
+    has_predefined_positions = any(
+        node.pos_x is not None
+        and node.pos_y is not None
+        and str(node.pos_x).strip() != ""
+        and str(node.pos_y).strip() != ""
+        for node in nodes.values()
+    )
 
-    # Choose layout based on layout argument
-    if layout == "vertical":
-        layout_manager = VerticalLayout()
+    if has_predefined_positions:
+        logger.debug("Using predefined positions from YAML file with scaling...")
+
+        # Scale factor to ensure adequate spacing between nodes
+        x_scale = (styles.get("padding_x", 150) / 100) * 1.5
+        y_scale = (styles.get("padding_y", 150) / 100) * 1.5
+
+        # Convert string positions to float and apply scaling
+        for node in nodes.values():
+            try:
+                if (
+                    node.pos_x is not None
+                    and node.pos_y is not None
+                    and str(node.pos_x).strip() != ""
+                    and str(node.pos_y).strip() != ""
+                ):
+                    node.pos_x = int(node.pos_x) * x_scale
+                    node.pos_y = int(node.pos_y) * y_scale
+            except (ValueError, TypeError):
+                logger.debug(
+                    f"Could not convert position for node {node.name}, will use layout position"
+                )
+                node.pos_x = None
+                node.pos_y = None
+
+        # When fixed positions are available, we still assign graph levels for connectivity purposes
+        # but instruct it to skip warnings and not override positions
+        logger.debug(
+            "Using predefined positions - graph levels will only be used for connectivity"
+        )
+        graph_manager = GraphLevelManager()
+        graph_manager.assign_graphlevels(
+            diagram, verbose=False, skip_warnings=True, respect_fixed_positions=True
+        )
     else:
-        layout_manager = HorizontalLayout()
+        # No fixed positions, proceed with normal graph level assignment
+        logger.debug("No predefined positions found - assigning graph levels normally")
+        graph_manager = GraphLevelManager()
+        graph_manager.assign_graphlevels(diagram, verbose=False)
 
-    logger.debug(f"Applying {layout} layout...")
-    layout_manager.apply(diagram, verbose=verbose)
+    # Only apply layout manager if we don't have predefined positions
+    if not has_predefined_positions:
+        # Choose layout based on layout argument
+        if layout == "vertical":
+            layout_manager = VerticalLayout()
+        else:
+            layout_manager = HorizontalLayout()
+
+        logger.debug(f"Applying {layout} layout...")
+        layout_manager.apply(diagram, verbose=verbose)
 
     # Calculate the diagram size based on the positions of the nodes
     min_x = min(node.pos_x for node in nodes.values())
