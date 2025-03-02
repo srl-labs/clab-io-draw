@@ -724,6 +724,22 @@ class DiagramBuilder:
                                 entryY, entryX = 1, 0.5
                             else:  # left
                                 entryY, entryX = 0.5, 0
+                            if (
+                                abs(link.source.pos_y - link.target.pos_y) < 10
+                                and len(group) > 1
+                            ):
+                                # Distribute links vertically for nodes at same level
+                                spread = 0.4 / len(
+                                    group
+                                )  # Use 40% of the node height for distribution
+                                offset = (i - (len(group) - 1) / 2) * spread
+
+                                # Adjust entry/exit Y positions
+                                if source_edge in ["left", "right"]:
+                                    exitY = 0.5 + offset
+
+                                if target_edge in ["left", "right"]:
+                                    entryY = 0.5 + offset
                         else:
                             # Fallback if no port_pos
                             entryX, entryY, exitX, exitY = (
