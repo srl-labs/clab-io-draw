@@ -12,4 +12,5 @@ dependencies = [
     "ruamel-yaml==0.18.6",
     "textual-dev==1.7.0",
     "textual==1.0.0",
+    "networkx>=3.4.2",
 ]

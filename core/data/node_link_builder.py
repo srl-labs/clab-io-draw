@@ -65,18 +65,18 @@ class NodeLinkBuilder:
         nodes = {}
         for node_name, node_data in nodes_from_clab.items():
             formatted_node_name = self.format_node_name(node_name)
-            
+
             # Extract position from graph-posX and graph-posY labels if available
             pos_x = node_data.get("pos_x", "")
             pos_y = node_data.get("pos_y", "")
-            
+
             # Check for graph-posX and graph-posY in labels
             labels = node_data.get("labels", {})
             if "graph-posX" in labels:
                 pos_x = labels["graph-posX"]
             if "graph-posY" in labels:
                 pos_y = labels["graph-posY"]
-            
+
             node = Node(
                 name=formatted_node_name,
                 label=node_name,
