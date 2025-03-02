@@ -32,8 +32,26 @@ class Node:
         self.custom_style = kwargs.get("custom_style", "")
         self.width = kwargs.get("width", "")
         self.height = kwargs.get("height", "")
-        self.pos_x = kwargs.get("pos_x", "")
-        self.pos_y = kwargs.get("pos_y", "")
+        # Convert pos_x to float if possible, otherwise set to None
+        pos_x = kwargs.get("pos_x", None)
+        if pos_x is not None and pos_x != "":
+            try:
+                self.pos_x = int(float(pos_x))
+            except (ValueError, TypeError):
+                self.pos_x = None
+        else:
+            self.pos_x = None
+
+        # Convert pos_y to float if possible, otherwise set to None
+        pos_y = kwargs.get("pos_y", None)
+        if pos_y is not None and pos_y != "":
+            try:
+                self.pos_y = int(float(pos_y))
+            except (ValueError, TypeError):
+                self.pos_y = None
+        else:
+            self.pos_y = None
+
         self.links = []
         self.group = kwargs.get("group", "")
 
