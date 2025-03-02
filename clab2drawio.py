@@ -135,18 +135,43 @@ def main(
             else:
                 logger.warning(f"User chose theme '{chosen_theme}' but no file found. Keeping old theme.")
 
+    # Check if any nodes have predefined positions from the YAML
+    has_predefined_positions = any(
+        node.pos_x and node.pos_y for node in nodes.values()
+    )
+    
+    if has_predefined_positions:
+        logger.debug("Using predefined positions from YAML file with scaling...")
+        
+        # Scale factor to ensure adequate spacing between nodes
+        x_scale = (styles.get("padding_x", 150) / 100) * 1.5
+        y_scale = (styles.get("padding_y", 150) / 100) * 1.5 
+        
+        # Convert string positions to float and apply scaling
+        for node in nodes.values():
+            try:
+                if node.pos_x and node.pos_y:
+                    node.pos_x = int(node.pos_x) * x_scale
+                    node.pos_y = int(node.pos_y) * y_scale
+            except (ValueError, TypeError):
+                # If conversion fails, position will be assigned by the layout manager
+                print("error")
+                node.pos_x = ""
+                node.pos_y = ""
+
     logger.debug("Assigning graph levels...")
     graph_manager = GraphLevelManager()
     graph_manager.assign_graphlevels(diagram, verbose=False)
 
-    # Choose layout based on layout argument
-    if layout == "vertical":
-        layout_manager = VerticalLayout()
-    else:
-        layout_manager = HorizontalLayout()
+    if not has_predefined_positions:
+        # Choose layout based on layout argument
+        if layout == "vertical":
+            layout_manager = VerticalLayout()
+        else:
+            layout_manager = HorizontalLayout()
 
-    logger.debug(f"Applying {layout} layout...")
-    layout_manager.apply(diagram, verbose=verbose)
+        logger.debug(f"Applying {layout} layout...")
+        layout_manager.apply(diagram, verbose=verbose)
 
     # Calculate the diagram size based on the positions of the nodes
     min_x = min(node.pos_x for node in nodes.values())

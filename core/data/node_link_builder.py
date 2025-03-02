@@ -65,6 +65,18 @@ class NodeLinkBuilder:
         nodes = {}
         for node_name, node_data in nodes_from_clab.items():
             formatted_node_name = self.format_node_name(node_name)
+            
+            # Extract position from graph-posX and graph-posY labels if available
+            pos_x = node_data.get("pos_x", "")
+            pos_y = node_data.get("pos_y", "")
+            
+            # Check for graph-posX and graph-posY in labels
+            labels = node_data.get("labels", {})
+            if "graph-posX" in labels:
+                pos_x = labels["graph-posX"]
+            if "graph-posY" in labels:
+                pos_y = labels["graph-posY"]
+            
             node = Node(
                 name=formatted_node_name,
                 label=node_name,
@@ -74,8 +86,8 @@ class NodeLinkBuilder:
                 graph_icon=node_data.get("labels", {}).get("graph-icon", None),
                 base_style=base_style,
                 custom_style=self.styles.get(node_data.get("kind", ""), ""),
-                pos_x=node_data.get("pos_x", ""),
-                pos_y=node_data.get("pos_y", ""),
+                pos_x=pos_x,
+                pos_y=pos_y,
                 width=node_width,
                 height=node_height,
                 group=node_data.get("group", ""),
