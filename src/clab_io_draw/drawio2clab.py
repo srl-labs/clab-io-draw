@@ -1,13 +1,19 @@
+# ruff: noqa: B008
 import logging
 import os
+from pathlib import Path
 
-from clab_io_draw.cli.parser_drawio2clab import parse_arguments
+import typer
+
 from clab_io_draw.core.drawio.converter import Drawio2ClabConverter
 from clab_io_draw.core.drawio.drawio_parser import DrawioParser
 from clab_io_draw.core.logging_config import configure_logging
 from clab_io_draw.core.utils.yaml_processor import YAMLProcessor
 
 logger = logging.getLogger(__name__)
+
+
+app = typer.Typer(help="Convert a .drawio file to a Containerlab YAML file")
 
 
 def main(
@@ -47,18 +53,35 @@ def main(
     logger.info(f"Conversion completed. Output saved to {output_file}")
 
 
-def main_cli() -> None:
-    args = parse_arguments()
-    if not args.output:
-        args.output = os.path.splitext(args.input)[0] + ".yaml"
-    configure_logging(level=logging.DEBUG if args.style == "block" else logging.INFO)
+@app.command(name="drawio2clab")
+def cli(  # noqa: B008
+    input: Path = typer.Option(..., "-i", "--input", help="Input .drawio XML file"),  # noqa: B008
+    output: Path | None = typer.Option(None, "-o", "--output", help="Output YAML file"),  # noqa: B008
+    style: str = typer.Option("flow", "--style", help="YAML style"),  # noqa: B008
+    diagram_name: str | None = typer.Option(
+        None, "--diagram-name", help="Diagram name"
+    ),  # noqa: B008
+    default_kind: str = typer.Option(
+        "nokia_srlinux", "--default-kind", help="Default node kind"
+    ),  # noqa: B008
+) -> None:
+    """Convert a .drawio diagram to a Containerlab YAML file."""
+
+    if output is None:
+        output = Path(os.path.splitext(input)[0] + ".yaml")
+
+    configure_logging(level=logging.DEBUG if style == "block" else logging.INFO)
     main(
-        args.input,
-        args.output,
-        style=args.style,
-        diagram_name=args.diagram_name,
-        default_kind=args.default_kind,
+        str(input),
+        str(output),
+        style=style,
+        diagram_name=diagram_name,
+        default_kind=default_kind,
     )
+
+
+def main_cli() -> None:
+    app()
 
 
 if __name__ == "__main__":
