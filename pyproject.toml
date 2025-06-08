@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "n2g==0.3.3",
     "prompt-toolkit==3.0.43",
-    "PyYAML==6.0.1",
+    "PyYAML==6.0.2",
     "six==1.16.0",
     "wcwidth==0.2.13",
     "ruamel-yaml==0.18.6",
@@ -15,6 +15,7 @@ dependencies = [
     "textual==1.0.0",
     "networkx>=3.4.2",
     "defusedxml>=0.7.1",
+    "typer>=0.16.0",
 ]
 
 [project.scripts]

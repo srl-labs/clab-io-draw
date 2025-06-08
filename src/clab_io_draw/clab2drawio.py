@@ -1,8 +1,12 @@
+# ruff: noqa: B008
 import logging
 import os
 import sys
+from enum import Enum
+from pathlib import Path
 
-from clab_io_draw.cli.parser_clab2drawio import parse_arguments
+import typer
+
 from clab_io_draw.core.config.theme_manager import ThemeManager, ThemeManagerError
 from clab_io_draw.core.data.graph_level_manager import GraphLevelManager
 from clab_io_draw.core.data.node_link_builder import NodeLinkBuilder
@@ -17,6 +21,14 @@ from clab_io_draw.core.logging_config import configure_logging
 from clab_io_draw.core.utils.yaml_processor import YAMLProcessor
 
 logger = logging.getLogger(__name__)
+
+
+class Layout(str, Enum):
+    VERTICAL = "vertical"
+    HORIZONTAL = "horizontal"
+
+
+app = typer.Typer(help="Generate a topology diagram from a containerlab YAML file")
 
 
 def main(
@@ -86,7 +98,10 @@ def main(
     diagram.styles = styles
 
     # Enable Grafana output automatically when using the grafana theme
-    if not grafana and os.path.splitext(os.path.basename(theme))[0].lower() == "grafana":
+    if (
+        not grafana
+        and os.path.splitext(os.path.basename(theme))[0].lower() == "grafana"
+    ):
         grafana = True
 
     # Determine the prefix
@@ -296,25 +311,52 @@ def main(
             logger.error(f"Failed to export SVG: {e}")
 
 
-def main_cli() -> None:
-    args = parse_arguments()
+@app.command(name="clab2drawio")
+def cli(  # noqa: B008
+    input: Path = typer.Option(
+        ..., "-i", "--input", help="Input containerlab YAML or draw.io XML file"
+    ),  # noqa: B008
+    output: Path | None = typer.Option(
+        None, "-o", "--output", help="Output draw.io file"
+    ),  # noqa: B008
+    gf_dashboard: bool = typer.Option(
+        False, "-g", "--gf-dashboard", help="Generate Grafana dashboard"
+    ),  # noqa: B008
+    grafana_config: Path | None = typer.Option(
+        None, "--grafana-config", help="Path to Grafana YAML config"
+    ),  # noqa: B008
+    include_unlinked_nodes: bool = typer.Option(
+        False, "--include-unlinked-nodes", help="Include nodes without links"
+    ),  # noqa: B008
+    no_links: bool = typer.Option(False, "--no-links", help="Do not draw links"),  # noqa: B008
+    layout: Layout = typer.Option(Layout.VERTICAL, "--layout", help="Diagram layout"),  # noqa: B008
+    theme: str = typer.Option("nokia", "--theme", help="Diagram theme or style file"),  # noqa: B008
+    verbose: bool = typer.Option(False, "--verbose", help="Enable verbose output"),  # noqa: B008
+    interactive: bool = typer.Option(
+        False, "-I", "--interactive", help="Interactive mode"
+    ),  # noqa: B008
+) -> None:
+    """Generate a topology diagram from a containerlab YAML or draw.io file."""
 
-    # Configure logging at startup
-    log_level = logging.DEBUG if args.verbose else logging.INFO
+    log_level = logging.DEBUG if verbose else logging.INFO
     configure_logging(level=log_level)
 
     main(
-        input_file=args.input,
-        output_file=args.output,
-        grafana=args.gf_dashboard,
-        theme=args.theme,
-        include_unlinked_nodes=args.include_unlinked_nodes,
-        no_links=args.no_links,
-        layout=args.layout,
-        verbose=args.verbose,
-        interactive=args.interactive,
-        grafana_config_path=args.grafana_config,
+        input_file=str(input),
+        output_file=str(output) if output else None,
+        grafana=gf_dashboard,
+        theme=theme,
+        include_unlinked_nodes=include_unlinked_nodes,
+        no_links=no_links,
+        layout=layout.value,
+        verbose=verbose,
+        interactive=interactive,
+        grafana_config_path=str(grafana_config) if grafana_config else None,
     )
+
+
+def main_cli() -> None:
+    app()
 
 
 if __name__ == "__main__":
