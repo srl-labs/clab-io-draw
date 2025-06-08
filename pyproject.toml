@@ -2,6 +2,7 @@
 name = "clab-io-draw"
 version = "0.5.1"
 description = "Convert between draw.io and containerlab topology files"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "n2g==0.3.3",
@@ -14,3 +15,22 @@ dependencies = [
     "textual==1.0.0",
     "networkx>=3.4.2",
 ]
+
+[project.scripts]
+clab2drawio = "clab_io_draw.clab2drawio:main_cli"
+drawio2clab = "clab_io_draw.drawio2clab:main_cli"
+
+[build-system]
+requires = ["setuptools>=67"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"clab_io_draw.styles" = ["*.yaml"]
+"clab_io_draw.core.grafana.config" = ["*.yml"]
+"clab_io_draw.core.grafana.templates" = ["*.json"]

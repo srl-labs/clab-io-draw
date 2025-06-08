@@ -1,16 +1,16 @@
-from cli.parser_clab2drawio import parse_arguments
-from core.diagram.custom_drawio import CustomDrawioDiagram
-from core.grafana.grafana_manager import GrafanaDashboard
-from core.utils.yaml_processor import YAMLProcessor
-from core.data.topology_loader import TopologyLoader, TopologyLoaderError
-from core.data.node_link_builder import NodeLinkBuilder
-from core.data.graph_level_manager import GraphLevelManager
-from core.layout.vertical_layout import VerticalLayout
-from core.layout.horizontal_layout import HorizontalLayout
-from core.config.theme_manager import ThemeManager, ThemeManagerError
-from core.interactivity.interactive_manager import InteractiveManager
-from core.diagram.diagram_builder import DiagramBuilder
-from core.logging_config import configure_logging
+from clab_io_draw.cli.parser_clab2drawio import parse_arguments
+from clab_io_draw.core.diagram.custom_drawio import CustomDrawioDiagram
+from clab_io_draw.core.grafana.grafana_manager import GrafanaDashboard
+from clab_io_draw.core.utils.yaml_processor import YAMLProcessor
+from clab_io_draw.core.data.topology_loader import TopologyLoader, TopologyLoaderError
+from clab_io_draw.core.data.node_link_builder import NodeLinkBuilder
+from clab_io_draw.core.data.graph_level_manager import GraphLevelManager
+from clab_io_draw.core.layout.vertical_layout import VerticalLayout
+from clab_io_draw.core.layout.horizontal_layout import HorizontalLayout
+from clab_io_draw.core.config.theme_manager import ThemeManager, ThemeManagerError
+from clab_io_draw.core.interactivity.interactive_manager import InteractiveManager
+from clab_io_draw.core.diagram.diagram_builder import DiagramBuilder
+from clab_io_draw.core.logging_config import configure_logging
 import os
 import sys
 import logging
@@ -44,6 +44,7 @@ def main(
     :param interactive: Run in interactive mode to define graph-levels and icons.
     """
     logger.debug("Starting clab2drawio main function.")
+    script_dir = os.path.dirname(__file__)
     loader = TopologyLoader()
     try:
         containerlab_data = loader.load(input_file)
@@ -277,10 +278,8 @@ def main(
     print("Saved file to:", output_file)
 
 
-if __name__ == "__main__":
+def main_cli() -> None:
     args = parse_arguments()
-
-    script_dir = os.path.dirname(__file__)
 
     # Configure logging at startup
     log_level = logging.DEBUG if args.verbose else logging.INFO
@@ -298,3 +297,7 @@ if __name__ == "__main__":
         interactive=args.interactive,
         grafana_config_path=args.grafana_config,
     )
+
+
+if __name__ == "__main__":
+    main_cli()

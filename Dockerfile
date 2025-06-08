@@ -19,17 +19,13 @@ ENV COLORTERM=truecolor
 WORKDIR /app
 
 COPY pyproject.toml ./
-COPY drawio2clab.py ./
-COPY clab2drawio.py ./
+COPY src/ ./src/
 COPY entrypoint.sh ./
-COPY styles/ ./styles/
-COPY core/ ./core/
-COPY cli/ ./cli/
 
 # Install dependencies using uv
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system -r pyproject.toml
+    uv pip install --system -e .
 
 # Make the entrypoint script executable
 RUN chmod +x /app/entrypoint.sh

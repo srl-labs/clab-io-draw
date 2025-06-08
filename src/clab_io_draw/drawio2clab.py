@@ -1,10 +1,10 @@
 import os
 import logging
-from cli.parser_drawio2clab import parse_arguments
-from core.utils.yaml_processor import YAMLProcessor
-from core.drawio.drawio_parser import DrawioParser
-from core.drawio.converter import Drawio2ClabConverter
-from core.logging_config import configure_logging
+from clab_io_draw.cli.parser_drawio2clab import parse_arguments
+from clab_io_draw.core.utils.yaml_processor import YAMLProcessor
+from clab_io_draw.core.drawio.drawio_parser import DrawioParser
+from clab_io_draw.core.drawio.converter import Drawio2ClabConverter
+from clab_io_draw.core.logging_config import configure_logging
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ def main(
     logger.info(f"Conversion completed. Output saved to {output_file}")
 
 
-if __name__ == "__main__":
+def main_cli() -> None:
     args = parse_arguments()
     if not args.output:
         args.output = os.path.splitext(args.input)[0] + ".yaml"
@@ -58,3 +58,7 @@ if __name__ == "__main__":
         diagram_name=args.diagram_name,
         default_kind=args.default_kind,
     )
+
+
+if __name__ == "__main__":
+    main_cli()
