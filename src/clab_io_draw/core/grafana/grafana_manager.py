@@ -26,12 +26,21 @@ class GrafanaDashboard:
         )
 
         # Determine config path (default or user-provided)
-        base_dir = os.getenv("APP_BASE_DIR", "")
+        base_dir_env = os.getenv("APP_BASE_DIR")
         if grafana_config_path is None:
-            # default location in core/grafana/config
-            grafana_config_path = os.path.join(
-                base_dir, "core/grafana/config/default_grafana_panel_config.yml"
-            )
+            if base_dir_env:
+                # default location when running inside container or with APP_BASE_DIR
+                grafana_config_path = os.path.join(
+                    base_dir_env,
+                    "core/grafana/config/default_grafana_panel_config.yml",
+                )
+            else:
+                # default relative to this file when running from source tree
+                grafana_config_path = os.path.join(
+                    os.path.dirname(__file__),
+                    "config",
+                    "default_grafana_panel_config.yml",
+                )
 
         self.grafana_config = self._load_grafana_config(grafana_config_path)
 
@@ -75,10 +84,15 @@ class GrafanaDashboard:
         """
         logger.debug("Creating Grafana dashboard JSON from template...")
 
-        base_dir = os.getenv("APP_BASE_DIR", "")
-        template_path = os.path.join(
-            base_dir, "core/grafana/templates/flow_panel_template.json"
-        )
+        base_dir_env = os.getenv("APP_BASE_DIR")
+        if base_dir_env:
+            template_path = os.path.join(
+                base_dir_env, "core/grafana/templates/flow_panel_template.json"
+            )
+        else:
+            template_path = os.path.join(
+                os.path.dirname(__file__), "templates", "flow_panel_template.json"
+            )
         if not os.path.exists(template_path):
             logger.error(f"Template not found at {template_path}")
             raise FileNotFoundError(
