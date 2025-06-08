@@ -34,10 +34,9 @@ class NodeLinkBuilder:
         """
         if self.prefix == "":
             return base_name
-        elif self.prefix == "clab" and not self.prefix:
+        if self.prefix == "clab" and not self.prefix:
             return f"clab-{self.lab_name}-{base_name}"
-        else:
-            return f"{self.prefix}-{self.lab_name}-{base_name}"
+        return f"{self.prefix}-{self.lab_name}-{base_name}"
 
     def build_nodes_and_links(self):
         """

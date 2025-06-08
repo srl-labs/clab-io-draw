@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
-from typing import Any, Dict, List
+from typing import Any
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
@@ -104,8 +104,7 @@ def build_preview_lines(
         # If it's a string like "(will be 2)", we can parse out the int, but let's just rank them last
         if isinstance(lvl, int):
             return lvl
-        else:
-            return 9999
+        return 9999
 
     sorted_nodes = sorted(all_node_names, key=sort_key)
 
@@ -154,22 +153,22 @@ def build_group_grid(groups_dict: dict[Any, list[str]], layout: str) -> str:
             lines.append(row)
         return "\n".join(lines)
 
-    else:  # layout == "horizontal"
-        # We'll pivot columns: each group is one column, top to bottom.
-        # 1) find max # of nodes among groups
-        max_len = max(len(groups_dict[k]) for k in sorted_keys) if sorted_keys else 0
+    # layout == "horizontal"
+    # We'll pivot columns: each group is one column, top to bottom.
+    # 1) find max # of nodes among groups
+    max_len = max(len(groups_dict[k]) for k in sorted_keys) if sorted_keys else 0
 
-        # 2) build rows by taking i-th element of each group
-        #    if i is out of range, we do e.g. '' or ' '.
-        rows = []
-        for i in range(max_len):
-            row_parts = []
-            for group_key in sorted_keys:
-                node_list = groups_dict[group_key]
-                val = node_list[i] if i < len(node_list) else ""
-                row_parts.append(f"{val:8s}")  # fixed width or just use val
-            rows.append("  ".join(row_parts).rstrip())
-        return "\n".join(rows)
+    # 2) build rows by taking i-th element of each group
+    #    if i is out of range, we do e.g. '' or ' '.
+    rows = []
+    for i in range(max_len):
+        row_parts = []
+        for group_key in sorted_keys:
+            node_list = groups_dict[group_key]
+            val = node_list[i] if i < len(node_list) else ""
+            row_parts.append(f"{val:8s}")  # fixed width or just use val
+        rows.append("  ".join(row_parts).rstrip())
+    return "\n".join(rows)
 
 
 def update_preview_common(
@@ -236,7 +235,7 @@ class InteractiveManager:
     def __init__(self):
         # Default layout is "vertical"
         self.layout = "vertical"
-        self.ephemeral_icons: Dict[int, set[str]] = {}
+        self.ephemeral_icons: dict[int, set[str]] = {}
 
     def detect_pty_legacy_mode(self) -> bool:
         """
@@ -261,14 +260,14 @@ class InteractiveManager:
     def run_interactive_mode(
         self,
         diagram: Any,
-        available_themes: List[str],
-        icon_to_group_mapping: Dict[str, str],
-        containerlab_data: Dict[str, Any],
+        available_themes: list[str],
+        icon_to_group_mapping: dict[str, str],
+        containerlab_data: dict[str, Any],
         output_file: str,
         processor,
         prefix: str,
         lab_name: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Launch the TUI wizard. Return final_summary with "Levels", "Icons", "Layout", "Theme".
         """

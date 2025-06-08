@@ -118,7 +118,7 @@ class VerticalLayout(LayoutManager):
                     continue
 
             if positions:
-                return sum(p * w for p, w in zip(positions, weights)) / sum(weights)
+                return sum(p * w for p, w in zip(positions, weights, strict=False)) / sum(weights)
             return node.pos_x
 
         def reposition_level(level_nodes):

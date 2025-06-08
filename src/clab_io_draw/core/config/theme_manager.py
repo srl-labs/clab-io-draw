@@ -3,7 +3,6 @@ import glob
 import logging
 import os
 import re
-from typing import Dict, List
 
 import yaml
 
@@ -35,7 +34,7 @@ class ThemeManager:
         """
         self.config_path = config_path
 
-    def list_available_themes(self) -> List[str]:
+    def list_available_themes(self) -> list[str]:
         """
         Return a list of all available theme names in the same directory as the current config_path.
         Themes are identified by files ending with .yaml or .yml.
@@ -77,7 +76,7 @@ class ThemeManager:
         """
         logger.debug(f"Loading theme from: {self.config_path}")
         try:
-            with open(self.config_path, "r") as file:
+            with open(self.config_path) as file:
                 config = yaml.safe_load(file)
         except FileNotFoundError:
             error_message = (
@@ -159,7 +158,7 @@ class ThemeManager:
 
         return merged_str
 
-    def _style_str_to_dict(self, style_str: str) -> Dict[str, str]:
+    def _style_str_to_dict(self, style_str: str) -> dict[str, str]:
         """
         Parse a style string of the form "key1=value1;key2=value2;..." into a dict.
         We skip 'points=[]' segments because they're not strictly "key=value" pairs.
@@ -179,7 +178,7 @@ class ThemeManager:
                 style_dict[k] = v
         return style_dict
 
-    def _dict_to_style_str(self, style_dict: Dict[str, str]) -> str:
+    def _dict_to_style_str(self, style_dict: dict[str, str]) -> str:
         """
         Convert a dictionary of style properties into a "key=value;" style string.
 
@@ -192,7 +191,7 @@ class ThemeManager:
         return ";".join(segs) + ";" if segs else ""
 
     def _maybe_modify_svg_css(
-        self, style_name: str, style_str: str, css_overrides: Dict[str, Dict[str, str]]
+        self, style_name: str, style_str: str, css_overrides: dict[str, dict[str, str]]
     ) -> str:
         """
         Check if the given style string references an SVG image. If so, and if CSS overrides
@@ -235,7 +234,7 @@ class ThemeManager:
         return new_style_str
 
     def _modify_svg_style_block(
-        self, svg_data: str, style_overrides: Dict[str, str]
+        self, svg_data: str, style_overrides: dict[str, str]
     ) -> str:
         """
         Modify or create <style> block in the embedded SVG to apply the given CSS overrides.
@@ -307,19 +306,17 @@ class ThemeManager:
             if insert_pos == -1:
                 # No closing svg? Just append the style at the end.
                 return svg_data + "<style>" + new_style_content + "</style>"
-            else:
-                return (
-                    svg_data[:insert_pos]
-                    + "<style>"
-                    + new_style_content
-                    + "</style>"
-                    + svg_data[insert_pos:]
-                )
-        else:
-            # Replace existing style content
-            return self._replace_style_block(
-                svg_data, style_start, style_end, new_style_content
+            return (
+                svg_data[:insert_pos]
+                + "<style>"
+                + new_style_content
+                + "</style>"
+                + svg_data[insert_pos:]
             )
+        # Replace existing style content
+        return self._replace_style_block(
+            svg_data, style_start, style_end, new_style_content
+        )
 
     def _replace_style_block(
         self, svg_data: str, style_start: int, style_end: int, new_content: str
@@ -343,7 +340,7 @@ class ThemeManager:
             + svg_data[style_end:]
         )
 
-    def _parse_properties(self, props_str: str) -> Dict[str, str]:
+    def _parse_properties(self, props_str: str) -> dict[str, str]:
         """
         Parse CSS properties from a string like "fill:#001135;stroke:#FFF".
         """
@@ -362,7 +359,7 @@ class ThemeManager:
         return props
 
     def _build_class_line(
-        self, indent: str, cls_name: str, props: Dict[str, str]
+        self, indent: str, cls_name: str, props: dict[str, str]
     ) -> str:
         """
         Rebuild a single CSS class line for the style block.

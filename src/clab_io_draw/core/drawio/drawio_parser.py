@@ -37,11 +37,10 @@ class DrawioParser:
                     mxGraphModel_root = diagram.find(".//mxGraphModel/root")
                     if mxGraphModel_root is not None:
                         return mxGraphModel_root
-                    else:
-                        logger.error(
-                            f"mxGraphModel/root not found in diagram '{self.diagram_name}'."
-                        )
-                        sys.exit(1)
+                    logger.error(
+                        f"mxGraphModel/root not found in diagram '{self.diagram_name}'."
+                    )
+                    sys.exit(1)
             logger.error(f"Diagram named '{self.diagram_name}' not found.")
             sys.exit(1)
         else:
@@ -50,9 +49,8 @@ class DrawioParser:
                 mxGraphModel_root = first_diagram.find(".//mxGraphModel/root")
                 if mxGraphModel_root is not None:
                     return mxGraphModel_root
-                else:
-                    logger.error("mxGraphModel/root not found in the first diagram.")
-                    sys.exit(1)
+                logger.error("mxGraphModel/root not found in the first diagram.")
+                sys.exit(1)
             logger.error("No diagrams found in the file.")
             sys.exit(1)
 

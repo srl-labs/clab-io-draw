@@ -38,8 +38,8 @@ where = ["src"]
 [tool.ruff]
 line-length = 88
 target-version = "py311"
-indent-width = 4
 
+[tool.ruff.lint]
 select = [
     "E",
     "W",
@@ -55,10 +55,9 @@ select = [
     "TID",
     "ISC",
     "RET",
-    "ANN",
     "Q",
 ]
-ignore = ["E501", "ANN101", "ANN102"]
+ignore = ["E501", "ANN", "N803", "N806"]
 fixable = ["ALL"]
 unfixable = []
 

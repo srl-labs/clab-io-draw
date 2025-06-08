@@ -28,7 +28,7 @@ class TopologyLoader:
         """
         logger.debug(f"Loading topology from file: {input_file}")
         try:
-            with open(input_file, "r") as file:
+            with open(input_file) as file:
                 raw_content = file.read()
 
             # Expand ${VAR:=default} placeholders before parsing

@@ -379,17 +379,14 @@ class DiagramBuilder:
             if abs(dy) > y_threshold:
                 # Target is significantly above or below
                 return "top" if dy < 0 else "bottom"
-            else:
-                # Target is roughly at same height, use left/right
-                return "left" if dx < 0 else "right"
-        else:
-            # In horizontal layout, prioritize left/right connections
-            if abs(dx) > node.width:
-                # Target is significantly left or right
-                return "left" if dx < 0 else "right"
-            else:
-                # Target is roughly at same vertical position, use top/bottom
-                return "top" if dy < 0 else "bottom"
+            # Target is roughly at same height, use left/right
+            return "left" if dx < 0 else "right"
+        # In horizontal layout, prioritize left/right connections
+        if abs(dx) > node.width:
+            # Target is significantly left or right
+            return "left" if dx < 0 else "right"
+        # Target is roughly at same vertical position, use top/bottom
+        return "top" if dy < 0 else "bottom"
 
     def _distribute_ports_on_edge(self, node, links, edge, styles):
         """
@@ -660,10 +657,10 @@ class DiagramBuilder:
                 # Common interface name formats
                 if intf_name.lower().startswith("ethernet-"):
                     return "e" + intf_name[9:]
-                elif intf_name.lower().startswith("ethernet"):
+                if intf_name.lower().startswith("ethernet"):
                     return "e" + intf_name[8:]
                 # Keep capitalization for capitalized interfaces
-                elif intf_name.startswith("Ethernet"):
+                if intf_name.startswith("Ethernet"):
                     return "E" + intf_name[8:]
                 # Add more format rules as needed
             return intf_name

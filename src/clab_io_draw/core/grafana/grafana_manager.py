@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from typing import Optional
 
 import yaml
 
@@ -13,7 +12,7 @@ class GrafanaDashboard:
     Manages the creation of a Grafana dashboard and associated panel config from the diagram data.
     """
 
-    def __init__(self, diagram=None, grafana_config_path: Optional[str] = None):
+    def __init__(self, diagram=None, grafana_config_path: str | None = None):
         """
         :param diagram: Diagram object that includes node and link data.
         :param grafana_config_path: Path to the YAML file containing grafana panel config (targets, thresholds, etc.).
@@ -56,7 +55,7 @@ class GrafanaDashboard:
             logger.error(f"Grafana config file not found: {path}")
             raise FileNotFoundError(f"Grafana config file not found: {path}")
 
-        with open(path, "r") as f:
+        with open(path) as f:
             config = yaml.safe_load(f)
 
         required_keys = ["targets", "thresholds", "label_config"]
@@ -99,7 +98,7 @@ class GrafanaDashboard:
                 f"Grafana template file not found at {template_path}"
             )
 
-        with open(template_path, "r") as file:
+        with open(template_path) as file:
             dashboard_json = json.load(file)
 
         # Update the first panel’s 'targets' from the config
