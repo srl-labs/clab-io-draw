@@ -60,4 +60,13 @@ def export_svg_with_metadata(drawio_file: str, svg_file: str) -> None:
         drawio_file,
     ]
     logger.debug("Running: %s", " ".join(cmd))
-    subprocess.run(cmd, check=True)
+    result = subprocess.run(
+        cmd,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    if result.stdout:
+        logger.debug(result.stdout)
+    if result.stderr:
+        logger.debug(result.stderr)
