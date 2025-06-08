@@ -263,8 +263,9 @@ def main(
             f.write(grafana_json)
         print("Saved Grafana dashboard JSON to:", grafana_output_file)
     else:
-        logger.debug("Adding links to diagram...")
-        diagram_builder.add_links(diagram, styles)
+        if not no_links:
+            logger.debug("Adding links to diagram...")
+            diagram_builder.add_links(diagram, styles)
 
     if not output_file:
         output_file = os.path.splitext(input_file)[0] + ".drawio"

@@ -28,7 +28,7 @@ class TopologyLoader:
         """
         logger.debug(f"Loading topology from file: {input_file}")
         try:
-            with open(input_file, "r") as file:
+            with open(input_file) as file:
                 raw_content = file.read()
 
             # Expand ${VAR:=default} placeholders before parsing
@@ -38,14 +38,14 @@ class TopologyLoader:
             logger.debug("Topology successfully loaded.")
             return containerlab_data
 
-        except FileNotFoundError:
+        except FileNotFoundError as err:
             error_message = (
                 f"Error: The specified clab file '{input_file}' does not exist."
             )
             logger.error(error_message)
-            raise TopologyLoaderError(error_message)
+            raise TopologyLoaderError(error_message) from err
 
-        except Exception as e:
-            error_message = f"An error occurred while loading the config: {e}"
+        except Exception as err:
+            error_message = f"An error occurred while loading the config: {err}"
             logger.error(error_message)
-            raise TopologyLoaderError(error_message)
+            raise TopologyLoaderError(error_message) from err

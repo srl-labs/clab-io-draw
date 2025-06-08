@@ -1,6 +1,7 @@
 import logging
 import sys
-import xml.etree.ElementTree as ET
+
+from defusedxml import ElementTree
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class DrawioParser:
         """
         logger.debug(f"Parsing drawio XML from file: {self.input_file}")
         try:
-            tree = ET.parse(self.input_file)
+            tree = ElementTree.parse(self.input_file)
             root = tree.getroot()
         except FileNotFoundError:
             logger.error(f"Input file '{self.input_file}' does not exist.")
@@ -37,11 +38,10 @@ class DrawioParser:
                     mxGraphModel_root = diagram.find(".//mxGraphModel/root")
                     if mxGraphModel_root is not None:
                         return mxGraphModel_root
-                    else:
-                        logger.error(
-                            f"mxGraphModel/root not found in diagram '{self.diagram_name}'."
-                        )
-                        sys.exit(1)
+                    logger.error(
+                        f"mxGraphModel/root not found in diagram '{self.diagram_name}'."
+                    )
+                    sys.exit(1)
             logger.error(f"Diagram named '{self.diagram_name}' not found.")
             sys.exit(1)
         else:
@@ -50,9 +50,8 @@ class DrawioParser:
                 mxGraphModel_root = first_diagram.find(".//mxGraphModel/root")
                 if mxGraphModel_root is not None:
                     return mxGraphModel_root
-                else:
-                    logger.error("mxGraphModel/root not found in the first diagram.")
-                    sys.exit(1)
+                logger.error("mxGraphModel/root not found in the first diagram.")
+                sys.exit(1)
             logger.error("No diagrams found in the file.")
             sys.exit(1)
 
@@ -156,6 +155,7 @@ class DrawioParser:
                 "geometry": {"x": x, "y": y},
                 "labels": [],
             }
+        return None
 
     def extract_link_labels(self, mxGraphModel, links_info):
         """

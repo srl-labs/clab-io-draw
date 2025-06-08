@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from typing import Optional
 
 import yaml
 
@@ -13,7 +12,7 @@ class GrafanaDashboard:
     Manages the creation of a Grafana dashboard and associated panel config from the diagram data.
     """
 
-    def __init__(self, diagram=None, grafana_config_path: Optional[str] = None):
+    def __init__(self, diagram=None, grafana_config_path: str | None = None):
         """
         :param diagram: Diagram object that includes node and link data.
         :param grafana_config_path: Path to the YAML file containing grafana panel config (targets, thresholds, etc.).
@@ -26,12 +25,21 @@ class GrafanaDashboard:
         )
 
         # Determine config path (default or user-provided)
-        base_dir = os.getenv("APP_BASE_DIR", "")
+        base_dir_env = os.getenv("APP_BASE_DIR")
         if grafana_config_path is None:
-            # default location in core/grafana/config
-            grafana_config_path = os.path.join(
-                base_dir, "core/grafana/config/default_grafana_panel_config.yml"
-            )
+            if base_dir_env:
+                # default location when running inside container or with APP_BASE_DIR
+                grafana_config_path = os.path.join(
+                    base_dir_env,
+                    "core/grafana/config/default_grafana_panel_config.yml",
+                )
+            else:
+                # default relative to this file when running from source tree
+                grafana_config_path = os.path.join(
+                    os.path.dirname(__file__),
+                    "config",
+                    "default_grafana_panel_config.yml",
+                )
 
         self.grafana_config = self._load_grafana_config(grafana_config_path)
 
@@ -47,7 +55,7 @@ class GrafanaDashboard:
             logger.error(f"Grafana config file not found: {path}")
             raise FileNotFoundError(f"Grafana config file not found: {path}")
 
-        with open(path, "r") as f:
+        with open(path) as f:
             config = yaml.safe_load(f)
 
         required_keys = ["targets", "thresholds", "label_config"]
@@ -75,17 +83,22 @@ class GrafanaDashboard:
         """
         logger.debug("Creating Grafana dashboard JSON from template...")
 
-        base_dir = os.getenv("APP_BASE_DIR", "")
-        template_path = os.path.join(
-            base_dir, "core/grafana/templates/flow_panel_template.json"
-        )
+        base_dir_env = os.getenv("APP_BASE_DIR")
+        if base_dir_env:
+            template_path = os.path.join(
+                base_dir_env, "core/grafana/templates/flow_panel_template.json"
+            )
+        else:
+            template_path = os.path.join(
+                os.path.dirname(__file__), "templates", "flow_panel_template.json"
+            )
         if not os.path.exists(template_path):
             logger.error(f"Template not found at {template_path}")
             raise FileNotFoundError(
                 f"Grafana template file not found at {template_path}"
             )
 
-        with open(template_path, "r") as file:
+        with open(template_path) as file:
             dashboard_json = json.load(file)
 
         # Update the first panel’s 'targets' from the config

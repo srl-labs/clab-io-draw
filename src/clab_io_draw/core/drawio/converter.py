@@ -56,7 +56,7 @@ class Drawio2ClabConverter:
         nodes = {}
         kinds = {}
 
-        for node_id, details in node_details.items():
+        for _node_id, details in node_details.items():
             node_label = details["label"]
             node_kind = details["kind"]
 
@@ -89,9 +89,7 @@ class Drawio2ClabConverter:
 
             nodes[node_label] = node_info
 
-        yaml_data = {
+        return {
             "name": base_name,
             "topology": {"kinds": kinds, "nodes": nodes, "links": compiled_links},
         }
-
-        return yaml_data

@@ -33,7 +33,7 @@ class Node:
         self.width = kwargs.get("width", "")
         self.height = kwargs.get("height", "")
         # Convert pos_x to float if possible, otherwise set to None
-        pos_x = kwargs.get("pos_x", None)
+        pos_x = kwargs.get("pos_x")
         if pos_x is not None and pos_x != "":
             try:
                 self.pos_x = int(float(pos_x))
@@ -43,7 +43,7 @@ class Node:
             self.pos_x = None
 
         # Convert pos_y to float if possible, otherwise set to None
-        pos_y = kwargs.get("pos_y", None)
+        pos_y = kwargs.get("pos_y")
         if pos_y is not None and pos_y != "":
             try:
                 self.pos_y = int(float(pos_y))

@@ -20,10 +20,9 @@ class YAMLProcessor:
             return dumper.represent_sequence(
                 "tag:yaml.org,2002:seq", data, flow_style=True
             )
-        else:
-            return dumper.represent_sequence(
-                "tag:yaml.org,2002:seq", data, flow_style=False
-            )
+        return dumper.represent_sequence(
+            "tag:yaml.org,2002:seq", data, flow_style=False
+        )
 
     def custom_dict_representer(self, dumper, data):
         return dumper.represent_dict(data.items())
@@ -34,8 +33,7 @@ class YAMLProcessor:
 
     def load_yaml(self, yaml_str):
         try:
-            data = yaml.safe_load(yaml_str)
-            return data
+            return yaml.safe_load(yaml_str)
         except yaml.YAMLError as e:
             logger.error(f"Error loading YAML: {str(e)}")
             sys.exit(1)
@@ -64,6 +62,6 @@ class YAMLProcessor:
                     yaml.dump(data, file, default_flow_style=False, sort_keys=False)
 
             logger.debug("YAML file saved successfully.")
-        except IOError as e:
+        except OSError as e:
             logger.error(f"Error saving YAML file: {str(e)}")
             sys.exit(1)
