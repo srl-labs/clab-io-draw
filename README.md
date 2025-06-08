@@ -43,7 +43,7 @@ containerlab graph --drawio -t topo.clab.drawio
 
 ### Running with Docker
 
-You can also use a Docker container for a quick start without installing Python and other dependencies locally.
+You can also use a Docker container for a quick start without installing Python and other dependencies locally. The image already includes the draw.io AppImage, so no additional downloads are needed at runtime.
 
 
 #### Pulling from Container registry
