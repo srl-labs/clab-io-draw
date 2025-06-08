@@ -436,7 +436,7 @@ class AssignLevelsScreen(Screen):
         elif event.button.id == "confirm":
             # finalize ephemeral => remove from old final, place in new
             for n in self.ephemeral_nodes:
-                for lvl, nds in self.manager.final_summary["Levels"].items():
+                for _lvl, nds in self.manager.final_summary["Levels"].items():
                     if n in nds:
                         nds.remove(n)
                 self.manager.final_summary["Levels"].setdefault(
@@ -503,7 +503,7 @@ class AssignLevelsScreen(Screen):
     def on_item_toggled(self, event: ItemToggled) -> None:
         node_name = event.sender.text
         if event.checked:
-            for lvl, nds in self.manager.final_summary["Levels"].items():
+            for _lvl, nds in self.manager.final_summary["Levels"].items():
                 if node_name in nds:
                     nds.remove(node_name)
             self.ephemeral_nodes.add(node_name)
@@ -961,7 +961,7 @@ class _MultiCheckItem(ListItem):
         self._label = Static(f"{mark} {self.text}")
         yield self._label
 
-    def watch_checked(self, old_val: bool, new_val: bool) -> None:
+    def watch_checked(self, _old_val: bool, new_val: bool) -> None:
         # This updates the text whenever .checked changes
         mark = "[x]" if new_val else "[ ]"
         if self._label:

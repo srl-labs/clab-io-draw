@@ -1,7 +1,7 @@
 import logging
 import math
-import random
 import re
+from random import SystemRandom
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +11,7 @@ class DiagramBuilder:
     Builds diagram elements such as nodes, ports, and links into the Draw.io diagram.
     """
 
-    def add_ports(self, diagram, styles, verbose=True):
+    def add_ports(self, diagram, styles, _verbose=True):
         """
         Add ports and their connections to the diagram.
 
@@ -22,8 +22,7 @@ class DiagramBuilder:
         logger.debug("Adding ports to nodes...")
         nodes = diagram.nodes
         has_predefined_positions = any(
-            isinstance(node.pos_x, (int, float))
-            and isinstance(node.pos_y, (int, float))
+            isinstance(node.pos_x, int | float) and isinstance(node.pos_y, int | float)
             for node in nodes.values()
         )
 
@@ -229,44 +228,28 @@ class DiagramBuilder:
                     # Adjust port positions if mismatch
                     source_downstream_links = link.source.get_downstream_links()
                     target_upstream_links = link.target.get_upstream_links()
-                    if diagram.layout == "vertical":
-                        if link.source.pos_x == link.target.pos_x:
-                            if len(source_downstream_links) != len(
-                                target_upstream_links
-                            ):
-                                if len(source_downstream_links) < len(
-                                    target_upstream_links
-                                ):
-                                    adjusted_x = target_connector_pos[0]
-                                    source_connector_pos = (
-                                        adjusted_x,
-                                        source_connector_pos[1],
-                                    )
-                                else:
-                                    adjusted_x = source_connector_pos[0]
-                                    target_connector_pos = (
-                                        adjusted_x,
-                                        target_connector_pos[1],
-                                    )
-                    elif diagram.layout == "horizontal":
-                        if link.source.pos_y == link.target.pos_y:
-                            if len(source_downstream_links) != len(
-                                target_upstream_links
-                            ):
-                                if len(source_downstream_links) < len(
-                                    target_upstream_links
-                                ):
-                                    adjusted_y = target_connector_pos[1]
-                                    source_connector_pos = (
-                                        source_connector_pos[0],
-                                        adjusted_y,
-                                    )
-                                else:
-                                    adjusted_y = source_connector_pos[1]
-                                    target_connector_pos = (
-                                        target_connector_pos[0],
-                                        adjusted_y,
-                                    )
+                    if (
+                        diagram.layout == "vertical"
+                        and link.source.pos_x == link.target.pos_x
+                        and len(source_downstream_links) != len(target_upstream_links)
+                    ):
+                        if len(source_downstream_links) < len(target_upstream_links):
+                            adjusted_x = target_connector_pos[0]
+                            source_connector_pos = (adjusted_x, source_connector_pos[1])
+                        else:
+                            adjusted_x = source_connector_pos[0]
+                            target_connector_pos = (adjusted_x, target_connector_pos[1])
+                    elif (
+                        diagram.layout == "horizontal"
+                        and link.source.pos_y == link.target.pos_y
+                        and len(source_downstream_links) != len(target_upstream_links)
+                    ):
+                        if len(source_downstream_links) < len(target_upstream_links):
+                            adjusted_y = target_connector_pos[1]
+                            source_connector_pos = (source_connector_pos[0], adjusted_y)
+                        else:
+                            adjusted_y = source_connector_pos[1]
+                            target_connector_pos = (target_connector_pos[0], adjusted_y)
 
                     # Add source and target connector nodes
                     diagram.add_node(
@@ -302,8 +285,9 @@ class DiagramBuilder:
                     midpoint_center_x = (source_center[0] + target_center[0]) / 2
                     midpoint_center_y = (source_center[1] + target_center[1]) / 2
 
-                    random_offset = random.choice(
-                        [random.uniform(-20, -10), random.uniform(10, 20)]
+                    _sysrand = SystemRandom()
+                    random_offset = _sysrand.choice(
+                        [_sysrand.uniform(-20, -10), _sysrand.uniform(10, 20)]
                     )
                     dx = target_center[0] - source_center[0]
                     dy = target_center[1] - source_center[1]
@@ -443,8 +427,7 @@ class DiagramBuilder:
         nodes = diagram.nodes
         global_seen_links = set()
         has_predefined_positions = any(
-            isinstance(node.pos_x, (int, float))
-            and isinstance(node.pos_y, (int, float))
+            isinstance(node.pos_x, int | float) and isinstance(node.pos_y, int | float)
             for node in nodes.values()
         )
 
@@ -685,10 +668,10 @@ class DiagramBuilder:
 
             target_groups = {}
             for link in filtered_links:
-                target = link.target
-                target_groups.setdefault(target, []).append(link)
+                tgt = link.target
+                target_groups.setdefault(tgt, []).append(link)
 
-            for target, group in target_groups.items():
+            for _tgt, group in target_groups.items():
                 for i, link in enumerate(group):
                     source_x, source_y = link.source.pos_x, link.source.pos_y
                     target_x, target_y = link.target.pos_x, link.target.pos_y

@@ -1,6 +1,6 @@
 import logging
-import xml.etree.ElementTree as ET
 
+from defusedxml import ElementTree
 from N2G import drawio_diagram
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ class CustomDrawioDiagram(drawio_diagram):
     <diagram id="{id}" name="{name}">
       <mxGraphModel dx="{width}" dy="{height}" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0" background="#000000">
         <root>
-          <mxCell id="0"/>   
+          <mxCell id="0"/>
           <mxCell id="1" parent="0"/>
         </root>
       </mxGraphModel>
@@ -36,7 +36,7 @@ class CustomDrawioDiagram(drawio_diagram):
             <diagram id="{{id}}" name="{{name}}">
             <mxGraphModel dx="{{width}}" dy="{{height}}" grid="{grid}" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="{pagew}" pageHeight="{pageh}" math="0" shadow="{shadow}" background="{background}">
                 <root>
-                <mxCell id="0"/>   
+                <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
                 </root>
             </mxGraphModel>
@@ -75,13 +75,13 @@ class CustomDrawioDiagram(drawio_diagram):
         <diagram id="{{id}}" name="{{name}}">
           <mxGraphModel dx="{{width}}" dy="{{height}}" grid="{grid}" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="{pagew}" pageHeight="{pageh}" math="0" shadow="{shadow}" background="{background}">
             <root>
-              <mxCell id="0"/>   
+              <mxCell id="0"/>
               <mxCell id="1" parent="0"/>
             </root>
           </mxGraphModel>
         </diagram>
         """
-        self.drawing = ET.fromstring(self.drawio_drawing_xml)
+        self.drawing = ElementTree.fromstring(self.drawio_drawing_xml)
 
     def group_nodes(self, member_objects, group_id, style=""):
         """
@@ -120,7 +120,7 @@ class CustomDrawioDiagram(drawio_diagram):
         <mxGeometry x="{group_x}" y="{group_y}" width="{group_width}" height="{group_height}" as="geometry" />
         </mxCell>
         """
-        group_cell = ET.fromstring(group_cell_xml)
+        group_cell = ElementTree.fromstring(group_cell_xml)
         self.current_root.append(group_cell)
 
         # Update positions of objects within group
@@ -135,7 +135,7 @@ class CustomDrawioDiagram(drawio_diagram):
                     obj_mxcell.set("parent", group_id)
 
     def get_used_levels(self):
-        return set([node.graph_level for node in self.nodes.values()])
+        return {node.graph_level for node in self.nodes.values()}
 
     def get_max_level(self):
         return max([node.graph_level for node in self.nodes.values()])
@@ -167,7 +167,7 @@ class CustomDrawioDiagram(drawio_diagram):
         nodes_with_same_x = {}
         nodes_with_same_y = {}
 
-        for node_id, node in self.nodes.items():
+        for _node_id, node in self.nodes.items():
             x, y = node.pos_x, node.pos_y
             nodes_with_same_x.setdefault(x, []).append(node)
             nodes_with_same_y.setdefault(y, []).append(node)
@@ -180,44 +180,40 @@ class CustomDrawioDiagram(drawio_diagram):
         nodes_between_interconnected_y = []
 
         # Check vertical alignment
-        for coord, nodes in nodes_with_same_x.items():
+        for _coord, nodes in nodes_with_same_x.items():
             for i in range(len(nodes)):
                 for j in range(i + 1, len(nodes)):
                     node1 = nodes[i]
                     node2 = nodes[j]
                     if node1.is_connected_to(node2):
                         for node_between in nodes:
-                            if node_between not in (node1, node2):
-                                if (node1.pos_y < node_between.pos_y < node2.pos_y) or (
-                                    node2.pos_y < node_between.pos_y < node1.pos_y
-                                ):
-                                    if (
-                                        node_between
-                                        not in nodes_between_interconnected_x
-                                    ):
-                                        nodes_between_interconnected_x.append(
-                                            node_between
-                                        )
+                            if (
+                                node_between not in (node1, node2)
+                                and (
+                                    node1.pos_y < node_between.pos_y < node2.pos_y
+                                    or node2.pos_y < node_between.pos_y < node1.pos_y
+                                )
+                                and node_between not in nodes_between_interconnected_x
+                            ):
+                                nodes_between_interconnected_x.append(node_between)
 
         # Check horizontal alignment
-        for coord, nodes in nodes_with_same_y.items():
+        for _coord, nodes in nodes_with_same_y.items():
             for i in range(len(nodes)):
                 for j in range(i + 1, len(nodes)):
                     node1 = nodes[i]
                     node2 = nodes[j]
                     if node1.is_connected_to(node2):
                         for node_between in nodes:
-                            if node_between not in (node1, node2):
-                                if (node1.pos_x < node_between.pos_x < node2.pos_x) or (
-                                    node2.pos_x < node_between.pos_x < node1.pos_x
-                                ):
-                                    if (
-                                        node_between
-                                        not in nodes_between_interconnected_y
-                                    ):
-                                        nodes_between_interconnected_y.append(
-                                            node_between
-                                        )
+                            if (
+                                node_between not in (node1, node2)
+                                and (
+                                    node1.pos_x < node_between.pos_x < node2.pos_x
+                                    or node2.pos_x < node_between.pos_x < node1.pos_x
+                                )
+                                and node_between not in nodes_between_interconnected_y
+                            ):
+                                nodes_between_interconnected_y.append(node_between)
 
         return nodes_between_interconnected_x, nodes_between_interconnected_y
 

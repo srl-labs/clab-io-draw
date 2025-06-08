@@ -1,6 +1,7 @@
 import logging
 import sys
-import xml.etree.ElementTree as ET
+
+from defusedxml import ElementTree
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class DrawioParser:
         """
         logger.debug(f"Parsing drawio XML from file: {self.input_file}")
         try:
-            tree = ET.parse(self.input_file)
+            tree = ElementTree.parse(self.input_file)
             root = tree.getroot()
         except FileNotFoundError:
             logger.error(f"Input file '{self.input_file}' does not exist.")
@@ -154,6 +155,7 @@ class DrawioParser:
                 "geometry": {"x": x, "y": y},
                 "labels": [],
             }
+        return None
 
     def extract_link_labels(self, mxGraphModel, links_info):
         """

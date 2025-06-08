@@ -33,8 +33,7 @@ class YAMLProcessor:
 
     def load_yaml(self, yaml_str):
         try:
-            data = yaml.safe_load(yaml_str)
-            return data
+            return yaml.safe_load(yaml_str)
         except yaml.YAMLError as e:
             logger.error(f"Error loading YAML: {str(e)}")
             sys.exit(1)

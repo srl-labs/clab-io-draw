@@ -47,7 +47,9 @@ class ThemeManager:
             base_dir = "."
 
         # Gather all .yaml / .yml files
-        yaml_files = glob.glob(os.path.join(base_dir, "*.yaml")) + glob.glob(os.path.join(base_dir, "*.yml"))
+        yaml_files = glob.glob(os.path.join(base_dir, "*.yaml")) + glob.glob(
+            os.path.join(base_dir, "*.yml")
+        )
 
         # Extract base filenames without extensions
         available_themes = []
@@ -58,7 +60,6 @@ class ThemeManager:
             available_themes.append(theme_name)
 
         return available_themes
-
 
     def load_theme(self) -> dict:
         """
@@ -78,16 +79,16 @@ class ThemeManager:
         try:
             with open(self.config_path) as file:
                 config = yaml.safe_load(file)
-        except FileNotFoundError:
+        except FileNotFoundError as err:
             error_message = (
                 f"Error: The specified config file '{self.config_path}' does not exist."
             )
             logger.error(error_message)
-            raise SystemExit(error_message)
-        except Exception as e:
-            error_message = f"An error occurred while loading the config: {e}"
+            raise SystemExit(error_message) from err
+        except Exception as err:
+            error_message = f"An error occurred while loading the config: {err}"
             logger.error(error_message)
-            raise SystemExit(error_message)
+            raise SystemExit(error_message) from err
 
         # 1. Read base_style and validate
         base_style = config.get("base_style", "")
