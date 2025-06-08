@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
-import sys, os
+import sys
+import os
 from typing import Any, Dict, List
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, ScrollableContainer

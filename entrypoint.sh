@@ -22,11 +22,11 @@ Examples:
   Convert .drawio to .yaml: docker run -v "\$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i input.drawio -o output.yaml
   Convert .yaml to .drawio: docker run -v "\$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i input.yaml -o output.drawio
 
-clab2drawio.py help:
-$(python -u "/app/clab2drawio.py" -h)
+clab2drawio help:
+$(clab2drawio -h)
 
-drawio2clab.py help:
-$(python -u "/app/drawio2clab.py" -h)
+drawio2clab help:
+$(drawio2clab -h)
 EOF
 }
 
@@ -52,10 +52,10 @@ done
 if [ ! -z "$input_file" ]; then
   case $(get_extension "$input_file") in
     yml|yaml)
-      script_name="clab2drawio.py"
+      script_name="clab2drawio"
       ;;
     drawio)
-      script_name="drawio2clab.py"
+      script_name="drawio2clab"
       ;;
     *)
       echo "Unsupported file type: $input_file"
@@ -68,4 +68,4 @@ else
 fi
 
 # Execute the determined script with all passed arguments
-python "/app/${script_name}" "$@"
+${script_name} "$@"
