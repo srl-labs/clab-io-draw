@@ -85,6 +85,10 @@ def main(
     diagram.layout = layout
     diagram.styles = styles
 
+    # Enable Grafana output automatically when using the grafana theme
+    if not grafana and os.path.splitext(os.path.basename(theme))[0].lower() == "grafana":
+        grafana = True
+
     # Determine the prefix
     prefix = containerlab_data.get("prefix", "clab")
     lab_name = containerlab_data.get("name", "")
@@ -262,6 +266,9 @@ def main(
         with open(grafana_output_file, "w") as f:
             f.write(grafana_json)
         print("Saved Grafana dashboard JSON to:", grafana_output_file)
+
+        # Prepare SVG export after dumping the diagram
+        svg_file = os.path.splitext(grafana_output_file)[0] + ".svg"
     else:
         if not no_links:
             logger.debug("Adding links to diagram...")
@@ -278,6 +285,15 @@ def main(
     diagram.dump_file(filename=output_filename, folder=output_folder)
 
     print("Saved file to:", output_file)
+
+    if grafana:
+        try:
+            from clab_io_draw.core.svg.drawio_cli import export_svg_with_metadata
+
+            export_svg_with_metadata(output_file, svg_file)
+            print("Saved Grafana SVG to:", svg_file)
+        except Exception as e:
+            logger.error(f"Failed to export SVG: {e}")
 
 
 def main_cli() -> None:
