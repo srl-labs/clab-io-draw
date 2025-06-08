@@ -38,10 +38,37 @@ where = ["src"]
 [tool.ruff]
 line-length = 88
 target-version = "py311"
+indent-width = 4
 
-[tool.ruff.lint]
-select = ["E", "F", "I"]
-ignore = ["E501"]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "UP",
+    "B",
+    "C4",
+    "N",
+    "S",
+    "ARG",
+    "SIM",
+    "TID",
+    "ISC",
+    "RET",
+    "ANN",
+    "Q",
+]
+ignore = ["E501", "ANN101", "ANN102"]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+line-ending = "auto"
+skip-magic-trailing-comma = false
+docstring-code-line-length = "dynamic"
 
 [dependency-groups]
 dev = [
