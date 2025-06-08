@@ -1,8 +1,10 @@
-import yaml
 import logging
+
+import yaml
+
 from clab_io_draw.core.utils.env_expander import (
     expand_env_vars,
-)  # if you put the function above in env_expander.py
+)
 
 logger = logging.getLogger(__name__)
 

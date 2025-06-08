@@ -1,6 +1,7 @@
-from N2G import drawio_diagram
-import xml.etree.ElementTree as ET
 import logging
+import xml.etree.ElementTree as ET
+
+from N2G import drawio_diagram
 
 logger = logging.getLogger(__name__)
 

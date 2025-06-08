@@ -1,6 +1,6 @@
-import xml.etree.ElementTree as ET
-import sys
 import logging
+import sys
+import xml.etree.ElementTree as ET
 
 logger = logging.getLogger(__name__)
 

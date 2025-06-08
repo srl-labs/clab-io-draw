@@ -1,6 +1,7 @@
 import logging
-import networkx as nx
 from collections import deque
+
+import networkx as nx
 
 logger = logging.getLogger(__name__)
 

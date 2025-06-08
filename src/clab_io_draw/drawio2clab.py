@@ -1,10 +1,11 @@
-import os
 import logging
+import os
+
 from clab_io_draw.cli.parser_drawio2clab import parse_arguments
-from clab_io_draw.core.utils.yaml_processor import YAMLProcessor
-from clab_io_draw.core.drawio.drawio_parser import DrawioParser
 from clab_io_draw.core.drawio.converter import Drawio2ClabConverter
+from clab_io_draw.core.drawio.drawio_parser import DrawioParser
 from clab_io_draw.core.logging_config import configure_logging
+from clab_io_draw.core.utils.yaml_processor import YAMLProcessor
 
 logger = logging.getLogger(__name__)
 

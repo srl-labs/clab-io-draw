@@ -1,6 +1,7 @@
 import logging
-from clab_io_draw.core.models.node import Node
+
 from clab_io_draw.core.models.link import Link
+from clab_io_draw.core.models.node import Node
 
 logger = logging.getLogger(__name__)
 

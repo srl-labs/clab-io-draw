@@ -1,15 +1,17 @@
 from __future__ import annotations
+
 import logging
-import sys
 import os
+import sys
 from typing import Any, Dict, List
+
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical, ScrollableContainer
-from textual.screen import Screen
-from textual.widgets import Static, Button, ListView, ListItem, Select
-from textual.reactive import reactive
-from textual.message import Message
 from textual.binding import Binding
+from textual.containers import Horizontal, ScrollableContainer, Vertical
+from textual.message import Message
+from textual.reactive import reactive
+from textual.screen import Screen
+from textual.widgets import Button, ListItem, ListView, Select, Static
 
 logger = logging.getLogger(__name__)
 

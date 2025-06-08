@@ -1,0 +1,7 @@
+repos:
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.1.7
+  hooks:
+  - id: ruff
+    args: ["--select", "E,F,I", "--ignore", "E501"]
+
