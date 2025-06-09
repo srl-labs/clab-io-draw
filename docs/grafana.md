@@ -22,7 +22,7 @@ The `-g, --gf_dashboard` command line option is designed to automate the generat
 ### Usage
 To generate a dashboard, execute the following command:
 ```bash
-uv run python clab2drawio.py -i <path_to_your_yaml_file> -g --theme grafana
+clab2drawio -i <path_to_your_yaml_file> -g --theme grafana
 ```
 > [!TIP]
 > Use a Grafana-compatible theme like `grafana` for a more cohesive look.
@@ -52,7 +52,7 @@ The `--grafana-config` option lets you customize Grafana Flow Panel settings. If
 
 To use a custom configuration:
 ```bash
-uv run python clab2drawio.py -i <path_to_yaml> -g --theme grafana --grafana-config <path_to_config>
+clab2drawio -i <path_to_yaml> -g --theme grafana --grafana-config <path_to_config>
 ```
 
 > [!TIP]  
