@@ -1,42 +1,39 @@
-FROM python:3.11-slim
+# Use the smallest possible Python base
+FROM python:3.11-slim-bookworm AS builder
 
-# Install build tools and required libraries
+# Install minimal build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    python3-dev \
     curl \
-  && rm -rf /var/lib/apt/lists/*
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install uv
+# Install uv for faster dependency resolution
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:${PATH}"
 
-# Set terminal environment variables
+WORKDIR /app
+COPY pyproject.toml ./
+COPY src/ ./src/
+
+# Install dependencies
+RUN uv venv /opt/venv && \
+    uv pip install --python /opt/venv/bin/python -e .
+
+FROM python:3.11-slim-bookworm
+
+COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /app/src /app/src
+COPY entrypoint.sh /app/
+
+ENV PATH="/opt/venv/bin:${PATH}"
+ENV APP_BASE_DIR=/app/src/clab_io_draw
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
+ENV IN_DOCKER=true
+ENV HOME=/root
 
-# Set up working directory
-WORKDIR /app
-
-COPY pyproject.toml ./
-COPY drawio2clab.py ./
-COPY clab2drawio.py ./
-COPY entrypoint.sh ./
-COPY styles/ ./styles/
-COPY core/ ./core/
-COPY cli/ ./cli/
-
-# Install dependencies using uv
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system -r pyproject.toml
-
-# Make the entrypoint script executable
 RUN chmod +x /app/entrypoint.sh
 
-# Set the working directory for running the application
 WORKDIR /data
-ENV APP_BASE_DIR=/app
-
-# Use the entrypoint script to handle script execution
 ENTRYPOINT ["/app/entrypoint.sh"]

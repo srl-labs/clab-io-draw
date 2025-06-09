@@ -31,7 +31,7 @@ for real-time network monitoring.
 To generate a network topology diagram from a containerlab YAML file, run the following command:
 
 ```bash
-uv run python clab2drawio.py -i <path_to_your_yaml_file> 
+clab2drawio -i <path_to_your_yaml_file>
 ```
 or
 ```bash
@@ -50,8 +50,8 @@ containerlab graph --drawio -t <path_to_your_yaml_file>
 A user-friendly way to organize your topology is using the interactive TUI mode:
 
 ```bash
-python clab2drawio.py -i <path_to_your_yaml_file> -I
-``` 
+clab2drawio -i <path_to_your_yaml_file> -I
+```
 
 <p align="center">
 
@@ -121,25 +121,25 @@ The easiest way to create perfect layouts is using the VS Code Containerlab exte
 
 - `-i, --input`: Specifies the filename of the input file. This file should be a containerlab YAML for diagram generation. This argument is required.
 
-    ```bash
-    uv run python clab2drawio.py -i <path_to_your_yaml_file>
-    ```
+     ```bash
+     clab2drawio -i <path_to_your_yaml_file>
+     ```
 
 - `-o, --output`: Specifies the output file path for the generated diagram in draw.io format. 
 
-    ```bash
-    uv run python clab2drawio.py -i <path_to_your_yaml_file> -o <path_to_output_file>
-    ```
+     ```bash
+     clab2drawio -i <path_to_your_yaml_file> -o <path_to_output_file>
+     ```
 - `-g, --gf_dashboard`: Generates a Grafana dashboard in Grafana style. 
 
-    ```bash
-    uv run python clab2drawio.py -i <path_to_your_yaml_file> -g --theme grafana
-    ```
+     ```bash
+     clab2drawio -i <path_to_your_yaml_file> -g --theme grafana
+     ```
 - `--grafana-config`: Path to a Grafana YAML config file. If omitted, defaults are used. 
 
-    ```bash
-    uv run python clab2drawio.py -i <path_to_your_yaml_file> -g --theme grafana --grafana-config <path_to_your_cfg_file>
-    ```
+     ```bash
+     clab2drawio -i <path_to_your_yaml_file> -g --theme grafana --grafana-config <path_to_your_cfg_file>
+     ```
 
     For more detailed information about this feature, including compatibility, usage guidelines, and future enhancements, please see the [Grafana Dashboard Documentation](./grafana.md).
 
@@ -151,19 +151,19 @@ The easiest way to create perfect layouts is using the VS Code Containerlab exte
 
 - `--theme`: Specifies the theme for the diagram (`nokia`,  `nokia_modern`, or ... ) or the path to a custom style config file. By default, the `nokia` theme is used. Users can also create their own style file and place it in any directory, specifying its path with this option. Feel free to contribute your own styles.
 
-    ```bash
-    uv run python clab2drawio.py --theme nokia_dark -i <path_to_your_yaml_file>
-    ```
+     ```bash
+     clab2drawio --theme nokia_dark -i <path_to_your_yaml_file>
+     ```
     
     Or using a custom style file:
 
-    ```bash
-    uv run python clab2drawio.py --theme <path_to_custom_style_file> -i <path_to_your_yaml_file>
-    ```
+     ```bash
+     clab2drawio --theme <path_to_custom_style_file> -i <path_to_your_yaml_file>
+     ```
 
 - `-I`, `--interactive`: Define graph-levels and graph-icons in interactive mode
 
-- `--verbose`: Enable verbose output for debugging purposes.
+- `-l`, `--log-level`: Set logging level (`critical`, `error`, `warning`, `info`, `debug`). Default is `info`.
 
 
 ---
@@ -173,7 +173,7 @@ The easiest way to create perfect layouts is using the VS Code Containerlab exte
 You can apply different style themes such as `nokia`, `nokia_modern` or `grafana`:
 
 ```bash
-uv run python clab2drawio.py --theme nokia_modern -i <path_to_yaml>
+clab2drawio --theme nokia_modern -i <path_to_yaml>
 ```
 
 > [!TIP]

@@ -15,6 +15,8 @@ attrs==24.3.0
     # via aiohttp
 click==8.1.8
     # via textual-dev
+defusedxml==0.7.1
+    # via clab-io-draw (pyproject.toml)
 frozenlist==1.5.0
     # via
     #   aiohttp
@@ -45,6 +47,8 @@ multidict==6.1.0
     #   aiohttp
     #   yarl
 n2g==0.3.3
+    # via clab-io-draw (pyproject.toml)
+networkx==3.5
     # via clab-io-draw (pyproject.toml)
 platformdirs==4.3.6
     # via textual

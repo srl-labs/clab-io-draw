@@ -41,9 +41,33 @@ containerlab graph --drawio -t topo.clab.drawio
 > This example applies the "nokia_modern" theme to your generated diagram. 
 
 
+## Running locally
+
+### Installation
+
+> [!TIP]
+> **Why uv?**
+> [uv](https://docs.astral.sh/uv) is a single, ultra-fast tool that can replace `pip`, `pipx`, `virtualenv`, `pip-tools`, `poetry`, and more. It automatically manages Python versions, handles ephemeral or persistent virtual environments (`uv venv`), lockfiles, and often runs **10–100× faster** than pip installs.
+
+1. **Install uv** (no Python or Rust needed):
+    ```
+    # On macOS and Linux
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+2. **Install clab-io-draw**
+    ```bash
+    uv tool install git+https://github.com/srl-labs/clab-io-draw
+    ```
+
+To update later on:
+```bash
+uv tool upgrade clab-io-draw
+```
+
 ### Running with Docker
 
-You can also use a Docker container for a quick start without installing Python and other dependencies locally.
+You can also use a Docker container for a quick start without installing Python and other dependencies locally. The image already includes the draw.io AppImage, so no additional downloads are needed at runtime.
 
 
 #### Pulling from Container registry
@@ -67,50 +91,10 @@ docker run -it -v "$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i lab-examples/b
 docker run -v "$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i output.drawio
 ```
 
-Replace `your_input_file.drawio` or `your_output_file.yaml` with the 
+Replace `your_input_file.drawio` or `your_output_file.yaml` with the
 actual file names in your environment.
 
-## Running locally
 
-> [!IMPORTANT]  
-> Python 3.11+ is required if you prefer running these tools locally.
-
-### Installation
-
-> [!TIP]
-> **Why uv?**
-> [uv](https://docs.astral.sh/uv) is a single, ultra-fast tool that can replace `pip`, `pipx`, `virtualenv`, `pip-tools`, `poetry`, and more. It automatically manages Python versions, handles ephemeral or persistent virtual environments (`uv venv`), lockfiles, and often runs **10–100× faster** than pip installs.
-
-1. **Install uv** (no Python or Rust needed):
-    ```
-    # On macOS and Linux
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    ```
-
-2. **Run the tool** (uv automatically installs dependencies in a venv from `pyproject.toml`):
-    ```
-    uv run python clab2drawio.py --help
-    ```
-
-## Alternative: Using pip
-
-If you’d rather use pip or can’t install uv:
-
-1. **(Optional) Create & Activate a Virtual Environment**:
-    ```
-    python -m venv venv
-    source venv/bin/activate
-    ```
-
-2. **Installing Dependencies**
-
-    After activating the virtual environment, install the required packages from the requirements.txt file:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-> [!NOTE]
-> If you installed dependencies using pip instead of uv, simply run the commands using `python` directly instead of `uv run python`
 
 
 # Usage
@@ -122,7 +106,7 @@ Detailed Usages: [drawio2clab.md](docs/drawio2clab.md#usage) and [clab2drawio.md
 ## drawio2clab
 
 ```bash
-uv run python drawio2clab.py -i <input_file.drawio>
+drawio2clab -i <input_file.drawio>
 ```
 
 - `-i, --input`: path to your `.drawio` file.
@@ -136,7 +120,7 @@ uv run python drawio2clab.py -i <input_file.drawio>
 ## clab2drawio
 
 ```bash
-uv run python clab2drawio.py -i <input_file.yaml>
+clab2drawio -i <input_file.yaml>
 ```
 
 - `-i, --input`: path to your Containerlab YAML file.
