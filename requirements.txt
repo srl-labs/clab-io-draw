@@ -11,7 +11,7 @@ aiohttp-jinja2==1.6
     # via textual-serve
 aiosignal==1.3.2
     # via aiohttp
-attrs==24.3.0
+attrs==25.3.0
     # via aiohttp
 click==8.1.8
     # via textual-dev
