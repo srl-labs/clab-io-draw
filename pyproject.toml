@@ -16,6 +16,7 @@ dependencies = [
     "networkx>=3.4.2",
     "defusedxml>=0.7.1",
     "typer>=0.16.0",
+    "pytest>=8.4.0",
 ]
 
 [project.scripts]
