@@ -23,7 +23,7 @@ frozenlist==1.5.0
     #   aiosignal
 idna==3.10
     # via yarl
-jinja2==3.1.5
+jinja2==3.1.6
     # via
     #   aiohttp-jinja2
     #   textual-serve
