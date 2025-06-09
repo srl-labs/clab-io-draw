@@ -52,7 +52,7 @@ networkx==3.5
     # via clab-io-draw (pyproject.toml)
 platformdirs==4.3.6
     # via textual
-prompt-toolkit==3.0.43
+prompt-toolkit==3.0.51
     # via clab-io-draw (pyproject.toml)
 propcache==0.2.1
     # via

@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "n2g==0.3.3",
-    "prompt-toolkit==3.0.43",
+    "prompt-toolkit==3.0.51",
     "PyYAML==6.0.2",
     "six==1.16.0",
     "wcwidth==0.2.13",
