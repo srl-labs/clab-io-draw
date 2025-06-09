@@ -28,6 +28,17 @@ class Layout(str, Enum):
     HORIZONTAL = "horizontal"
 
 
+class LogLevel(str, Enum):
+    CRITICAL = "critical"
+    ERROR = "error"
+    WARNING = "warning"
+    INFO = "info"
+    DEBUG = "debug"
+
+    def to_int(self) -> int:
+        return getattr(logging, self.name)
+
+
 app = typer.Typer(help="Generate a topology diagram from a containerlab YAML file")
 
 
@@ -39,7 +50,7 @@ def main(
     include_unlinked_nodes: bool = False,
     no_links: bool = False,
     layout: str = "vertical",
-    verbose: bool = False,
+    log_level: LogLevel = LogLevel.INFO,
     interactive: bool = False,
     grafana_config_path: str = None,
 ) -> None:
@@ -53,7 +64,7 @@ def main(
     :param include_unlinked_nodes: Include nodes without any links in the topology diagram.
     :param no_links: Do not draw links between nodes.
     :param layout: Layout direction ("vertical" or "horizontal").
-    :param verbose: Enable verbose output.
+    :param log_level: Logging level for output.
     :param interactive: Run in interactive mode to define graph-levels and icons.
     """
     logger.debug("Starting clab2drawio main function.")
@@ -215,7 +226,7 @@ def main(
             layout_manager = HorizontalLayout()
 
         logger.debug(f"Applying {layout} layout...")
-        layout_manager.apply(diagram, verbose=verbose)
+        layout_manager.apply(diagram, verbose=log_level == LogLevel.DEBUG)
 
     # Calculate the diagram size based on the positions of the nodes
     min_x = min(node.pos_x for node in nodes.values())
@@ -275,12 +286,12 @@ def main(
         )
         with open(flow_panel_output_file, "w") as f:
             f.write(panel_config)
-        print("Saved flow panel YAML to:", flow_panel_output_file)
+        logger.info("Saved flow panel YAML to: %s", flow_panel_output_file)
 
         grafana_json = grafana_dashboard.create_dashboard(panel_config)
         with open(grafana_output_file, "w") as f:
             f.write(grafana_json)
-        print("Saved Grafana dashboard JSON to:", grafana_output_file)
+        logger.info("Saved Grafana dashboard JSON to: %s", grafana_output_file)
 
         # Prepare SVG export after dumping the diagram
         svg_file = os.path.splitext(grafana_output_file)[0] + ".svg"
@@ -299,14 +310,14 @@ def main(
     logger.debug(f"Dumping diagram to file: {output_file}")
     diagram.dump_file(filename=output_filename, folder=output_folder)
 
-    print("Saved file to:", output_file)
+    logger.info("Saved file to: %s", output_file)
 
     if grafana:
         try:
             from clab_io_draw.core.svg.drawio_cli import export_svg_with_metadata
 
             export_svg_with_metadata(output_file, svg_file)
-            print("Saved Grafana SVG to:", svg_file)
+            logger.info("Saved Grafana SVG to: %s", svg_file)
         except Exception as e:
             logger.error(f"Failed to export SVG: {e}")
 
@@ -331,15 +342,16 @@ def cli(  # noqa: B008
     no_links: bool = typer.Option(False, "--no-links", help="Do not draw links"),  # noqa: B008
     layout: Layout = typer.Option(Layout.VERTICAL, "--layout", help="Diagram layout"),  # noqa: B008
     theme: str = typer.Option("nokia", "--theme", help="Diagram theme or style file"),  # noqa: B008
-    verbose: bool = typer.Option(False, "--verbose", help="Enable verbose output"),  # noqa: B008
+    log_level: LogLevel = typer.Option(
+        LogLevel.INFO, "--log-level", "-l", help="Set logging level"
+    ),
     interactive: bool = typer.Option(
         False, "-I", "--interactive", help="Interactive mode"
     ),  # noqa: B008
 ) -> None:
     """Generate a topology diagram from a containerlab YAML or draw.io file."""
 
-    log_level = logging.DEBUG if verbose else logging.INFO
-    configure_logging(level=log_level)
+    configure_logging(level=log_level.to_int())
 
     main(
         input_file=str(input),
@@ -349,7 +361,7 @@ def cli(  # noqa: B008
         include_unlinked_nodes=include_unlinked_nodes,
         no_links=no_links,
         layout=layout.value,
-        verbose=verbose,
+        log_level=log_level,
         interactive=interactive,
         grafana_config_path=str(grafana_config) if grafana_config else None,
     )

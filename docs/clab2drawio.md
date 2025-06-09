@@ -163,7 +163,7 @@ The easiest way to create perfect layouts is using the VS Code Containerlab exte
 
 - `-I`, `--interactive`: Define graph-levels and graph-icons in interactive mode
 
-- `--verbose`: Enable verbose output for debugging purposes.
+- `-l`, `--log-level`: Set logging level (`critical`, `error`, `warning`, `info`, `debug`). Default is `info`.
 
 
 ---
