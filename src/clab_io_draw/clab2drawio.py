@@ -293,8 +293,6 @@ def main(
             f.write(grafana_json)
         logger.info("Saved Grafana dashboard JSON to: %s", grafana_output_file)
 
-        # Prepare SVG export after dumping the diagram
-        svg_file = os.path.splitext(grafana_output_file)[0] + ".svg"
     else:
         if not no_links:
             logger.debug("Adding links to diagram...")
@@ -313,13 +311,10 @@ def main(
     logger.info("Saved file to: %s", output_file)
 
     if grafana:
-        try:
-            from clab_io_draw.core.svg.drawio_cli import export_svg_with_metadata
-
-            export_svg_with_metadata(output_file, svg_file)
-            logger.info("Saved Grafana SVG to: %s", svg_file)
-        except Exception as e:
-            logger.error(f"Failed to export SVG: {e}")
+        logger.info(
+            "Grafana SVG export skipped. Export %s manually using draw.io.",
+            output_file,
+        )
 
 
 @app.command(name="clab2drawio")

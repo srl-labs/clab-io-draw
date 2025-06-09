@@ -67,7 +67,7 @@ docker run -it -v "$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i lab-examples/b
 docker run -v "$(pwd)":/data ghcr.io/srl-labs/clab-io-draw -i output.drawio
 ```
 
-Replace `your_input_file.drawio` or `your_output_file.yaml` with the 
+Replace `your_input_file.drawio` or `your_output_file.yaml` with the
 actual file names in your environment.
 
 ## Running locally

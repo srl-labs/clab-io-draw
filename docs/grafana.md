@@ -61,10 +61,9 @@ uv run python clab2drawio.py -i <path_to_yaml> -g --theme grafana --grafana-conf
 #### To export the diagram as an SVG:
 To get a full guide: [https://github.com/andymchugh/andrewbmchugh-flow-panel/blob/main/src/README.md#using-drawio-to-create-your-svg](https://github.com/andymchugh/andrewbmchugh-flow-panel/blob/main/src/README.md#using-drawio-to-create-your-svg)
 
-~~1. Open the generated draw.io diagram using the draw.io application or use the online version at [https://app.diagrams.net/?p=svgdata](https://app.diagrams.net/?p=svgdata).~~
 > [!IMPORTANT]
 > The svgdata plugin needs to be enabled
-> 
+>
 > ⚠️ Due to breaking changes in draw.io 26.0.x ([Issue #127](https://github.com/andymchugh/andrewbmchugh-flow-panel/issues/127)), please use draw.io desktop app version 25.x or lower
 
 > [!NOTE]
