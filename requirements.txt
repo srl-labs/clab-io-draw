@@ -72,7 +72,7 @@ ruamel-yaml-clib==0.2.12
     # via ruamel-yaml
 six==1.16.0
     # via clab-io-draw (pyproject.toml)
-textual==1.0.0
+textual==3.3.0
     # via
     #   clab-io-draw (pyproject.toml)
     #   textual-dev
