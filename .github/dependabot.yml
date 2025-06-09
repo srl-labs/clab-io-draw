@@ -3,8 +3,13 @@
 
 version: 2
 updates:
-  - package-ecosystem: "uv"  # For Python packages
-    directory: "/"            # Location of package manifests
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "pip"
+    directory: "/"
     schedule:
       interval: "weekly"
 
