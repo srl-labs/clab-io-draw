@@ -79,7 +79,7 @@ textual==1.0.0
     #   textual-serve
 textual-dev==1.7.0
     # via clab-io-draw (pyproject.toml)
-textual-serve==1.1.1
+textual-serve==1.1.2
     # via textual-dev
 typing-extensions==4.12.2
     # via
