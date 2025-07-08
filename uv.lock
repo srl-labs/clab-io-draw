@@ -151,7 +151,7 @@ requires-dist = [
     { name = "pyyaml", specifier = "==6.0.2" },
     { name = "ruamel-yaml", specifier = "==0.18.6" },
     { name = "six", specifier = "==1.17.0" },
-    { name = "textual", specifier = "==3.3.0" },
+    { name = "textual", specifier = "==3.7.0" },
     { name = "textual-dev", specifier = "==1.7.0" },
     { name = "typer", specifier = ">=0.16.0" },
     { name = "wcwidth", specifier = "==0.2.13" },
@@ -804,7 +804,7 @@ wheels = [
 
 [[package]]
 name = "textual"
-version = "3.3.0"
+version = "3.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markdown-it-py", extra = ["linkify", "plugins"] },
@@ -812,9 +812,9 @@ dependencies = [
     { name = "rich" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6d/96/02751746cf6950e9e8968186cb42eed1e52d91e2c80cc52bb19589e25900/textual-3.3.0.tar.gz", hash = "sha256:aa162b92dde93c5231e3689cdf26b141e86a77ac0a5ba96069bc9547e44119ae", size = 1618996, upload-time = "2025-06-01T14:01:40.336Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/71/78d56783bbf7f77b635d3e3debd4deca52449ea1bfd2f4f0c1204f3d59d4/textual-3.7.0.tar.gz", hash = "sha256:d5cb710b4691a2d9b9075ff2dc9ebecf2d8369c893af3354dad344960c91d7c9", size = 1603085, upload-time = "2025-07-07T20:55:17.167Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/c2/c8be0b51bfce3278e057e1563a477bf128097bf5ce82ab21b0bbbcb30986/textual-3.3.0-py3-none-any.whl", hash = "sha256:463809791fd2c979c91ff0b54e25f2e57874828815e51a6503f32cb2e21e4eb0", size = 687997, upload-time = "2025-06-01T14:01:37.654Z" },
+    { url = "https://files.pythonhosted.org/packages/21/aa/d76e57eea60baabda1bc64e8fabdc1bf540dded3d5034c9f07462505e61d/textual-3.7.0-py3-none-any.whl", hash = "sha256:761352ada0427ef7e5405c0b01d9df6fafd773cba09338955249a8b45988c3fc", size = 691342, upload-time = "2025-07-07T20:55:15.421Z" },
 ]
 
 [[package]]
