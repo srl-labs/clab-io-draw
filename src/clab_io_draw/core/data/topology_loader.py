@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 
 import yaml
 
@@ -21,9 +23,10 @@ class TopologyLoader:
     def load(self, input_file: str) -> dict:
         """
         Load the containerlab YAML topology file, including environment-variable expansion.
+        Also loads annotations from .annotations.json file if it exists.
 
         :param input_file: Path to the containerlab YAML file.
-        :return: Parsed containerlab topology data with env variables expanded.
+        :return: Parsed containerlab topology data with env variables expanded and annotations.
         :raises TopologyLoaderError: If file not found or parse error occurs.
         """
         logger.debug(f"Loading topology from file: {input_file}")
@@ -35,6 +38,19 @@ class TopologyLoader:
             expanded_content = expand_env_vars(raw_content)
 
             containerlab_data = yaml.safe_load(expanded_content)
+
+            # Load annotations if .annotations.json file exists
+            annotations_file = f"{input_file}.annotations.json"
+            if os.path.exists(annotations_file):
+                logger.debug(f"Loading annotations from: {annotations_file}")
+                with open(annotations_file) as f:
+                    annotations = json.load(f)
+                containerlab_data["annotations"] = annotations
+                logger.debug("Annotations successfully loaded.")
+            else:
+                logger.debug(f"No annotations file found at: {annotations_file}")
+                containerlab_data["annotations"] = None
+
             logger.debug("Topology successfully loaded.")
             return containerlab_data
 

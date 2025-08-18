@@ -24,6 +24,7 @@ class NodeLinkBuilder:
         self.styles = styles
         self.prefix = prefix
         self.lab_name = lab_name
+        self.annotations = containerlab_data.get("annotations")
 
     def format_node_name(self, base_name: str) -> str:
         """
@@ -62,28 +63,50 @@ class NodeLinkBuilder:
         node_height = self.styles.get("node_height", 75)
         base_style = self.styles.get("base_style", "")
 
+        # Create mapping of node annotations by id if annotations exist
+        node_annotations_map = {}
+        if self.annotations and "nodeAnnotations" in self.annotations:
+            for annotation in self.annotations["nodeAnnotations"]:
+                node_annotations_map[annotation["id"]] = annotation
+
         nodes = {}
         for node_name, node_data in nodes_from_clab.items():
             formatted_node_name = self.format_node_name(node_name)
 
-            # Extract position from graph-posX and graph-posY labels if available
+            # Initialize default values
             pos_x = node_data.get("pos_x", "")
             pos_y = node_data.get("pos_y", "")
+            graph_icon = None
+            graph_level = None
 
-            # Check for graph-posX and graph-posY in labels
+            # First check labels (lower priority)
             labels = node_data.get("labels", {})
             if "graph-posX" in labels:
                 pos_x = labels["graph-posX"]
             if "graph-posY" in labels:
                 pos_y = labels["graph-posY"]
+            if "graph-icon" in labels:
+                graph_icon = labels["graph-icon"]
+            if "graph-level" in labels:
+                graph_level = labels["graph-level"]
+
+            # Then check annotations (higher priority - overrides labels)
+            if node_name in node_annotations_map:
+                annotation = node_annotations_map[node_name]
+                if "position" in annotation:
+                    pos_x = str(annotation["position"]["x"])
+                    pos_y = str(annotation["position"]["y"])
+                if "icon" in annotation:
+                    graph_icon = annotation["icon"]
+                # Note: graph-level could be added to annotations if needed
 
             node = Node(
                 name=formatted_node_name,
                 label=node_name,
                 kind=node_data.get("kind", ""),
                 mgmt_ipv4=node_data.get("mgmt_ipv4", ""),
-                graph_level=node_data.get("labels", {}).get("graph-level", None),
-                graph_icon=node_data.get("labels", {}).get("graph-icon", None),
+                graph_level=graph_level,
+                graph_icon=graph_icon,
                 base_style=base_style,
                 custom_style=self.styles.get(node_data.get("kind", ""), ""),
                 pos_x=pos_x,

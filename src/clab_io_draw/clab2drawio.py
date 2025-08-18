@@ -279,7 +279,9 @@ def main(
         os.makedirs(output_folder, exist_ok=True)
 
         grafana_dashboard = GrafanaDashboard(
-            diagram, grafana_config_path=grafana_config_path, grafana_interface_format=grafana_interface_format
+            diagram,
+            grafana_config_path=grafana_config_path,
+            grafana_interface_format=grafana_interface_format,
         )
         panel_config = grafana_dashboard.create_panel_yaml()
 
@@ -334,7 +336,9 @@ def cli(  # noqa: B008
         None, "--grafana-config", help="Path to Grafana YAML config"
     ),  # noqa: B008
     grafana_interface_format: str | None = typer.Option(
-        None, "--grafana-interface-format", help="Regex pattern for mapping interface names (e.g., 'e1-{x}:ethernet1/{x}')"
+        None,
+        "--grafana-interface-format",
+        help="Regex pattern for mapping interface names (e.g., 'e1-{x}:ethernet1/{x}')",
     ),  # noqa: B008
     include_unlinked_nodes: bool = typer.Option(
         False, "--include-unlinked-nodes", help="Include nodes without links"
