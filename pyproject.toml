@@ -1,6 +1,6 @@
 [project]
 name = "clab-io-draw"
-version = "0.6.0"
+version = "0.6.1"
 description = "Convert between draw.io and containerlab topology files"
 readme = "README.md"
 requires-python = ">=3.11"
