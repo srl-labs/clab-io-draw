@@ -12,13 +12,15 @@ class GrafanaDashboard:
     Manages the creation of a Grafana dashboard and associated panel config from the diagram data.
     """
 
-    def __init__(self, diagram=None, grafana_config_path: str | None = None):
+    def __init__(self, diagram=None, grafana_config_path: str | None = None, grafana_interface_format: str | None = None):
         """
         :param diagram: Diagram object that includes node and link data.
         :param grafana_config_path: Path to the YAML file containing grafana panel config (targets, thresholds, etc.).
+        :param grafana_interface_format: Regex pattern for mapping interface names (e.g., "e1-{x}:ethernet1/{x}").
         """
         self.diagram = diagram
         self.links = diagram.get_links_from_nodes() if diagram else []
+        self.grafana_interface_format = grafana_interface_format
         # The file where the final JSON will be saved
         self.dashboard_filename = (
             diagram.grafana_dashboard_file if diagram else "network_telemetry.json"
@@ -72,6 +74,49 @@ class GrafanaDashboard:
                     config["label_config"] = {}
 
         return config
+
+    def _map_interface_name(self, interface_name: str) -> str:
+        """
+        Map interface names for Grafana export using user-provided regex pattern.
+        Supports patterns like 'e1-{x}:ethernet1/{x}' to convert 'e1-1' to 'ethernet1/1'.
+        
+        :param interface_name: Original interface name
+        :return: Mapped interface name
+        """
+        if not self.grafana_interface_format:
+            return interface_name
+        
+        import re
+        
+        # Parse the pattern format: "before_pattern:after_pattern"
+        if ':' not in self.grafana_interface_format:
+            logger.warning(f"Invalid grafana_interface_format pattern: {self.grafana_interface_format}. Expected format: 'pattern:replacement'")
+            return interface_name
+        
+        pattern_part, replacement_part = self.grafana_interface_format.split(':', 1)
+        
+        # Convert {x} placeholders to regex capture groups
+        # Replace {x} with (\d+) for numeric captures
+        regex_pattern = pattern_part.replace('{x}', r'(\d+)')
+        
+        # Convert replacement pattern from {x} to \1, \2, etc.
+        replacement = replacement_part
+        capture_count = 1
+        while '{x}' in replacement:
+            replacement = replacement.replace('{x}', f'\\{capture_count}', 1)
+            capture_count += 1
+        
+        try:
+            # Try to match and replace
+            match = re.match(f'^{regex_pattern}$', interface_name)
+            if match:
+                return re.sub(f'^{regex_pattern}$', replacement, interface_name)
+        except re.error as e:
+            logger.warning(f"Invalid regex pattern in grafana_interface_format: {e}")
+            return interface_name
+        
+        # If no pattern matches, return original name
+        return interface_name
 
     def create_dashboard(self, panel_config: str) -> str:
         """
@@ -192,9 +237,9 @@ class GrafanaDashboard:
         # Add link data
         for link in self.links:
             source_name = link.source.name
-            source_intf = link.source_intf
+            source_intf = self._map_interface_name(link.source_intf)
             target_name = link.target.name
-            target_intf = link.target_intf
+            target_intf = self._map_interface_name(link.target_intf)
 
             # oper-state cell
             cell_id_operstate = (

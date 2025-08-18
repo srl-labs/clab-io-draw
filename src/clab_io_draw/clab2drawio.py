@@ -53,6 +53,7 @@ def main(
     log_level: LogLevel = LogLevel.INFO,
     interactive: bool = False,
     grafana_config_path: str = None,
+    grafana_interface_format: str | None = None,
 ) -> None:
     """
     Main function to generate a topology diagram from a containerlab YAML or draw.io XML file.
@@ -66,6 +67,7 @@ def main(
     :param layout: Layout direction ("vertical" or "horizontal").
     :param log_level: Logging level for output.
     :param interactive: Run in interactive mode to define graph-levels and icons.
+    :param grafana_interface_format: Regex pattern for mapping interface names (e.g., "e1-{x}:ethernet1/{x}").
     """
     logger.debug("Starting clab2drawio main function.")
     script_dir = os.path.dirname(__file__)
@@ -277,7 +279,7 @@ def main(
         os.makedirs(output_folder, exist_ok=True)
 
         grafana_dashboard = GrafanaDashboard(
-            diagram, grafana_config_path=grafana_config_path
+            diagram, grafana_config_path=grafana_config_path, grafana_interface_format=grafana_interface_format
         )
         panel_config = grafana_dashboard.create_panel_yaml()
 
@@ -331,6 +333,9 @@ def cli(  # noqa: B008
     grafana_config: Path | None = typer.Option(
         None, "--grafana-config", help="Path to Grafana YAML config"
     ),  # noqa: B008
+    grafana_interface_format: str | None = typer.Option(
+        None, "--grafana-interface-format", help="Regex pattern for mapping interface names (e.g., 'e1-{x}:ethernet1/{x}')"
+    ),  # noqa: B008
     include_unlinked_nodes: bool = typer.Option(
         False, "--include-unlinked-nodes", help="Include nodes without links"
     ),  # noqa: B008
@@ -359,6 +364,7 @@ def cli(  # noqa: B008
         log_level=log_level,
         interactive=interactive,
         grafana_config_path=str(grafana_config) if grafana_config else None,
+        grafana_interface_format=grafana_interface_format,
     )
 
 
