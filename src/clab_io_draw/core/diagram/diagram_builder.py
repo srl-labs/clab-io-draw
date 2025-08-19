@@ -11,6 +11,22 @@ class DiagramBuilder:
     Builds diagram elements such as nodes, ports, and links into the Draw.io diagram.
     """
 
+    def get_intf_digit(self, intf_name, styles):
+        interface_selector = styles.get("grafana_interface_selector")
+        if interface_selector:
+            regex_pattern = interface_selector.replace("{x}", r"(\d+)")
+            
+            try:
+                match = re.match(f"^{regex_pattern}$", intf_name)
+                if match:
+                    return match.group(1)
+            except re.error as e:
+                logger.warning(f"Invalid pattern for grafana_interface_selector: {e}")
+
+        # fallback to default        
+        digits = re.findall(r"\d+", intf_name)
+        return digits[-1] if digits else "0"
+
     def add_ports(self, diagram, styles, _verbose=True):
         """
         Add ports and their connections to the diagram.
@@ -207,7 +223,7 @@ class DiagramBuilder:
                 if connection_id not in processed_connections:
                     processed_connections.add(connection_id)
                     source_cID = f"{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
-                    source_label = re.findall(r"\d+", link.source_intf)[-1]
+                    source_label = self.get_intf_digit(link.source_intf, styles)
                     source_connector_pos = link.port_pos
                     port_width = styles["port_width"]
                     port_height = styles["port_height"]
@@ -219,7 +235,7 @@ class DiagramBuilder:
                     target_cID = f"{link.target.name}:{link.target_intf}:{link.source.name}:{link.source_intf}"
                     target_link = diagram.get_target_link(link)
                     target_connector_pos = target_link.port_pos
-                    target_label = re.findall(r"\d+", target_link.source_intf)[-1]
+                    target_label = self.get_intf_digit(target_link.source_intf, styles)
 
                     if link.target.name not in connector_dict:
                         connector_dict[link.target.name] = []
