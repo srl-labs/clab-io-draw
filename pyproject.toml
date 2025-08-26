@@ -10,7 +10,7 @@ dependencies = [
     "PyYAML==6.0.2",
     "six==1.17.0",
     "wcwidth==0.2.13",
-    "ruamel-yaml==0.18.14",
+    "ruamel-yaml==0.18.15",
     "textual-dev==1.7.0",
     "textual==5.3.0",
     "networkx>=3.5.0",
