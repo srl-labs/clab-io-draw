@@ -54,6 +54,7 @@ def main(
     interactive: bool = False,
     grafana_config_path: str = None,
     grafana_interface_format: str | None = None,
+    grafana_interface_selector: str | None = None,
 ) -> None:
     """
     Main function to generate a topology diagram from a containerlab YAML or draw.io XML file.
@@ -68,6 +69,7 @@ def main(
     :param log_level: Logging level for output.
     :param interactive: Run in interactive mode to define graph-levels and icons.
     :param grafana_interface_format: Regex pattern for mapping interface names (e.g., "e1-{x}:ethernet1/{x}").
+    :param grafana_interface_selector: Regex pattern for selecting which part of interface name to display (e.g., "e1-1-c{x}-1" to select 'x').
     """
     logger.debug("Starting clab2drawio main function.")
     script_dir = os.path.dirname(__file__)
@@ -269,6 +271,9 @@ def main(
     if grafana:
         styles["ports"] = True
 
+    if grafana_interface_selector:
+        styles["grafana_interface_selector"] = grafana_interface_selector
+
     if styles["ports"]:
         logger.debug("Adding ports and generating Grafana dashboard...")
         diagram_builder.add_ports(diagram, styles)
@@ -340,6 +345,11 @@ def cli(  # noqa: B008
         "--grafana-interface-format",
         help="Regex pattern for mapping interface names (e.g., 'e1-{x}:ethernet1/{x}')",
     ),  # noqa: B008
+    grafana_interface_selector: str | None = typer.Option(
+        None,
+        "--grafana-interface-selector",
+        help="Regex pattern for selecting which part of interface name to display (e.g., 'e1-1-c{x}-1' to select 'x')",
+    ),  # noqa: B008
     include_unlinked_nodes: bool = typer.Option(
         False, "--include-unlinked-nodes", help="Include nodes without links"
     ),  # noqa: B008
@@ -369,6 +379,7 @@ def cli(  # noqa: B008
         interactive=interactive,
         grafana_config_path=str(grafana_config) if grafana_config else None,
         grafana_interface_format=grafana_interface_format,
+        grafana_interface_selector=grafana_interface_selector,
     )
 
 

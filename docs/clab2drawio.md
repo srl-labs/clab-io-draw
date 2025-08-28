@@ -141,6 +141,22 @@ The easiest way to create perfect layouts is using the VS Code Containerlab exte
      clab2drawio -i <path_to_your_yaml_file> -g --theme grafana --grafana-config <path_to_your_cfg_file>
      ```
 
+- `--grafana-interface-format`: Maps interface names for Grafana export using regex patterns. This allows you to transform interface names to match your monitoring system's naming conventions.
+
+     ```bash
+     clab2drawio -i <path_to_your_yaml_file> -g --grafana-interface-format "e1-{x}:ethernet1/{x}"
+     ```
+
+     This would convert interface names like `e1-1` to `ethernet1/1` in the Grafana dashboard.
+
+- `--grafana-interface-selector`: Selects which part of the interface name to display as the port label using regex patterns with capture groups.
+
+     ```bash
+     clab2drawio -i <path_to_your_yaml_file> -g --grafana-interface-selector "e1-1-c{x}-1"
+     ```
+
+     This would extract and display only the captured digit (e.g., from `e1-1-c3-1` it would display `3` as the port label).
+
     For more detailed information about this feature, including compatibility, usage guidelines, and future enhancements, please see the [Grafana Dashboard Documentation](./grafana.md).
 
 - `--include-unlinked-nodes`: Include nodes without any links in the topology diagram. By default, only nodes with at least one connection are included.
