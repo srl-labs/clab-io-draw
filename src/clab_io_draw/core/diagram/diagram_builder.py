@@ -15,7 +15,7 @@ class DiagramBuilder:
         interface_selector = styles.get("grafana_interface_selector")
         if interface_selector:
             regex_pattern = interface_selector.replace("{x}", r"(\d+)")
-            
+
             try:
                 match = re.match(f"^{regex_pattern}$", intf_name)
                 if match:
@@ -23,7 +23,7 @@ class DiagramBuilder:
             except re.error as e:
                 logger.warning(f"Invalid pattern for grafana_interface_selector: {e}")
 
-        # fallback to default        
+        # fallback to default
         digits = re.findall(r"\d+", intf_name)
         return digits[-1] if digits else "0"
 

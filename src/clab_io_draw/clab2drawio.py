@@ -270,7 +270,7 @@ def main(
 
     if grafana:
         styles["ports"] = True
-    
+
     if grafana_interface_selector:
         styles["grafana_interface_selector"] = grafana_interface_selector
 

@@ -58,6 +58,32 @@ clab2drawio -i <path_to_yaml> -g --theme grafana --grafana-config <path_to_confi
 > [!TIP]  
 > Customize targets, thresholds, or labels in your YAML to align with your network's metrics and visualization needs.
 
+#### Interface Name Mapping
+
+The `--grafana-interface-format` option allows you to transform interface names to match your monitoring system's naming conventions. This is useful when your containerlab topology uses different interface naming than your telemetry system.
+
+Example:
+```bash
+clab2drawio -i topo.yml -g --grafana-interface-format "e1-{x}:ethernet1/{x}"
+```
+
+This would map interface names like:
+- `e1-1` → `ethernet1/1`
+- `e1-48` → `ethernet1/48`
+
+#### Interface Label Selection
+
+The `--grafana-interface-selector` option lets you control which part of complex interface names appears as port labels in the diagram. This is useful for cleaner visualization when interface names contain multiple segments.
+
+Example:
+```bash
+clab2drawio -i topo.yml -g --grafana-interface-selector "e1-1-c{x}-1"
+```
+
+This would extract and display only the captured digit from interface names like:
+- `e1-1-c3-1` → displays `3` as the port label
+- `e1-1-c10-1` → displays `10` as the port label
+
 #### To export the diagram as an SVG:
 To get a full guide: [https://github.com/andymchugh/andrewbmchugh-flow-panel/blob/main/src/README.md#using-drawio-to-create-your-svg](https://github.com/andymchugh/andrewbmchugh-flow-panel/blob/main/src/README.md#using-drawio-to-create-your-svg)
 
