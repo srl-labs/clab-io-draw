@@ -172,33 +172,31 @@ def main(
                     f"User chose theme '{chosen_theme}' but no file found. Keeping old theme."
                 )
 
-    # Check if any nodes have predefined positions from the YAML
-    has_predefined_positions = any(
-        node.pos_x is not None
+    # Determine which nodes have predefined positions
+    predefined = {
+        name: node
+        for name, node in nodes.items()
+        if node.pos_x is not None
         and node.pos_y is not None
         and str(node.pos_x).strip() != ""
         and str(node.pos_y).strip() != ""
-        for node in nodes.values()
-    )
+    }
 
-    if has_predefined_positions:
+    has_any_fixed = bool(predefined)
+    all_fixed = len(predefined) == len(nodes)
+
+    fixed_positions = {}
+    if has_any_fixed:
         logger.debug("Using predefined positions from YAML file with scaling...")
 
-        # Scale factor to ensure adequate spacing between nodes
         x_scale = (styles.get("padding_x", 150) / 100) * 1.5
         y_scale = (styles.get("padding_y", 150) / 100) * 1.5
 
-        # Convert string positions to float and apply scaling
-        for node in nodes.values():
+        for name, node in predefined.items():
             try:
-                if (
-                    node.pos_x is not None
-                    and node.pos_y is not None
-                    and str(node.pos_x).strip() != ""
-                    and str(node.pos_y).strip() != ""
-                ):
-                    node.pos_x = int(node.pos_x) * x_scale
-                    node.pos_y = int(node.pos_y) * y_scale
+                node.pos_x = int(node.pos_x) * x_scale
+                node.pos_y = int(node.pos_y) * y_scale
+                fixed_positions[name] = (node.pos_x, node.pos_y)
             except (ValueError, TypeError):
                 logger.debug(
                     f"Could not convert position for node {node.name}, will use layout position"
@@ -206,24 +204,16 @@ def main(
                 node.pos_x = None
                 node.pos_y = None
 
-        # When fixed positions are available, we still assign graph levels for connectivity purposes
-        # but instruct it to skip warnings and not override positions
-        logger.debug(
-            "Using predefined positions - graph levels will only be used for connectivity"
-        )
         graph_manager = GraphLevelManager()
         graph_manager.assign_graphlevels(
-            diagram, verbose=False, skip_warnings=True, respect_fixed_positions=True
+            diagram, verbose=False, skip_warnings=True, respect_fixed_positions=False
         )
     else:
-        # No fixed positions, proceed with normal graph level assignment
         logger.debug("No predefined positions found - assigning graph levels normally")
         graph_manager = GraphLevelManager()
         graph_manager.assign_graphlevels(diagram, verbose=False)
 
-    # Only apply layout manager if we don't have predefined positions
-    if not has_predefined_positions:
-        # Choose layout based on layout argument
+    if not all_fixed:
         if layout == "vertical":
             layout_manager = VerticalLayout()
         else:
@@ -232,24 +222,34 @@ def main(
         logger.debug(f"Applying {layout} layout...")
         layout_manager.apply(diagram, verbose=log_level == LogLevel.DEBUG)
 
+        # Restore positions for nodes that had predefined coordinates
+        for name, (x, y) in fixed_positions.items():
+            node = nodes.get(name)
+            if node:
+                node.pos_x = x
+                node.pos_y = y
+
     # Calculate the diagram size based on the positions of the nodes
-    min_x = min(node.pos_x for node in nodes.values())
-    min_y = min(node.pos_y for node in nodes.values())
-    max_x = max(node.pos_x for node in nodes.values())
-    max_y = max(node.pos_y for node in nodes.values())
+    positioned_nodes = [
+        n for n in nodes.values() if n.pos_x is not None and n.pos_y is not None
+    ]
+    min_x = min(node.pos_x for node in positioned_nodes)
+    min_y = min(node.pos_y for node in positioned_nodes)
+    max_x = max(node.pos_x for node in positioned_nodes)
+    max_y = max(node.pos_y for node in positioned_nodes)
 
     # Determine the necessary adjustments
     adjust_x = -min_x + 100  # Adjust so the minimum x is at least 100
     adjust_y = -min_y + 100  # Adjust so the minimum y is at least 100
 
     # Apply adjustments to each node's position
-    for node in nodes.values():
+    for node in positioned_nodes:
         node.pos_x += adjust_x
         node.pos_y += adjust_y
 
     # Recalculate diagram size if necessary, after adjustment
-    max_x = max(node.pos_x for node in nodes.values())
-    max_y = max(node.pos_y for node in nodes.values())
+    max_x = max(node.pos_x for node in positioned_nodes)
+    max_y = max(node.pos_y for node in positioned_nodes)
 
     max_size_x = max_x + 100  # Adding a margin to the right side
     max_size_y = max_y + 100  # Adding a margin to the bottom

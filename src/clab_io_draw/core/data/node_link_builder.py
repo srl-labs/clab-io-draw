@@ -26,6 +26,15 @@ class NodeLinkBuilder:
         self.lab_name = lab_name
         self.annotations = containerlab_data.get("annotations")
 
+        # Pre-build annotation maps for quick lookup later
+        self._node_annotations = {}
+        self._cloud_annotations = {}
+        if self.annotations:
+            for ann in self.annotations.get("nodeAnnotations", []):
+                self._node_annotations[ann.get("id")] = ann
+            for ann in self.annotations.get("cloudNodeAnnotations", []):
+                self._cloud_annotations[ann.get("id")] = ann
+
     def format_node_name(self, base_name: str) -> str:
         """
         Format node name with given prefix and lab_name.
@@ -63,12 +72,6 @@ class NodeLinkBuilder:
         node_height = self.styles.get("node_height", 75)
         base_style = self.styles.get("base_style", "")
 
-        # Create mapping of node annotations by id if annotations exist
-        node_annotations_map = {}
-        if self.annotations and "nodeAnnotations" in self.annotations:
-            for annotation in self.annotations["nodeAnnotations"]:
-                node_annotations_map[annotation["id"]] = annotation
-
         nodes = {}
         for node_name, node_data in nodes_from_clab.items():
             formatted_node_name = self.format_node_name(node_name)
@@ -91,8 +94,8 @@ class NodeLinkBuilder:
                 graph_level = labels["graph-level"]
 
             # Then check annotations (higher priority - overrides labels)
-            if node_name in node_annotations_map:
-                annotation = node_annotations_map[node_name]
+            if node_name in self._node_annotations:
+                annotation = self._node_annotations[node_name]
                 if "position" in annotation:
                     pos_x = str(annotation["position"]["x"])
                     pos_y = str(annotation["position"]["y"])
@@ -119,6 +122,53 @@ class NodeLinkBuilder:
 
         return nodes
 
+    def _parse_endpoint(self, endpoint):
+        """Extract node and interface information from an endpoint.
+
+        :param endpoint: Endpoint definition which may be a string in the
+            ``node:interface`` format or a dict with ``node`` and ``interface``
+            keys.
+        :return: Tuple of (node, interface) or (None, None) if parsing fails.
+        """
+        if isinstance(endpoint, str):
+            parts = endpoint.split(":", 1)
+            if parts:
+                return parts[0], parts[1] if len(parts) > 1 else ""
+        elif isinstance(endpoint, dict):
+            return endpoint.get("node"), endpoint.get("interface")
+        return None, None
+
+    def _create_network_node(self, name: str) -> Node:
+        """Create a Node instance representing a network endpoint.
+
+        If annotations include cloud node information for this endpoint, use the
+        stored position and label.
+        """
+
+        label = name
+        pos_x = ""
+        pos_y = ""
+        annotation = self._cloud_annotations.get(name)
+        if annotation:
+            label = annotation.get("label", name)
+            pos = annotation.get("position")
+            if pos:
+                pos_x = str(pos.get("x", ""))
+                pos_y = str(pos.get("y", ""))
+
+        return Node(
+            name=name,
+            label=label,
+            kind="network",
+            graph_icon="network",
+            base_style=self.styles.get("base_style", ""),
+            custom_style=self.styles.get("custom_styles", {}).get("network", ""),
+            width=self.styles.get("node_width", 75),
+            height=self.styles.get("node_height", 75),
+            pos_x=pos_x,
+            pos_y=pos_y,
+        )
+
     def _build_links(self, nodes):
         """
         Internal method to build Link instances and attach them to their respective nodes.
@@ -127,24 +177,76 @@ class NodeLinkBuilder:
         :return: List of Link objects
         """
         links_from_clab = []
+        defined_nodes = set(self.containerlab_data["topology"].get("nodes", {}).keys())
+        dummy_count = 0
+
         for link in self.containerlab_data["topology"].get("links", []):
             endpoints = link.get("endpoints")
-            if endpoints:
-                source_node, source_intf = endpoints[0].split(":")
-                target_node, target_intf = endpoints[1].split(":")
+            if endpoints and len(endpoints) == 2:
+                src_raw, src_intf = self._parse_endpoint(endpoints[0])
+                trgt_raw, trgt_intf = self._parse_endpoint(endpoints[1])
 
-                source_node = self.format_node_name(source_node)
-                target_node = self.format_node_name(target_node)
+                if src_raw and trgt_raw:
+                    if src_raw in defined_nodes:
+                        src_name = self.format_node_name(src_raw)
+                    else:
+                        src_name = f"{src_raw}:{src_intf}" if src_intf else src_raw
+                        if src_name not in nodes:
+                            nodes[src_name] = self._create_network_node(src_name)
 
-                if source_node in nodes and target_node in nodes:
+                    if trgt_raw in defined_nodes:
+                        trgt_name = self.format_node_name(trgt_raw)
+                    else:
+                        trgt_name = f"{trgt_raw}:{trgt_intf}" if trgt_intf else trgt_raw
+                        if trgt_name not in nodes:
+                            nodes[trgt_name] = self._create_network_node(trgt_name)
+
                     links_from_clab.append(
                         {
-                            "source": source_node,
-                            "target": target_node,
-                            "source_intf": source_intf,
-                            "target_intf": target_intf,
+                            "source": src_name,
+                            "target": trgt_name,
+                            "source_intf": src_intf or "",
+                            "target_intf": trgt_intf or "",
                         }
                     )
+            elif link.get("endpoint"):
+                # Special link types with a single endpoint
+                endpoint = link.get("endpoint")
+                src_raw, src_intf = self._parse_endpoint(endpoint)
+                if not src_raw:
+                    continue
+
+                link_type = link.get("type", "network")
+                if link_type == "host":
+                    trgt_name = f"host:{link.get('host-interface', '')}"
+                elif link_type == "vxlan":
+                    trgt_name = f"vxlan:{link.get('remote')}/{link.get('vni')}/{link.get('udp-port')}"
+                elif link_type == "vxlan-stitch":
+                    trgt_name = f"vxlan-stitch:{link.get('remote')}/{link.get('vni')}/{link.get('udp-port')}"
+                elif link_type == "dummy":
+                    dummy_count += 1
+                    trgt_name = f"dummy{dummy_count}"
+                else:
+                    trgt_name = link_type
+
+                if src_raw in defined_nodes:
+                    src_name = self.format_node_name(src_raw)
+                else:
+                    src_name = src_raw
+                    if src_name not in nodes:
+                        nodes[src_name] = self._create_network_node(src_name)
+
+                if trgt_name not in nodes:
+                    nodes[trgt_name] = self._create_network_node(trgt_name)
+
+                links_from_clab.append(
+                    {
+                        "source": src_name,
+                        "target": trgt_name,
+                        "source_intf": src_intf or "",
+                        "target_intf": "",
+                    }
+                )
 
         links = []
         for link_data in links_from_clab:

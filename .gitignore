@@ -6,7 +6,7 @@ lab-examples/*
 !lab-examples/*.yml
 !lab-examples/*.yaml
 lab-examples/*flow_panel.yaml
-
+patch.sh
 # Created by https://www.toptal.com/developers/gitignore/api/python
 # Edit at https://www.toptal.com/developers/gitignore?templates=python
 

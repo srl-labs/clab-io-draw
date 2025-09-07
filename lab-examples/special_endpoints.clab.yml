@@ -1,0 +1,71 @@
+name: special-endpoints-test
+
+topology:
+  kinds:
+    nokia_srlinux:
+      type: ixrd1
+      image: ghcr.io/nokia/srlinux:latest
+  nodes:
+    srl1:
+      kind: nokia_srlinux
+    srl2:
+      kind: nokia_srlinux
+    br0:
+      kind: bridge
+    br1:
+      kind: ovs-bridge
+
+  links:
+    # Regular link between nodes but extended
+    - endpoints:
+        - node: srl1
+          interface: e1-1
+          mac: 02:42:ac:11:00:02
+        - node: srl2
+          interface: e1-1
+          mac: 02:42:ac:11:00:03
+      type: veth
+      mtu: 1400
+      vars:
+        test: test
+      labels:
+        test: test
+
+    # Management network link
+    - endpoints: [ srl2:e1-2, mgmt-net:srl2-e1-2 ]
+    - endpoints: [ srl2:e1-3, macvlan:enp0s3 ]
+    - endpoints: [ srl1:e1-3, srl2:e1-4 ]
+    - endpoints: [ srl1:e1-4, macvlan:enp0s3 ]
+    - type: host
+      endpoint:
+        node: srl1
+        interface: e1-5
+        mac: 02:42:ac:11:00:04
+      host-interface: eth1
+      mtu: 1400
+      vars:
+        test: test
+      labels:
+        test: test
+    - type: vxlan
+      endpoint:
+        node: srl1
+        interface: e1-6
+      remote: 10.0.0.1
+      vni: 100
+      udp-port: 4789
+      mtu: 1500
+    - type: vxlan-stitch
+      endpoint:
+        node: srl1
+        interface: e1-7
+      remote: 10.0.0.2
+      vni: 100
+      udp-port: 4786
+      mtu: 1500
+    - type: dummy
+      endpoint:
+        node: srl1
+        interface: e1-2
+    - endpoints: [ srl1:e1-8, br0:eth1 ]
+    - endpoints: [ srl1:e1-9, br1:eth1 ]
