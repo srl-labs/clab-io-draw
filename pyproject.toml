@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "n2g==0.3.3",
     "prompt-toolkit==3.0.52",
-    "PyYAML==6.0.2",
+    "PyYAML==6.0.3",
     "six==1.17.0",
     "wcwidth==0.2.13",
     "ruamel-yaml==0.18.15",
