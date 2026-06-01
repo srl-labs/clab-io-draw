@@ -100,3 +100,32 @@ def test_clab2drawio_combinations(tmp_path, lab_file, extra_args, use_output, ca
     result = runner.invoke(app, cmd)
     assert result.exit_code == 0, result.output  # noqa: S101
     assert out_file.exists()  # noqa: S101
+
+
+def test_clab2drawio_accepts_empty_node_definitions(tmp_path):
+    runner = CliRunner()
+    lab_file = tmp_path / "empty-node-definitions.clab.yml"
+    lab_file.write_text(
+        """\
+name: mtik
+prefix: ""
+topology:
+  defaults:
+    kind: ceos
+  kinds:
+    ceos:
+      image: ceos:4.35.0F
+  nodes:
+    ceos1:
+    ceos2:
+  links:
+    - endpoints: ["ceos1:eth1", "ceos2:eth1"]
+""",
+        encoding="utf-8",
+    )
+    out_file = tmp_path / "empty-node-definitions.drawio"
+
+    result = runner.invoke(app, ["-i", str(lab_file), "-o", str(out_file)])
+
+    assert result.exit_code == 0, result.output  # noqa: S101
+    assert out_file.exists()  # noqa: S101

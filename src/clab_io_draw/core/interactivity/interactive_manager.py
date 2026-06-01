@@ -486,8 +486,9 @@ class AssignLevelsScreen(Screen):
         else:
             unformatted = node_name
 
-        node_data = self.manager.containerlab_data["topology"]["nodes"].get(
-            unformatted, {}
+        node_data = (
+            self.manager.containerlab_data["topology"]["nodes"].get(unformatted, {})
+            or {}
         )
         node_data.setdefault("labels", {})
         node_data["labels"]["graph-level"] = lvl
@@ -667,8 +668,9 @@ class AssignIconsScreen(Screen):
         else:
             unformatted = node_name
 
-        node_data = self.manager.containerlab_data["topology"]["nodes"].get(
-            unformatted, {}
+        node_data = (
+            self.manager.containerlab_data["topology"]["nodes"].get(unformatted, {})
+            or {}
         )
         if "labels" not in node_data:
             node_data["labels"] = {}
