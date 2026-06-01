@@ -74,6 +74,9 @@ class NodeLinkBuilder:
 
         nodes = {}
         for node_name, node_data in nodes_from_clab.items():
+            if node_data is None:
+                node_data = {}
+
             formatted_node_name = self.format_node_name(node_name)
 
             # Initialize default values

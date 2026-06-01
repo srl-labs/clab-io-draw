@@ -2,7 +2,7 @@
 import logging
 import os
 import sys
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 import typer
@@ -23,12 +23,12 @@ from clab_io_draw.core.utils.yaml_processor import YAMLProcessor
 logger = logging.getLogger(__name__)
 
 
-class Layout(str, Enum):
+class Layout(StrEnum):
     VERTICAL = "vertical"
     HORIZONTAL = "horizontal"
 
 
-class LogLevel(str, Enum):
+class LogLevel(StrEnum):
     CRITICAL = "critical"
     ERROR = "error"
     WARNING = "warning"

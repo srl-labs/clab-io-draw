@@ -38,7 +38,7 @@ class Drawio2ClabConverter:
             ]
             compiled_links.append({"endpoints": endpoints})
 
-        compiled_links.sort(key=lambda x: (x["endpoints"][0].split(":")[0]))
+        compiled_links.sort(key=lambda x: x["endpoints"][0].split(":")[0])
         return compiled_links
 
     def generate_yaml_structure(self, node_details, compiled_links, input_file):
