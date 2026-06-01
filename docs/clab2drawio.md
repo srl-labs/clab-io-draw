@@ -12,15 +12,15 @@ for real-time network monitoring.
 
 ## Features
 
-- **Automatic Diagram Generation**: Produces detailed Draw.io diagrams in vertical 
-  or horizontal layouts.
+- **Automatic Diagram Generation**: Produces detailed Draw.io diagrams with an
+  adaptive default layout, or explicit vertical and horizontal layouts.
 - **Graph-level-Based Layout**: Organizes nodes based on `graph-level` labels 
   in the YAML, which can be edited interactively with `-I`.
 - **Fixed Position Support**: Respects exact node positions defined in YAML files
   for pixel-perfect control over diagram layouts.
 - **Node Icon Customization**: Utilizes `graph-icon` labels to specify icons 
   (e.g., `router`, `switch`, `host`).
-- **Customizable Styles**: Users can apply or create custom Draw.io themes
+- **Customizable Styles**: Users can apply or create custom Draw.io themes.
 - **Grafana Dashboards**: Generates Grafana dashboards for monitoring node and link 
   states. See [grafana.md](./grafana.md) for details.
   <p align="center">
@@ -42,8 +42,12 @@ containerlab graph --drawio -t <path_to_your_yaml_file>
 > Use `-o` to specify a different path.
 
 > [!TIP]
-> Use `-I` for an interactive mode that prompts for `graph-level` and `graph-icon` if you have them not set in clab.yml
-> labels.
+> The default output uses the `nokia_modern` theme and automatically picks the
+> better vertical or horizontal layout for the topology.
+
+> [!TIP]
+> Use `-I` for an interactive mode that prompts for `graph-level` and `graph-icon`
+> labels if you have them not set in clab.yml.
 
 ## Interactive Mode
 
@@ -67,7 +71,9 @@ You have multiple ways to control node placement in your diagrams:
 
 #### 1. Using Graph Levels
 
-Configure graph levels in your YAML files through `graph-level` labels:
+By default, `clab2drawio` infers graph levels from topology links and then
+chooses the better vertical or horizontal layout. Configure graph levels in your
+YAML files when you want to control those ranks explicitly:
 
 ```bash
 client1:
@@ -163,9 +169,9 @@ The easiest way to create perfect layouts is using the VS Code Containerlab exte
 
 - `--no-links`: Do not draw links between nodes in the topology diagram. This option can be useful for focusing on node placement or when the connectivity between nodes is not relevant.
 
-- `--layout`: Specifies the layout of the topology diagram (either `vertical` or `horizontal`). The default layout is `vertical`.
+- `--layout`: Specifies the layout of the topology diagram (`auto`, `vertical`, or `horizontal`). The default layout is `auto`, which scores both directions and picks the cleaner result.
 
-- `--theme`: Specifies the theme for the diagram (`nokia`,  `nokia_modern`, or ... ) or the path to a custom style config file. By default, the `nokia` theme is used. Users can also create their own style file and place it in any directory, specifying its path with this option. Feel free to contribute your own styles.
+- `--theme`: Specifies the theme for the diagram (`nokia_modern`, `nokia`, `grafana`, or another style file) or the path to a custom style config file. By default, the `nokia_modern` theme is used. The previous modern styling is available as `nokia_modern_legacy`. Users can also create their own style file and place it in any directory, specifying its path with this option. Feel free to contribute your own styles.
 
      ```bash
      clab2drawio --theme nokia_dark -i <path_to_your_yaml_file>
@@ -186,7 +192,7 @@ The easiest way to create perfect layouts is using the VS Code Containerlab exte
 
 ### Customization
 
-You can apply different style themes such as `nokia`, `nokia_modern` or `grafana`:
+You can apply different style themes such as `nokia_modern`, `nokia`, `nokia_modern_legacy`, or `grafana`:
 
 ```bash
 clab2drawio --theme nokia_modern -i <path_to_yaml>
@@ -201,8 +207,8 @@ clab2drawio --theme nokia_modern -i <path_to_yaml>
 
 | Theme          | Preview                               |
 | :------------: | :------------------------------------: |
-| **nokia**      | ![Nokia](img/nokia_bright.png)         |
 | **nokia_modern** | ![Modern](img/modern_bright.png)     |
+| **nokia**      | ![Nokia](img/nokia_bright.png)         |
 | **grafana**    | ![Grafana](img/grafana.png)            |
 
 > [!NOTE] 
@@ -258,4 +264,3 @@ icon_to_group_mapping:
 - [clab2drawio.md](./clab2drawio.md)
 - [drawio2clab.md](./drawio2clab.md)
 - [grafana.md](./grafana.md)
-

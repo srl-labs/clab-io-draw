@@ -41,9 +41,9 @@ class GraphLevelManager:
         # AND we're not using fixed positions
         if not all_levels_set and not skip_warnings and not has_fixed_positions:
             logger.warning(
-                "Not all graph levels set in the .clab file. Assigning graph levels based on downstream links. "
-                "Expect experimental output. Please consider assigning graph levels to your .clab file, "
-                "or use it with -I for interactive mode. Find more information here: "
+                "Not all graph levels are set in the .clab file. Inferring graph levels from topology links. "
+                "For exact placement, add graph-level labels, graph-posX/graph-posY labels, "
+                "or use -I for interactive mode. Find more information here: "
                 "https://github.com/srl-labs/clab-io-draw/blob/main/docs/clab2drawio.md#influencing-node-placement"
             )
 

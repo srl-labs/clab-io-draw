@@ -134,6 +134,68 @@ class CustomDrawioDiagram(drawio_diagram):
                     geometry.set("y", str(obj_pos_new[1]))
                     obj_mxcell.set("parent", group_id)
 
+    def parent_labels_to_node(self, node_id: str, label_ids: list[str]):
+        """Make interface labels children of the endpoint node they belong to."""
+        node_box = self._object_box(node_id)
+        if node_box is None:
+            return
+
+        node_x, node_y, _, _ = node_box
+        for label_id in label_ids:
+            label_cell = self._find_object_mxcell(label_id)
+            label_box = self._object_box(label_id)
+            if label_cell is None or label_box is None:
+                continue
+
+            geometry = label_cell.find("./mxGeometry")
+            if geometry is None:
+                continue
+
+            geometry.set("x", str(label_box[0] - node_x))
+            geometry.set("y", str(label_box[1] - node_y))
+            label_cell.set("parent", node_id)
+            label_cell.set("connectable", "0")
+
+        for object_id in [node_id, *label_ids]:
+            self._move_object_to_front(object_id)
+
+    def _find_object_mxcell(self, object_id: str):
+        if not object_id:
+            return None
+        for obj in self.current_root.findall("./object"):
+            if obj.get("id") == object_id:
+                return obj.find("./mxCell")
+        return None
+
+    def _move_object_to_front(self, object_id: str):
+        for obj in self.current_root.findall("./object"):
+            if obj.get("id") == object_id:
+                self.current_root.remove(obj)
+                self.current_root.append(obj)
+                return
+
+    def _object_box(self, object_id: str):
+        mxcell = self._find_object_mxcell(object_id)
+        if mxcell is None:
+            return None
+
+        geometry = mxcell.find("./mxGeometry")
+        if geometry is None:
+            return None
+
+        x = geometry.get("x")
+        y = geometry.get("y")
+        width = geometry.get("width")
+        height = geometry.get("height")
+        if x is None or y is None or width is None or height is None:
+            return None
+
+        x_val = float(x)
+        y_val = float(y)
+        w_val = float(width)
+        h_val = float(height)
+        return x_val, y_val, x_val + w_val, y_val + h_val
+
     def get_used_levels(self):
         return {node.graph_level for node in self.nodes.values()}
 

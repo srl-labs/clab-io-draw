@@ -104,15 +104,25 @@ class ThemeManager:
             self._validate_style_string(merged_style_str)
             merged_custom_styles[style_name] = merged_style_str
 
-        # 3. Load CSS overrides if any
+        # 3. Load SVG overrides if any
         css_overrides = config.get("css_overrides", {})
+        svg_overrides = config.get("svg_overrides", {})
 
-        # 4. Apply CSS overrides to embedded SVGs
+        # 4. Apply CSS and attribute overrides to embedded SVGs
         for style_name, final_style_str in merged_custom_styles.items():
             updated_style_str = self._maybe_modify_svg_css(
                 style_name, final_style_str, css_overrides
             )
+            updated_style_str = self._maybe_modify_svg_attributes(
+                style_name, updated_style_str, svg_overrides
+            )
             merged_custom_styles[style_name] = updated_style_str
+
+        style_overrides = config.get("style_overrides", {})
+        if style_overrides:
+            merged_custom_styles = self._apply_style_overrides(
+                merged_custom_styles, style_overrides
+            )
 
         config["custom_styles"] = merged_custom_styles
 
@@ -158,6 +168,24 @@ class ThemeManager:
                 merged_str += seg + ";"
 
         return merged_str
+
+    def _apply_style_overrides(
+        self, styles: dict[str, str], style_overrides: dict[str, dict[str, str]]
+    ) -> dict[str, str]:
+        global_overrides = style_overrides.get("*", {})
+        updated = {}
+        for style_name, style_str in styles.items():
+            override_dict = {
+                **global_overrides,
+                **style_overrides.get(style_name, {}),
+            }
+            if not override_dict:
+                updated[style_name] = style_str
+                continue
+            merged = self._style_str_to_dict(style_str)
+            merged.update({str(k): str(v) for k, v in override_dict.items()})
+            updated[style_name] = self._dict_to_style_str(merged)
+        return updated
 
     def _style_str_to_dict(self, style_str: str) -> dict[str, str]:
         """
@@ -233,6 +261,69 @@ class ThemeManager:
 
         logger.debug(f"CSS overrides applied successfully to style '{style_name}'.")
         return new_style_str
+
+    def _maybe_modify_svg_attributes(
+        self, style_name: str, style_str: str, svg_overrides: dict[str, dict[str, str]]
+    ) -> str:
+        image_match = re.search(r"image=data:([^;]+)", style_str)
+        if not image_match:
+            return style_str
+
+        image_data = image_match.group(1)
+        if not image_data.startswith("image/svg+xml,"):
+            return style_str
+
+        overrides = {
+            **svg_overrides.get("*", {}),
+            **svg_overrides.get(style_name, {}),
+        }
+        if not overrides:
+            return style_str
+
+        base64_part = image_data[len("image/svg+xml,") :]
+        try:
+            svg_binary = base64.b64decode(base64_part)
+        except Exception as e:
+            logger.warning(f"Failed to decode base64 SVG for style '{style_name}': {e}")
+            return style_str
+
+        svg_str = svg_binary.decode("utf-8", errors="replace")
+        new_svg_str = self._modify_svg_attributes(svg_str, overrides)
+        if new_svg_str == svg_str:
+            return style_str
+
+        new_base64 = base64.b64encode(new_svg_str.encode("utf-8")).decode("utf-8")
+        new_image_data = "image/svg+xml," + new_base64
+        return style_str.replace(image_data, new_image_data, 1)
+
+    def _modify_svg_attributes(self, svg_data: str, overrides: dict[str, str]) -> str:
+        rect_rx = overrides.get("root_rect_rx")
+        rect_ry = overrides.get("root_rect_ry", rect_rx)
+        if rect_rx is None and rect_ry is None:
+            return svg_data
+
+        def replace_rect(match):
+            tag = match.group(0)
+            if rect_rx is not None:
+                tag = self._set_tag_attr(tag, "rx", str(rect_rx))
+            if rect_ry is not None:
+                tag = self._set_tag_attr(tag, "ry", str(rect_ry))
+            return tag
+
+        return re.sub(
+            r"<rect\b(?=[^>]*\bclass=[\"']st0[\"'])[^>]*>",
+            replace_rect,
+            svg_data,
+            count=1,
+        )
+
+    def _set_tag_attr(self, tag: str, attr: str, value: str) -> str:
+        attr_pattern = rf"\b{re.escape(attr)}=(['\"])[^'\"]*\1"
+        if re.search(attr_pattern, tag):
+            return re.sub(attr_pattern, f'{attr}="{value}"', tag, count=1)
+        if tag.endswith("/>"):
+            return tag[:-2] + f' {attr}="{value}"/>'
+        return tag[:-1] + f' {attr}="{value}">'
 
     def _modify_svg_style_block(
         self, svg_data: str, style_overrides: dict[str, str]

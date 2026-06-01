@@ -15,8 +15,7 @@ from clab_io_draw.core.diagram.custom_drawio import CustomDrawioDiagram
 from clab_io_draw.core.diagram.diagram_builder import DiagramBuilder
 from clab_io_draw.core.grafana.grafana_manager import GrafanaDashboard
 from clab_io_draw.core.interactivity.interactive_manager import InteractiveManager
-from clab_io_draw.core.layout.horizontal_layout import HorizontalLayout
-from clab_io_draw.core.layout.vertical_layout import VerticalLayout
+from clab_io_draw.core.layout.adaptive_layout import AdaptiveLayout
 from clab_io_draw.core.logging_config import configure_logging
 from clab_io_draw.core.utils.yaml_processor import YAMLProcessor
 
@@ -24,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class Layout(StrEnum):
+    AUTO = "auto"
     VERTICAL = "vertical"
     HORIZONTAL = "horizontal"
 
@@ -49,7 +49,7 @@ def main(
     theme: str,
     include_unlinked_nodes: bool = False,
     no_links: bool = False,
-    layout: str = "vertical",
+    layout: str = "auto",
     log_level: LogLevel = LogLevel.INFO,
     interactive: bool = False,
     grafana_config_path: str = None,
@@ -65,7 +65,7 @@ def main(
     :param theme: Theme name or path to a custom theme file.
     :param include_unlinked_nodes: Include nodes without any links in the topology diagram.
     :param no_links: Do not draw links between nodes.
-    :param layout: Layout direction ("vertical" or "horizontal").
+    :param layout: Layout direction ("auto", "vertical", or "horizontal").
     :param log_level: Logging level for output.
     :param interactive: Run in interactive mode to define graph-levels and icons.
     :param grafana_interface_format: Regex pattern for mapping interface names (e.g., "e1-{x}:ethernet1/{x}").
@@ -172,7 +172,8 @@ def main(
                     f"User chose theme '{chosen_theme}' but no file found. Keeping old theme."
                 )
 
-    # Determine which nodes have predefined positions
+    # Determine which nodes have predefined positions. These are treated as
+    # authoritative canvas coordinates, not rescaled topology hints.
     predefined = {
         name: node
         for name, node in nodes.items()
@@ -184,18 +185,18 @@ def main(
 
     has_any_fixed = bool(predefined)
     all_fixed = len(predefined) == len(nodes)
+    normalize_predefined_positions = has_any_fixed and all(
+        getattr(node, "position_source", None) == "annotation"
+        for node in predefined.values()
+    )
 
     fixed_positions = {}
     if has_any_fixed:
-        logger.debug("Using predefined positions from YAML file with scaling...")
-
-        x_scale = (styles.get("padding_x", 150) / 100) * 1.5
-        y_scale = (styles.get("padding_y", 150) / 100) * 1.5
-
+        logger.debug("Using predefined positions from YAML file...")
         for name, node in predefined.items():
             try:
-                node.pos_x = int(node.pos_x) * x_scale
-                node.pos_y = int(node.pos_y) * y_scale
+                node.pos_x = float(node.pos_x)
+                node.pos_y = float(node.pos_y)
                 fixed_positions[name] = (node.pos_x, node.pos_y)
             except (ValueError, TypeError):
                 logger.debug(
@@ -214,45 +215,63 @@ def main(
         graph_manager.assign_graphlevels(diagram, verbose=False)
 
     if not all_fixed:
-        if layout == "vertical":
-            layout_manager = VerticalLayout()
-        else:
-            layout_manager = HorizontalLayout()
-
-        logger.debug(f"Applying {layout} layout...")
-        layout_manager.apply(diagram, verbose=log_level == LogLevel.DEBUG)
+        requested_layout = (layout or "auto").lower()
+        layout_manager = AdaptiveLayout(styles)
+        logger.debug(f"Applying {requested_layout} layout...")
+        result = layout_manager.apply(
+            diagram, requested_layout, verbose=log_level == LogLevel.DEBUG
+        )
+        logger.debug("Selected %s layout with score %.2f", result.name, result.score)
 
         # Restore positions for nodes that had predefined coordinates
-        for name, (x, y) in fixed_positions.items():
-            node = nodes.get(name)
-            if node:
-                node.pos_x = x
-                node.pos_y = y
+        if fixed_positions:
+            dx_values = []
+            dy_values = []
+            for name, (fixed_x, fixed_y) in fixed_positions.items():
+                node = nodes.get(name)
+                if node and node.pos_x is not None and node.pos_y is not None:
+                    dx_values.append(fixed_x - node.pos_x)
+                    dy_values.append(fixed_y - node.pos_y)
+
+            dx = sorted(dx_values)[len(dx_values) // 2] if dx_values else 0
+            dy = sorted(dy_values)[len(dy_values) // 2] if dy_values else 0
+
+            for name, node in nodes.items():
+                if name not in fixed_positions:
+                    node.pos_x += dx
+                    node.pos_y += dy
+
+            for name, (x, y) in fixed_positions.items():
+                node = nodes.get(name)
+                if node:
+                    node.pos_x = x
+                    node.pos_y = y
 
     # Calculate the diagram size based on the positions of the nodes
     positioned_nodes = [
         n for n in nodes.values() if n.pos_x is not None and n.pos_y is not None
     ]
-    min_x = min(node.pos_x for node in positioned_nodes)
-    min_y = min(node.pos_y for node in positioned_nodes)
-    max_x = max(node.pos_x for node in positioned_nodes)
-    max_y = max(node.pos_y for node in positioned_nodes)
+    min_x = min(float(node.pos_x) for node in positioned_nodes)
+    min_y = min(float(node.pos_y) for node in positioned_nodes)
+    max_x = max(float(node.pos_x) + float(node.width) for node in positioned_nodes)
+    max_y = max(float(node.pos_y) + float(node.height) for node in positioned_nodes)
 
-    # Determine the necessary adjustments
-    adjust_x = -min_x + 100  # Adjust so the minimum x is at least 100
-    adjust_y = -min_y + 100  # Adjust so the minimum y is at least 100
+    canvas_margin = float(styles.get("canvas_margin", 100))
+    if not fixed_positions or normalize_predefined_positions:
+        # Keep generated and annotation-derived layouts away from the page edge.
+        # Explicit graph-posX/graph-posY canvas coordinates are left untouched.
+        adjust_x = -min_x + canvas_margin
+        adjust_y = -min_y + canvas_margin
 
-    # Apply adjustments to each node's position
-    for node in positioned_nodes:
-        node.pos_x += adjust_x
-        node.pos_y += adjust_y
+        for node in positioned_nodes:
+            node.pos_x += adjust_x
+            node.pos_y += adjust_y
 
-    # Recalculate diagram size if necessary, after adjustment
-    max_x = max(node.pos_x for node in positioned_nodes)
-    max_y = max(node.pos_y for node in positioned_nodes)
+        max_x = max(float(node.pos_x) + float(node.width) for node in positioned_nodes)
+        max_y = max(float(node.pos_y) + float(node.height) for node in positioned_nodes)
 
-    max_size_x = max_x + 100  # Adding a margin to the right side
-    max_size_y = max_y + 100  # Adding a margin to the bottom
+    max_size_x = max_x + canvas_margin
+    max_size_y = max_y + canvas_margin
 
     if styles["pagew"] == "auto":
         styles["pagew"] = max_size_x
@@ -354,8 +373,8 @@ def cli(  # noqa: B008
         False, "--include-unlinked-nodes", help="Include nodes without links"
     ),  # noqa: B008
     no_links: bool = typer.Option(False, "--no-links", help="Do not draw links"),  # noqa: B008
-    layout: Layout = typer.Option(Layout.VERTICAL, "--layout", help="Diagram layout"),  # noqa: B008
-    theme: str = typer.Option("nokia", "--theme", help="Diagram theme or style file"),  # noqa: B008
+    layout: Layout = typer.Option(Layout.AUTO, "--layout", help="Diagram layout"),  # noqa: B008
+    theme: str = typer.Option("nokia_modern", "--theme", help="Diagram theme or style file"),  # noqa: B008
     log_level: LogLevel = typer.Option(
         LogLevel.INFO, "--log-level", "-l", help="Set logging level"
     ),

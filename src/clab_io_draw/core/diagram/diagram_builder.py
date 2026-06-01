@@ -1,7 +1,12 @@
 import logging
 import math
 import re
-from random import SystemRandom
+
+from clab_io_draw.core.diagram.anchor_planner import (
+    AnchorPlanner,
+    compact_interface_name,
+    label_dimensions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,173 +42,7 @@ class DiagramBuilder:
         """
         logger.debug("Adding ports to nodes...")
         nodes = diagram.nodes
-        has_predefined_positions = any(
-            isinstance(node.pos_x, int | float) and isinstance(node.pos_y, int | float)
-            for node in nodes.values()
-        )
-
-        # For fixed positions, first group ports by edge
-        if has_predefined_positions:
-            # Group links by node and the edge they should connect to
-            node_ports_by_edge = {}
-
-            # First pass: determine which edge each link should connect to
-            for node in nodes.values():
-                node_ports_by_edge[node.name] = {
-                    "top": [],
-                    "right": [],
-                    "bottom": [],
-                    "left": [],
-                }
-
-                for link in node.get_all_links():
-                    target = link.target
-                    edge = self._determine_port_edge(node, target, diagram.layout)
-                    node_ports_by_edge[node.name][edge].append(link)
-
-            # Second pass: assign positions to ports based on their edge and count
-            for node_name, edges in node_ports_by_edge.items():
-                node = nodes[node_name]
-
-                for edge, links in edges.items():
-                    if not links:
-                        continue
-
-                    # Sort links to ensure consistent order
-                    if edge in ("top", "bottom"):
-                        links.sort(key=lambda link: link.target.pos_x)
-                    else:  # left or right
-                        links.sort(key=lambda link: link.target.pos_y)
-
-                    # Distribute ports evenly along the edge
-                    self._distribute_ports_on_edge(node, links, edge, styles)
-        else:
-            # Original port positioning for regular layout
-            for node in nodes.values():
-                links = node.get_all_links()
-                direction_groups = {}
-                for link in links:
-                    direction = link.direction
-                    direction_groups.setdefault(direction, []).append(link)
-
-                for direction, group in direction_groups.items():
-                    # Position ports depending on layout and direction
-                    if diagram.layout == "vertical":
-                        if direction == "downstream":
-                            sorted_links = sorted(
-                                group,
-                                key=lambda link: (link.source.pos_x, link.target.pos_x),
-                            )
-                            num_links = len(sorted_links)
-                            spacing = styles["node_width"] / (num_links + 1)
-                            for i, link in enumerate(sorted_links):
-                                port_x = (
-                                    node.pos_x
-                                    + (i + 1) * spacing
-                                    - styles["port_width"] / 2
-                                )
-                                port_y = (
-                                    node.pos_y
-                                    + styles["node_height"]
-                                    - styles["port_height"] / 2
-                                )
-                                link.port_pos = (port_x, port_y)
-                        elif direction == "upstream":
-                            sorted_links = sorted(
-                                group,
-                                key=lambda link: (link.source.pos_x, link.target.pos_x),
-                            )
-                            num_links = len(sorted_links)
-                            spacing = styles["node_width"] / (num_links + 1)
-                            for i, link in enumerate(sorted_links):
-                                port_x = (
-                                    node.pos_x
-                                    + (i + 1) * spacing
-                                    - styles["port_width"] / 2
-                                )
-                                port_y = node.pos_y - styles["port_height"] / 2
-                                link.port_pos = (port_x, port_y)
-                        else:  # lateral
-                            sorted_links = sorted(
-                                group,
-                                key=lambda link: (link.source.pos_y, link.target.pos_y),
-                            )
-                            num_links = len(sorted_links)
-                            spacing = styles["node_height"] / (num_links + 1)
-                            for i, link in enumerate(sorted_links):
-                                if link.target.pos_x > link.source.pos_x:
-                                    port_x = (
-                                        node.pos_x
-                                        + styles["node_width"]
-                                        - styles["port_width"] / 2
-                                    )
-                                else:
-                                    port_x = node.pos_x - styles["port_width"] / 2
-                                port_y = (
-                                    node.pos_y
-                                    + (i + 1) * spacing
-                                    - styles["port_height"] / 2
-                                )
-                                link.port_pos = (port_x, port_y)
-                    else:
-                        # horizontal layout
-                        if direction == "downstream":
-                            sorted_links = sorted(
-                                group,
-                                key=lambda link: (link.source.pos_y, link.target.pos_y),
-                            )
-                            num_links = len(sorted_links)
-                            spacing = styles["node_height"] / (num_links + 1)
-                            for i, link in enumerate(sorted_links):
-                                port_x = (
-                                    node.pos_x
-                                    + styles["node_width"]
-                                    - styles["port_width"] / 2
-                                )
-                                port_y = (
-                                    node.pos_y
-                                    + (i + 1) * spacing
-                                    - styles["port_height"] / 2
-                                )
-                                link.port_pos = (port_x, port_y)
-
-                        elif direction == "upstream":
-                            sorted_links = sorted(
-                                group,
-                                key=lambda link: (link.source.pos_y, link.target.pos_y),
-                            )
-                            num_links = len(sorted_links)
-                            spacing = styles["node_height"] / (num_links + 1)
-                            for i, link in enumerate(sorted_links):
-                                port_x = node.pos_x - styles["port_width"] / 2
-                                port_y = (
-                                    node.pos_y
-                                    + (i + 1) * spacing
-                                    - styles["port_height"] / 2
-                                )
-                                link.port_pos = (port_x, port_y)
-                        else:  # lateral
-                            sorted_links = sorted(
-                                group,
-                                key=lambda link: (link.source.pos_x, link.target.pos_x),
-                            )
-                            num_links = len(sorted_links)
-                            spacing = styles["node_width"] / (num_links + 1)
-                            for i, link in enumerate(sorted_links):
-                                if link.target.pos_y > link.source.pos_y:
-                                    port_y = (
-                                        node.pos_y
-                                        + styles["node_height"]
-                                        - styles["port_height"] / 2
-                                    )
-                                else:
-                                    port_y = node.pos_y - styles["port_height"] / 2
-                                port_x = (
-                                    node.pos_x
-                                    + (i + 1) * spacing
-                                    - styles["port_width"] / 2
-                                )
-                                link.port_pos = (port_x, port_y)
+        AnchorPlanner(styles).assign(diagram)
 
         # Create connectors and midpoint connectors
         connector_dict = {}
@@ -222,7 +61,10 @@ class DiagramBuilder:
                 )
                 if connection_id not in processed_connections:
                     processed_connections.add(connection_id)
-                    source_cID = f"{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
+                    source_cID = (
+                        f"{link.source.name}:{link.source_intf}:"
+                        f"{link.target.name}:{link.target_intf}"
+                    )
                     source_label = self.get_intf_digit(link.source_intf, styles)
                     source_connector_pos = link.port_pos
                     port_width = styles["port_width"]
@@ -232,7 +74,10 @@ class DiagramBuilder:
                         connector_dict[link.source.name] = []
                     connector_dict[link.source.name].append(source_cID)
 
-                    target_cID = f"{link.target.name}:{link.target_intf}:{link.source.name}:{link.source_intf}"
+                    target_cID = (
+                        f"{link.target.name}:{link.target_intf}:"
+                        f"{link.source.name}:{link.source_intf}"
+                    )
                     target_link = diagram.get_target_link(link)
                     target_connector_pos = target_link.port_pos
                     target_label = self.get_intf_digit(target_link.source_intf, styles)
@@ -301,22 +146,19 @@ class DiagramBuilder:
                     midpoint_center_x = (source_center[0] + target_center[0]) / 2
                     midpoint_center_y = (source_center[1] + target_center[1]) / 2
 
-                    _sysrand = SystemRandom()
-                    random_offset = _sysrand.choice(
-                        [_sysrand.uniform(-20, -10), _sysrand.uniform(10, 20)]
-                    )
                     dx = target_center[0] - source_center[0]
                     dy = target_center[1] - source_center[1]
                     magnitude = (dx**2 + dy**2) ** 0.5
                     if magnitude != 0:
-                        direction_dx = dx / magnitude
-                        direction_dy = dy / magnitude
+                        normal_dx = -dy / magnitude
+                        normal_dy = dx / magnitude
                     else:
-                        direction_dx = 0
-                        direction_dy = 0
+                        normal_dx = 0
+                        normal_dy = 0
 
-                    midpoint_center_x += direction_dx * random_offset
-                    midpoint_center_y += direction_dy * random_offset
+                    parallel_offset = getattr(link, "parallel_offset", 0)
+                    midpoint_center_x += normal_dx * parallel_offset
+                    midpoint_center_y += normal_dy * parallel_offset
 
                     midpoint_top_left_x = midpoint_center_x - 2
                     midpoint_top_left_y = midpoint_center_y - 2
@@ -355,83 +197,6 @@ class DiagramBuilder:
                 member_objects=member_objects, group_id=group_id, style="group"
             )
 
-    def _determine_port_edge(self, node, target, layout):
-        """
-        Determine which edge of the node a port should be placed on based on the relative
-        position of the target node and layout direction.
-
-        Returns: 'top', 'right', 'bottom', or 'left'
-        """
-        # Calculate relative positions
-        node_center_x = node.pos_x + node.width / 2
-        node_center_y = node.pos_y + node.height / 2
-        target_center_x = target.pos_x + target.width / 2
-        target_center_y = target.pos_y + target.height / 2
-
-        dx = target_center_x - node_center_x
-        dy = target_center_y - node_center_y
-
-        # Define Y-position threshold for considering nodes at similar height
-        y_threshold = node.height * 1.2  # 120% of node height
-
-        if layout == "vertical":
-            # In vertical layout, prioritize top/bottom connections
-            if abs(dy) > y_threshold:
-                # Target is significantly above or below
-                return "top" if dy < 0 else "bottom"
-            # Target is roughly at same height, use left/right
-            return "left" if dx < 0 else "right"
-        # In horizontal layout, prioritize left/right connections
-        if abs(dx) > node.width:
-            # Target is significantly left or right
-            return "left" if dx < 0 else "right"
-        # Target is roughly at same vertical position, use top/bottom
-        return "top" if dy < 0 else "bottom"
-
-    def _distribute_ports_on_edge(self, node, links, edge, styles):
-        """
-        Distribute ports evenly along a specified edge of the node.
-        """
-        port_width = styles["port_width"]
-        port_height = styles["port_height"]
-        node_width = node.width
-        node_height = node.height
-
-        # Number of ports to distribute
-        num_ports = len(links)
-
-        if edge == "top":
-            # Distribute along top edge
-            spacing = node_width / (num_ports + 1)
-            for i, link in enumerate(links):
-                port_x = node.pos_x + (i + 1) * spacing - port_width / 2
-                port_y = node.pos_y - port_height / 2
-                link.port_pos = (port_x, port_y)
-
-        elif edge == "right":
-            # Distribute along right edge
-            spacing = node_height / (num_ports + 1)
-            for i, link in enumerate(links):
-                port_x = node.pos_x + node_width - port_width / 2
-                port_y = node.pos_y + (i + 1) * spacing - port_height / 2
-                link.port_pos = (port_x, port_y)
-
-        elif edge == "bottom":
-            # Distribute along bottom edge
-            spacing = node_width / (num_ports + 1)
-            for i, link in enumerate(links):
-                port_x = node.pos_x + (i + 1) * spacing - port_width / 2
-                port_y = node.pos_y + node_height - port_height / 2
-                link.port_pos = (port_x, port_y)
-
-        elif edge == "left":
-            # Distribute along left edge
-            spacing = node_height / (num_ports + 1)
-            for i, link in enumerate(links):
-                port_x = node.pos_x - port_width / 2
-                port_y = node.pos_y + (i + 1) * spacing - port_height / 2
-                link.port_pos = (port_x, port_y)
-
     def add_links(self, diagram, styles):
         """
         Add links between nodes, with labels if needed.
@@ -442,231 +207,15 @@ class DiagramBuilder:
         logger.debug("Adding links to diagram...")
         nodes = diagram.nodes
         global_seen_links = set()
-        has_predefined_positions = any(
-            isinstance(node.pos_x, int | float) and isinstance(node.pos_y, int | float)
-            for node in nodes.values()
-        )
+        AnchorPlanner(styles).assign(diagram)
 
-        # IMPORTANT ADDITION: Calculate port positions even if we don't render them
-        # This ensures consistent link placement between port and non-port themes
-        if not styles.get("ports", False):
-            # Calculate virtual port positions that we'll use for entry/exit points
-            temp_port_styles = styles.copy()
-            temp_port_styles["port_width"] = styles.get("port_width", 10)
-            temp_port_styles["port_height"] = styles.get("port_height", 10)
-
-            for node in nodes.values():
-                links = node.get_all_links()
-                if has_predefined_positions:
-                    # Group links by edge just like we do in add_ports()
-                    node_ports_by_edge = {
-                        "top": [],
-                        "right": [],
-                        "bottom": [],
-                        "left": [],
-                    }
-
-                    for link in links:
-                        target = link.target
-                        edge = self._determine_port_edge(node, target, diagram.layout)
-                        node_ports_by_edge[edge].append(link)
-
-                    # Distribute ports along each edge
-                    for edge, edge_links in node_ports_by_edge.items():
-                        if edge_links:
-                            # Sort links the same way we would with ports
-                            if edge in ("top", "bottom"):
-                                edge_links.sort(key=lambda link: link.target.pos_x)
-                            else:  # left or right
-                                edge_links.sort(key=lambda link: link.target.pos_y)
-
-                            # Assign virtual port positions
-                            self._distribute_ports_on_edge(
-                                node, edge_links, edge, temp_port_styles
-                            )
-                else:
-                    # Handle standard layout positioning as done in add_ports()
-                    direction_groups = {}
-                    for link in links:
-                        direction = link.direction
-                        direction_groups.setdefault(direction, []).append(link)
-
-                    for direction, group in direction_groups.items():
-                        # Position ports depending on layout and direction - copying logic from add_ports()
-                        if diagram.layout == "vertical":
-                            if direction == "downstream":
-                                sorted_links = sorted(
-                                    group,
-                                    key=lambda link: (
-                                        link.source.pos_x,
-                                        link.target.pos_x,
-                                    ),
-                                )
-                                num_links = len(sorted_links)
-                                spacing = temp_port_styles["node_width"] / (
-                                    num_links + 1
-                                )
-                                for i, link in enumerate(sorted_links):
-                                    port_x = (
-                                        node.pos_x
-                                        + (i + 1) * spacing
-                                        - temp_port_styles["port_width"] / 2
-                                    )
-                                    port_y = (
-                                        node.pos_y
-                                        + temp_port_styles["node_height"]
-                                        - temp_port_styles["port_height"] / 2
-                                    )
-                                    link.port_pos = (port_x, port_y)
-                            elif direction == "upstream":
-                                sorted_links = sorted(
-                                    group,
-                                    key=lambda link: (
-                                        link.source.pos_x,
-                                        link.target.pos_x,
-                                    ),
-                                )
-                                num_links = len(sorted_links)
-                                spacing = temp_port_styles["node_width"] / (
-                                    num_links + 1
-                                )
-                                for i, link in enumerate(sorted_links):
-                                    port_x = (
-                                        node.pos_x
-                                        + (i + 1) * spacing
-                                        - temp_port_styles["port_width"] / 2
-                                    )
-                                    port_y = (
-                                        node.pos_y - temp_port_styles["port_height"] / 2
-                                    )
-                                    link.port_pos = (port_x, port_y)
-                            else:  # lateral
-                                sorted_links = sorted(
-                                    group,
-                                    key=lambda link: (
-                                        link.source.pos_y,
-                                        link.target.pos_y,
-                                    ),
-                                )
-                                num_links = len(sorted_links)
-                                spacing = temp_port_styles["node_height"] / (
-                                    num_links + 1
-                                )
-                                for i, link in enumerate(sorted_links):
-                                    if link.target.pos_x > link.source.pos_x:
-                                        port_x = (
-                                            node.pos_x
-                                            + temp_port_styles["node_width"]
-                                            - temp_port_styles["port_width"] / 2
-                                        )
-                                    else:
-                                        port_x = (
-                                            node.pos_x
-                                            - temp_port_styles["port_width"] / 2
-                                        )
-                                    port_y = (
-                                        node.pos_y
-                                        + (i + 1) * spacing
-                                        - temp_port_styles["port_height"] / 2
-                                    )
-                                    link.port_pos = (port_x, port_y)
-                        else:
-                            # horizontal layout
-                            if direction == "downstream":
-                                sorted_links = sorted(
-                                    group,
-                                    key=lambda link: (
-                                        link.source.pos_y,
-                                        link.target.pos_y,
-                                    ),
-                                )
-                                num_links = len(sorted_links)
-                                spacing = temp_port_styles["node_height"] / (
-                                    num_links + 1
-                                )
-                                for i, link in enumerate(sorted_links):
-                                    port_x = (
-                                        node.pos_x
-                                        + temp_port_styles["node_width"]
-                                        - temp_port_styles["port_width"] / 2
-                                    )
-                                    port_y = (
-                                        node.pos_y
-                                        + (i + 1) * spacing
-                                        - temp_port_styles["port_height"] / 2
-                                    )
-                                    link.port_pos = (port_x, port_y)
-                            elif direction == "upstream":
-                                sorted_links = sorted(
-                                    group,
-                                    key=lambda link: (
-                                        link.source.pos_y,
-                                        link.target.pos_y,
-                                    ),
-                                )
-                                num_links = len(sorted_links)
-                                spacing = temp_port_styles["node_height"] / (
-                                    num_links + 1
-                                )
-                                for i, link in enumerate(sorted_links):
-                                    port_x = (
-                                        node.pos_x - temp_port_styles["port_width"] / 2
-                                    )
-                                    port_y = (
-                                        node.pos_y
-                                        + (i + 1) * spacing
-                                        - temp_port_styles["port_height"] / 2
-                                    )
-                                    link.port_pos = (port_x, port_y)
-                            else:  # lateral
-                                sorted_links = sorted(
-                                    group,
-                                    key=lambda link: (
-                                        link.source.pos_x,
-                                        link.target.pos_x,
-                                    ),
-                                )
-                                num_links = len(sorted_links)
-                                spacing = temp_port_styles["node_width"] / (
-                                    num_links + 1
-                                )
-                                for i, link in enumerate(sorted_links):
-                                    if link.target.pos_y > link.source.pos_y:
-                                        port_y = (
-                                            node.pos_y
-                                            + temp_port_styles["node_height"]
-                                            - temp_port_styles["port_height"] / 2
-                                        )
-                                    else:
-                                        port_y = (
-                                            node.pos_y
-                                            - temp_port_styles["port_height"] / 2
-                                        )
-                                    port_x = (
-                                        node.pos_x
-                                        + (i + 1) * spacing
-                                        - temp_port_styles["port_width"] / 2
-                                    )
-                                    link.port_pos = (port_x, port_y)
-
-        # Function to format interface names to be more compact if enabled
         def format_interface_name(intf_name):
-            # This only affects visual display, not the underlying data used by Grafana
-            if styles.get("compact_interface_names", True):
-                # Common interface name formats
-                if intf_name.lower().startswith("ethernet-"):
-                    return "e" + intf_name[9:]
-                if intf_name.lower().startswith("ethernet"):
-                    return "e" + intf_name[8:]
-                # Keep capitalization for capitalized interfaces
-                if intf_name.startswith("Ethernet"):
-                    return "E" + intf_name[8:]
-                # Add more format rules as needed
-            return intf_name
+            return compact_interface_name(intf_name, styles)
 
         # Configure font size for labels
         src_label_style = styles.get("src_label_style", "")
         trgt_label_style = styles.get("trgt_label_style", "")
+        labels_by_node: dict[str, list[str]] = {}
 
         for node in nodes.values():
             downstream_links = node.get_downstream_links()
@@ -688,106 +237,49 @@ class DiagramBuilder:
                 target_groups.setdefault(tgt, []).append(link)
 
             for _tgt, group in target_groups.items():
-                for i, link in enumerate(group):
-                    source_x, source_y = link.source.pos_x, link.source.pos_y
-                    target_x, target_y = link.target.pos_x, link.target.pos_y
+                for link in group:
+                    target_link = diagram.get_target_link(link)
+                    entryX, entryY, exitX, exitY = (
+                        self._calculate_entry_exit_for_fixed_layout(link)
+                    )
+                    if hasattr(link, "edge_exit"):
+                        exitX, exitY = link.edge_exit
 
-                    if has_predefined_positions:
-                        # For fixed positions, determine entry/exit points based on port positions
-                        if hasattr(link, "port_pos") and link.port_pos:
-                            source_edge = self._determine_port_edge(
-                                link.source, link.target, diagram.layout
-                            )
-                            target_edge = self._determine_port_edge(
-                                link.target, link.source, diagram.layout
-                            )
-
-                            # Set entry/exit percentages based on edge
-                            if source_edge == "top":
-                                exitY, exitX = 0, 0.5
-                            elif source_edge == "right":
-                                exitY, exitX = 0.5, 1
-                            elif source_edge == "bottom":
-                                exitY, exitX = 1, 0.5
-                            else:  # left
-                                exitY, exitX = 0.5, 0
-
-                            if target_edge == "top":
-                                entryY, entryX = 0, 0.5
-                            elif target_edge == "right":
-                                entryY, entryX = 0.5, 1
-                            elif target_edge == "bottom":
-                                entryY, entryX = 1, 0.5
-                            else:  # left
-                                entryY, entryX = 0.5, 0
-                            if (
-                                abs(link.source.pos_y - link.target.pos_y) < 10
-                                and len(group) > 1
-                            ):
-                                # Distribute links vertically for nodes at same level
-                                spread = 0.4 / len(
-                                    group
-                                )  # Use 40% of the node height for distribution
-                                offset = (i - (len(group) - 1) / 2) * spread
-
-                                # Adjust entry/exit Y positions
-                                if source_edge in ["left", "right"]:
-                                    exitY = 0.5 + offset
-
-                                if target_edge in ["left", "right"]:
-                                    entryY = 0.5 + offset
-                        else:
-                            # Fallback if no port_pos
-                            entryX, entryY, exitX, exitY = (
-                                self._calculate_entry_exit_for_fixed_layout(link)
-                            )
-                    else:
-                        # Original link entry/exit point calculation
-                        left_to_right = source_x < target_x
-                        above_to_below = source_y < target_y
-
-                        step = (
-                            0.5
-                            if len(group) == 1
-                            else 0.25 + 0.5 * (i / (len(group) - 1))
-                        )
-
-                        if diagram.layout == "horizontal":
-                            if link.level_diff > 0:
-                                entryX, exitX = (0, 1) if left_to_right else (1, 0)
-                                entryY = exitY = step
-                            else:
-                                if above_to_below:
-                                    entryY, exitY = (0, 1)
-                                else:
-                                    entryY, exitY = (1, 0)
-                                entryX = exitX = step
-                        else:  # vertical layout
-                            if link.level_diff > 0:
-                                entryY, exitY = (0, 1) if above_to_below else (1, 0)
-                                entryX = exitX = step
-                            else:
-                                if left_to_right:
-                                    entryX, exitX = (0, 1)
-                                else:
-                                    entryX, exitX = (1, 0)
-                                entryY = exitY = step
+                    if target_link is not None and hasattr(target_link, "edge_exit"):
+                        entryX, entryY = target_link.edge_exit
 
                     style = f"{styles['link_style']}entryY={entryY};exitY={exitY};entryX={entryX};exitX={exitX};"
 
-                    source_label_id = f"label:{link.source.name}:{link.source_intf}"
-                    target_label_id = f"label:{link.target.name}:{link.target_intf}"
+                    link_id = f"link:{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}"
+                    source_label_id = f"label:{link_id}:src"
+                    target_label_id = f"label:{link_id}:trgt"
 
                     if not styles.get("default_labels", False):
+                        source_label = format_interface_name(link.source_intf)
+                        target_label = format_interface_name(link.target_intf)
+                        source_label_w, source_label_h = label_dimensions(
+                            source_label, styles
+                        )
+                        target_label_w, target_label_h = label_dimensions(
+                            target_label, styles
+                        )
+
                         (
                             (source_label_x, source_label_y),
                             (target_label_x, target_label_y),
-                        ) = link.get_label_positions(
-                            entryX, entryY, exitX, exitY, styles
+                        ) = self._calculate_link_label_positions(
+                            link=link,
+                            entryX=entryX,
+                            entryY=entryY,
+                            exitX=exitX,
+                            exitY=exitY,
+                            source_size=(source_label_w, source_label_h),
+                            target_size=(target_label_w, target_label_h),
+                            styles=styles,
                         )
 
                         diagram.add_link(
-                            link_id=f"link:{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}",
+                            link_id=link_id,
                             source=link.source.name,
                             target=link.target.name,
                             style=style,
@@ -795,26 +287,32 @@ class DiagramBuilder:
 
                         diagram.add_node(
                             id=source_label_id,
-                            label=f"{format_interface_name(link.source_intf)}",
+                            label=source_label,
                             x_pos=source_label_x,
                             y_pos=source_label_y,
-                            width=styles["label_width"],
-                            height=styles["label_height"],
+                            width=source_label_w,
+                            height=source_label_h,
                             style=src_label_style,
                         )
 
                         diagram.add_node(
                             id=target_label_id,
-                            label=f"{format_interface_name(link.target_intf)}",
+                            label=target_label,
                             x_pos=target_label_x,
                             y_pos=target_label_y,
-                            width=styles["label_width"],
-                            height=styles["label_height"],
+                            width=target_label_w,
+                            height=target_label_h,
                             style=trgt_label_style,
+                        )
+                        labels_by_node.setdefault(link.source.name, []).append(
+                            source_label_id
+                        )
+                        labels_by_node.setdefault(link.target.name, []).append(
+                            target_label_id
                         )
                     else:
                         diagram.add_link(
-                            link_id=f"link:{link.source.name}:{link.source_intf}:{link.target.name}:{link.target_intf}",
+                            link_id=link_id,
                             source=link.source.name,
                             target=link.target.name,
                             src_label=format_interface_name(link.source_intf),
@@ -823,6 +321,61 @@ class DiagramBuilder:
                             trgt_label_style=trgt_label_style,
                             style=style,
                         )
+
+        for node_name, label_ids in labels_by_node.items():
+            diagram.parent_labels_to_node(node_name, label_ids)
+
+    def _calculate_link_label_positions(
+        self,
+        link,
+        entryX,
+        entryY,
+        exitX,
+        exitY,
+        source_size,
+        target_size,
+        styles,
+    ):
+        source_x, source_y = self._anchor_point(link.source, exitX, exitY)
+        target_x, target_y = self._anchor_point(link.target, entryX, entryY)
+
+        dx = target_x - source_x
+        dy = target_y - source_y
+        magnitude = math.hypot(dx, dy)
+        if magnitude == 0:
+            return link.get_label_positions(entryX, entryY, exitX, exitY, styles)
+
+        normal_x = -dy / magnitude
+        normal_y = dx / magnitude
+        line_offset = float(styles.get("label_line_offset", 0))
+        source_t = float(styles.get("source_label_position", 0.32))
+        target_t = float(styles.get("target_label_position", 0.68))
+
+        source_center = (
+            source_x + dx * source_t + normal_x * line_offset,
+            source_y + dy * source_t + normal_y * line_offset,
+        )
+        target_center = (
+            source_x + dx * target_t + normal_x * line_offset,
+            source_y + dy * target_t + normal_y * line_offset,
+        )
+
+        return (
+            (
+                source_center[0] - source_size[0] / 2,
+                source_center[1] - source_size[1] / 2,
+            ),
+            (
+                target_center[0] - target_size[0] / 2,
+                target_center[1] - target_size[1] / 2,
+            ),
+        )
+
+    def _anchor_point(self, node, rel_x, rel_y):
+        return (
+            float(node.pos_x) + float(node.width) * float(rel_x),
+            float(node.pos_y) + float(node.height) * float(rel_y),
+        )
 
     def _calculate_entry_exit_for_fixed_layout(self, link):
         """
@@ -909,7 +462,10 @@ class DiagramBuilder:
                 else:
                     group = "default"
 
-            style = custom_styles.get(group, base_style)
+            style = self._apply_node_label_position(
+                custom_styles.get(group, base_style),
+                node.label_position,
+            )
             x_pos, y_pos = node.pos_x, node.pos_y
             diagram.add_node(
                 id=node.name,
@@ -920,3 +476,55 @@ class DiagramBuilder:
                 width=node.width,
                 height=node.height,
             )
+
+    def _apply_node_label_position(self, style, label_position):
+        position = str(label_position or "").strip().lower()
+        if not position:
+            return style
+
+        position_styles = {
+            "top": {
+                "labelPosition": "center",
+                "align": "center",
+                "verticalLabelPosition": "top",
+                "verticalAlign": "bottom",
+            },
+            "bottom": {
+                "labelPosition": "center",
+                "align": "center",
+                "verticalLabelPosition": "bottom",
+                "verticalAlign": "top",
+            },
+            "left": {
+                "labelPosition": "left",
+                "align": "right",
+                "verticalLabelPosition": "middle",
+                "verticalAlign": "middle",
+            },
+            "right": {
+                "labelPosition": "right",
+                "align": "left",
+                "verticalLabelPosition": "middle",
+                "verticalAlign": "middle",
+            },
+        }
+        overrides = position_styles.get(position)
+        if overrides is None:
+            return style
+
+        style_dict = self._style_to_dict(style)
+        style_dict.update(overrides)
+        return self._dict_to_style(style_dict)
+
+    def _style_to_dict(self, style):
+        style_dict = {}
+        for segment in style.split(";"):
+            segment = segment.strip()
+            if not segment or "=" not in segment:
+                continue
+            key, value = segment.split("=", 1)
+            style_dict[key] = value
+        return style_dict
+
+    def _dict_to_style(self, style_dict):
+        return "".join(f"{key}={value};" for key, value in style_dict.items())
