@@ -36,9 +36,10 @@ containerlab graph --drawio -t topo.clab.drawio
 > 
 > You can also enhance your output by passing additional arguments. For example:  
 > ~~~bash
-> sudo containerlab graph --drawio -t topo.clab.yml --drawio-args "--theme nokia_modern"
+> sudo containerlab graph --drawio -t topo.clab.yml --drawio-args "--layout horizontal"
 > ~~~  
-> This example applies the "nokia_modern" theme to your generated diagram. 
+> The default theme is `nokia_modern` and the default layout is `auto`; this
+> example forces a horizontal layout.
 
 
 ## Running locally
@@ -125,6 +126,8 @@ clab2drawio -i <input_file.yaml>
 
 - `-i, --input`: path to your Containerlab YAML file.
 - `-o, --output`: path to your output `.drawio` file (optional).
+- `--layout`: `auto`, `vertical`, or `horizontal`; default is `auto`.
+- `--theme`: diagram theme or custom style file; default is `nokia_modern`.
 
 > [!NOTE]
 > For advanced functionality—like 

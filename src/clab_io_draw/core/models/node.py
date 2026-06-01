@@ -28,10 +28,12 @@ class Node:
             self.graph_level = None
 
         self.graph_icon = graph_icon
+        self.label_position = kwargs.get("label_position")
         self.base_style = kwargs.get("base_style", "")
         self.custom_style = kwargs.get("custom_style", "")
         self.width = kwargs.get("width", "")
         self.height = kwargs.get("height", "")
+        self.position_source = kwargs.get("position_source")
         # Convert pos_x to float if possible, otherwise set to None
         pos_x = kwargs.get("pos_x")
         if pos_x is not None and pos_x != "":

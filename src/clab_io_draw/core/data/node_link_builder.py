@@ -82,15 +82,19 @@ class NodeLinkBuilder:
             # Initialize default values
             pos_x = node_data.get("pos_x", "")
             pos_y = node_data.get("pos_y", "")
+            position_source = "node" if pos_x != "" and pos_y != "" else None
             graph_icon = None
             graph_level = None
+            label_position = None
 
             # First check labels (lower priority)
             labels = node_data.get("labels", {})
             if "graph-posX" in labels:
                 pos_x = labels["graph-posX"]
+                position_source = "label"
             if "graph-posY" in labels:
                 pos_y = labels["graph-posY"]
+                position_source = "label"
             if "graph-icon" in labels:
                 graph_icon = labels["graph-icon"]
             if "graph-level" in labels:
@@ -102,8 +106,11 @@ class NodeLinkBuilder:
                 if "position" in annotation:
                     pos_x = str(annotation["position"]["x"])
                     pos_y = str(annotation["position"]["y"])
+                    position_source = "annotation"
                 if "icon" in annotation:
                     graph_icon = annotation["icon"]
+                if "labelPosition" in annotation:
+                    label_position = annotation["labelPosition"]
                 # Note: graph-level could be added to annotations if needed
 
             node = Node(
@@ -113,10 +120,12 @@ class NodeLinkBuilder:
                 mgmt_ipv4=node_data.get("mgmt_ipv4", ""),
                 graph_level=graph_level,
                 graph_icon=graph_icon,
+                label_position=label_position,
                 base_style=base_style,
                 custom_style=self.styles.get(node_data.get("kind", ""), ""),
                 pos_x=pos_x,
                 pos_y=pos_y,
+                position_source=position_source,
                 width=node_width,
                 height=node_height,
                 group=node_data.get("group", ""),
@@ -151,6 +160,7 @@ class NodeLinkBuilder:
         label = name
         pos_x = ""
         pos_y = ""
+        position_source = None
         annotation = self._cloud_annotations.get(name)
         if annotation:
             label = annotation.get("label", name)
@@ -158,6 +168,7 @@ class NodeLinkBuilder:
             if pos:
                 pos_x = str(pos.get("x", ""))
                 pos_y = str(pos.get("y", ""))
+                position_source = "annotation"
 
         return Node(
             name=name,
@@ -170,6 +181,7 @@ class NodeLinkBuilder:
             height=self.styles.get("node_height", 75),
             pos_x=pos_x,
             pos_y=pos_y,
+            position_source=position_source,
         )
 
     def _build_links(self, nodes):

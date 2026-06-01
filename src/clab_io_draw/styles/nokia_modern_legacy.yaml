@@ -5,21 +5,18 @@ grid: "0"
 pagew: "auto"
 pageh: "auto"
 
-node_width: 64
-node_height: 64
+node_width: 75
+node_height: 75
 
 padding_x: 150
-padding_y: 150
-node_margin: 22
-parallel_edge_spacing: 34
-canvas_margin: 80
+padding_y: 175
 
 # Base style for nodes; defines the general appearance for all nodes.
-base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=center;align=center;verticalLabelPosition=bottom;verticalAlign=top;spacingTop=5;spacing=0;fontFamily=Helvetica;fontSize=12;fontStyle=0;fontColor=#111827;labelBackgroundColor=none;labelBorderColor=none;"
+base_style: "shape=image;imageAlign=center;imageVerticalAlign=middle;labelPosition=left;align=right;verticalLabelPosition=top;spacingLeft=0;verticalAlign=bottom;spacingTop=0;spacing=0;"
 
 #Nodes with ports if ports:true (-g option for grafana will set always to true)
 ports: false
-port_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=8;strokeColor=#000000;strokeOpacity=25;fillColor=#BEC8D2;"
+port_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=6;strokeColor=#98A2AE;fillColor=#BEC8D2;"
 connector_style: "ellipse;whiteSpace=wrap;html=1;aspect=fixed;fontColor=#FFFFFF;fontSize=6;fillColor=#BEC8D2;strokeColor=none;noLabel=1;"
 
 port_width:  12
@@ -29,59 +26,17 @@ connector_width:  4
 connector_height: 4
 
 # Style for links between nodes
-link_style: "rounded=1;html=1;endArrow=none;jumpStyle=gap;strokeColor=#969799;strokeWidth=2;opacity=72;"
+link_style: "endArrow=none;jumpStyle=gap;"
 
-# Style for interface labels. These are separate vertices parented by their endpoint node.
-src_label_style: "rounded=1;whiteSpace=wrap;html=1;fontFamily=Helvetica;arcSize=50;spacing=0;spacingLeft=4;spacingRight=4;spacingTop=1;spacingBottom=1;fillColor=#FFFFFF;fontColor=#111827;strokeColor=#CBD5E1;strokeWidth=1;fontSize=9;horizontal=1;fontStyle=0;shadow=0;"
-trgt_label_style: "rounded=1;whiteSpace=wrap;html=1;fontFamily=Helvetica;arcSize=50;spacing=0;spacingLeft=4;spacingRight=4;spacingTop=1;spacingBottom=1;fillColor=#FFFFFF;fontColor=#111827;strokeColor=#CBD5E1;strokeWidth=1;fontSize=9;horizontal=1;fontStyle=0;shadow=0;"
+# Style for labels
+src_label_style: "rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1"
+trgt_label_style: "rounded=1;whiteSpace=wrap;html=1;fontFamily=Google Sans;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DGoogle%2BSans;arcSize=32;spacing=0;spacingBottom=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#98A2AE;fontSize=8;horizontal=1;fontStyle=1"
 
 default_labels: false
 label_offset: 20
-label_height: 16
-label_width: 28
-label_min_width: 28
-label_max_width: 88
-label_max_chars: 14
-label_padding_x: 7
-label_font_size: 9
-label_anchor_gap: 3
+label_height: 10
+label_width: 20
 label_alignment: center
-label_line_offset: 0
-source_label_position: 0.22
-target_label_position: 0.78
-compact_interface_names: true
-
-css_overrides:
-  default:
-    st0_fill: "#005AFF"
-  spine:
-    st0_fill: "#005AFF"
-  leaf:
-    st0_fill: "#005AFF"
-  dcgw:
-    st0_fill: "#005AFF"
-  server:
-    st0_fill: "#6B7280"
-  network:
-    st0_fill: "#3B82F6"
-
-svg_overrides:
-  "*":
-    root_rect_rx: "14"
-    root_rect_ry: "14"
-
-style_overrides:
-  "*":
-    verticalLabelPosition: bottom
-    verticalAlign: top
-    labelPosition: center
-    align: center
-    labelBackgroundColor: none
-    labelBorderColor: none
-    fontColor: "#111827"
-    fontFamily: Helvetica
-    fontSize: "12"
-    fontStyle: "0"
 
 # Custom styles for different types of nodes, allowing for unique visual representation based on node role or function
 custom_styles:
