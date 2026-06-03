@@ -24,7 +24,7 @@ clab2drawio = "clab_io_draw.clab2drawio:main_cli"
 drawio2clab = "clab_io_draw.drawio2clab:main_cli"
 
 [build-system]
-requires = ["setuptools>=67"]
+requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
