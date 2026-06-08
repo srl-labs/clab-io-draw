@@ -9,7 +9,7 @@ dependencies = [
     "prompt-toolkit==3.0.52",
     "PyYAML==6.0.3",
     "six==1.17.0",
-    "wcwidth==0.7.0",
+    "wcwidth==0.8.1",
     "ruamel-yaml==0.19.1",
     "textual-dev==1.8.0",
     "textual==8.2.7",
