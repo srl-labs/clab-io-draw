@@ -12,7 +12,7 @@ dependencies = [
     "wcwidth==0.7.0",
     "ruamel-yaml==0.19.1",
     "textual-dev==1.8.0",
-    "textual==8.2.7",
+    "textual==8.2.8",
     "networkx>=3.6.1",
     "defusedxml>=0.7.1",
     "typer>=0.26.4",
